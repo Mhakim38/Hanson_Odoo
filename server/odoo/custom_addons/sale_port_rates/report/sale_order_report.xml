@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_saleorder_port_rates" inherit_id="sale.report_saleorder_document">
+
+        <!-- Replace the main report content -->
+        <xpath expr="//div[contains(@class,'page')]" position="replace">
+            <div class="page">
+                <h2 style="text-align:center; margin-top:40px; margin-bottom:20px;">Port Rates Quotation</h2>
+
+                <div style="margin-top:20px; margin-bottom:20px;">
+                    <p><strong>Customer:</strong> <span t-field="doc.partner_id.display_name"/></p>
+                    <p><strong>Date:</strong>
+                        <span t-field="doc.date_order" t-options="{'format': 'dd/MM/yyyy HH:mm:ss'}"/>
+                    </p>
+                </div>
+
+                <table class="table table-sm table-bordered" style="border-collapse: collapse; width:100%;">
+                    <thead>
+                        <tr style="background-color:#f0f0f0;">
+                            <th style="border:1px solid #000; padding:5px;">Port</th>
+                            <th style="border:1px solid #000; padding:5px;">Validation</th>
+                            <th style="border:1px solid #000; padding:5px;">Export Rate</th>
+                            <th style="border:1px solid #000; padding:5px;">Inclusive</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr t-foreach="doc.port_order_line_ids" t-as="l">
+                            <td style="border:1px solid #000; padding:5px;"><span t-field="l.port"/></td>
+                            <td style="border:1px solid #000; padding:5px;"><span t-field="l.validation"/></td>
+                            <td style="border:1px solid #000; padding:5px; text-align:right;">
+                                <span t-field="l.export_rate"
+                                      t-options="{'widget': 'monetary', 'display_currency': doc.currency_id}"/>
+                            </td>
+                            <td style="border:1px solid #000; padding:5px;"><span t-field="l.inclusive"/></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </xpath>
+
+    </template>
+</odoo>
