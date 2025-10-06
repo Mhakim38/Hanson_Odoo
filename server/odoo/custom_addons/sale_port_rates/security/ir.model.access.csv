@@ -1,0 +1,3 @@
+id,name,model_id:id,group_id,perm_read,perm_write,perm_create,perm_unlink
+access_sale_port_rates_sale_order,sale.port.rates.sale.order,model_sale_order,,1,1,1,1
+access_sale_port_rates_sale_order_line,sale.port.rates.sale.order.line,model_sale_order_port_line,,1,1,1,1

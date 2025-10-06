@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_order_form_port_rates" model="ir.ui.view">
+        <field name="name">sale.order.form.port.rates</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+
+            <!-- Replace Order Lines tab with Port Rates -->
+            <xpath expr="//page[@name='order_lines']" position="replace">
+                <page string="Port Rates" name="port_rates">
+                    <field name="port_order_line_ids" nolabel="1">
+                        <tree string="Port Rates" editable="bottom">
+                            <field name="port"/>
+                            <field name="validation"/>
+                            <field name="export_rate"/>
+                            <field name="inclusive"/>
+                        </tree>
+                    </field>
+                </page>
+            </xpath>
+
+        </field>
+    </record>
+</odoo>
