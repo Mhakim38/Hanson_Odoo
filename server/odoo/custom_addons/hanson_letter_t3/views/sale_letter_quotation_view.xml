@@ -1,40 +1,58 @@
 <odoo>
-    <!-- Action -->
-    <record id="action_letter_quotation" model="ir.actions.act_window">
-        <field name="name">Letter Quotation</field>
-        <field name="res_model">sale.order</field>
-        <field name="view_mode">tree,form</field>
-        <field name="domain">[('state', '=', 'draft')]</field>
-        <field name="context">{'default_is_letter_quotation': True}</field>
-    </record>
-
-    <!-- Menu -->
-    <menuitem id="menu_letter_quotation"
-              name="Letter Quotation"
-              parent="sale.menu_sale_order"
-              action="action_letter_quotation"
-              sequence="15"/>
-
-    <!-- Extend Sale Order Form -->
     <record id="view_order_form_letter" model="ir.ui.view">
         <field name="name">sale.order.letter.form</field>
         <field name="model">sale.order</field>
-        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="inherit_id" ref="sale_management.sale_order_form_quote"/>
         <field name="arch" type="xml">
-            <xpath expr="//sheet//group" position="inside">
-                <group>
-                    <field name="dear"/>
-                    <field name="subject"/>
-                </group>
+
+            <!-- Place radio above SO number -->
+            <xpath expr="//sheet" position="inside">
+                <field name="quotation_type" widget="radio"/>
             </xpath>
 
-            <!-- Add button to load default sections -->
-            <xpath expr="//header" position="inside">
-                <button name="action_add_default_lines"
-                        type="object"
-                        string="Load Letter Quotation Lines"
-                        class="btn-primary"/>
+            <!-- Add Subject below customer -->
+            <xpath expr="//field[@name='partner_id']" position="after">
+                <field name="subject" style="font-size:30px; font-weight:900; text-decoration:underline;"/>
             </xpath>
+
+            <!-- Hide fields -->
+            <xpath expr="//field[@name='validity_date']" position="attributes">
+                <attribute name="invisible">quotation_type == 'letter'</attribute>
+            </xpath>
+            <xpath expr="//field[@name='date_order']" position="attributes">
+                <attribute name="invisible">quotation_type == 'letter'</attribute>
+            </xpath>
+            <xpath expr="//field[@name='payment_term_id']" position="attributes">
+                <attribute name="invisible">quotation_type == 'letter'</attribute>
+            </xpath>
+
+            <!-- Hide tabs -->
+            <xpath expr="//page[@name='optional_products']" position="attributes">
+                <attribute name="invisible">quotation_type == 'letter'</attribute>
+            </xpath>
+            <xpath expr="//page[@name='other_information']" position="attributes">
+                <attribute name="invisible">quotation_type == 'letter'</attribute>
+            </xpath>
+<!--            <xpath expr="//page[@name='customer_sign']" position="attributes">-->
+<!--                <attribute name="invisible">quotation_type == 'letter'</attribute>-->
+<!--            </xpath>-->
+
+            <!-- Add letter quotation tab -->
+            <xpath expr="//page[@name='optional_products']" position="after">
+                <page string="Letter Quotation Lines" name="letter_quotation"
+                      invisible="quotation_type != 'letter'">
+                    <field name="letter_order_line">
+                        <tree editable="bottom">
+                            <field name="product_id"/>
+                            <field name="name"/>
+                            <field name="product_uom_qty"/>
+                            <field name="price_unit"/>
+                            <field name="price_subtotal" readonly="1"/>
+                        </tree>
+                    </field>
+                </page>
+            </xpath>
+
         </field>
     </record>
 </odoo>

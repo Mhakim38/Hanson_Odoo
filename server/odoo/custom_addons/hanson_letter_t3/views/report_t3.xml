@@ -1,0 +1,17 @@
+<odoo>
+    <template id="report_saleorder_document_inherit_letter" inherit_id="sale.report_saleorder_document">
+        <!-- Insert Dear + Subject before the page body; only display for letter quotations -->
+        <xpath expr="//div[contains(@class,'page')]" position="before">
+            <t t-foreach="docs" t-as="o">
+                <t t-if="o.quotation_type == 'letter'">
+                    <div style="margin-bottom: 30px;">
+                        <p><strong>Dear </strong><t t-esc="o.partner_id.name"/></p>
+                        <p style="font-size:30px; font-weight:900; text-decoration:underline;">
+                            <strong>Subject:</strong> <t t-esc="o.subject"/>
+                        </p>
+                    </div>
+                </t>
+            </t>
+        </xpath>
+    </template>
+</odoo>
