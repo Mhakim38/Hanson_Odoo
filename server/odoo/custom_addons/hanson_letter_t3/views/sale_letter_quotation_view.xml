@@ -1,0 +1,40 @@
+<odoo>
+    <!-- Action -->
+    <record id="action_letter_quotation" model="ir.actions.act_window">
+        <field name="name">Letter Quotation</field>
+        <field name="res_model">sale.order</field>
+        <field name="view_mode">tree,form</field>
+        <field name="domain">[('state', '=', 'draft')]</field>
+        <field name="context">{'default_is_letter_quotation': True}</field>
+    </record>
+
+    <!-- Menu -->
+    <menuitem id="menu_letter_quotation"
+              name="Letter Quotation"
+              parent="sale.menu_sale_order"
+              action="action_letter_quotation"
+              sequence="15"/>
+
+    <!-- Extend Sale Order Form -->
+    <record id="view_order_form_letter" model="ir.ui.view">
+        <field name="name">sale.order.letter.form</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet//group" position="inside">
+                <group>
+                    <field name="dear"/>
+                    <field name="subject"/>
+                </group>
+            </xpath>
+
+            <!-- Add button to load default sections -->
+            <xpath expr="//header" position="inside">
+                <button name="action_add_default_lines"
+                        type="object"
+                        string="Load Letter Quotation Lines"
+                        class="btn-primary"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>
