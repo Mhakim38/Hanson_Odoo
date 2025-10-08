@@ -33,10 +33,15 @@ class SaleOrder(models.Model):
     @api.model
     def _get_letter_item_line(self, name):
         product = self.env['product.product'].search([('name', '=', name)], limit=1)
-        if product:
-            return {'product_id': product.id, 'name': product.name}
-        else:
-            return {'name': name}
+        if not product:
+            # Create the product if it does not exist
+            product = self.env['product.product'].create({
+                'name': name,
+                'type': 'service',
+                'sale_ok': True,
+                'purchase_ok': False,
+            })
+        return {'product_id': product.id, 'name': product.name}
 
     @api.model
     def _default_letter_lines(self):
