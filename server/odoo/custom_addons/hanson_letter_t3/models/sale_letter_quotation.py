@@ -1,82 +1,122 @@
-# -*- coding: utf-8 -*-
 from odoo import models, fields, api
 
-class SaleOrderLetterQuotation(models.Model):
-    _inherit = "sale.order"
+
+class SaleOrder(models.Model):
+    _inherit = 'sale.order'
 
     quotation_type = fields.Selection([
-        ('standard', 'Standard Quotation'),
+        ('base', 'Base Quotation'),
         ('letter', 'Letter Quotation'),
-    ], string="Quotation Type", default='standard')
+    ], string="Quotation Type", default='base')
+
+    letter_line_ids = fields.One2many(
+        'sale.order.letter.line',
+        'order_id',
+        string='Letter Quotation Lines',
+        default=lambda self: self._default_letter_lines()
+    )
 
     subject = fields.Char(string="Subject")
 
-    # ✅ This is the missing field
-    letter_order_line = fields.One2many(
-        'sale.order.line', 'order_id',
-        string="Letter Quotation Lines",
-        domain=[('display_type', '!=', False)],
+    show_order_line = fields.Boolean(
+        compute='_compute_order_line_visibility',
+        string='Show Order Line',
+        store=False
     )
+
+    @api.depends('quotation_type')
+    def _compute_order_line_visibility(self):
+        """Control visibility of base order lines."""
+        for order in self:
+            order.show_order_line = order.quotation_type == 'base'
+
+    @api.model
+    def _default_letter_lines(self):
+        # Only provide default lines if context says letter quotation
+        ctx = self.env.context or {}
+        if ctx.get('default_quotation_type') == 'letter':
+            return [
+                (0, 0, {'display_type': 'line_section', 'name': 'Customs Clearance Charges'}),
+                (0, 0, {'name': 'Forwarding Fees'}),
+                (0, 0, {'name': 'Customs Examination'}),
+                (0, 0, {'name': 'Customs Attendance'}),
+                (0, 0, {'name': 'Labour Attendance'}),
+                (0, 0, {'name': 'EFT Fees'}),
+                (0, 0, {'name': 'Const Recovery Measurements'}),
+                (0, 0, {'name': 'Post Storage/SSR Charges/D&D Charges'}),
+                (0, 0, {'display_type': 'line_section', 'name': 'Transportation Charges'}),
+                (0, 0, {'name': 'Haulage Charges'}),
+                (0, 0, {'name': 'Depot Gate Charges'}),
+                (0, 0, {'name': 'Warehouse Charges'}),
+            ]
+        return []
 
     @api.onchange('quotation_type')
     def _onchange_quotation_type(self):
-        """Auto-load default lines when switching to Letter Quotation."""
-        if self.quotation_type == 'letter':
-            self.order_line = [(5, 0, 0)]  # clear normal order lines
-            order_lines = []
-
-            # Section 1: Customs Clearance
-            order_lines.append((0, 0, {
-                "display_type": "line_section",
-                "name": "Customs Clearance Charges",
-            }))
-
-            products_clearance = [
-                "Forwarding Fees",
-                "Customs Examination (If Any)",
-                "Customs Attendance (If Any)",
-                "Labour Attendance (If Any)",
-                "EFT Fees (If Any)",
-                "Const Recovery Measurements (as per port receipt)",
-                "Post Storage/SSR Charges/D&D Charges (If Any) as per port receipt",
+        if self.quotation_type == 'letter' and not self.letter_line_ids:
+            self.letter_line_ids = [
+                (0, 0, {'display_type': 'line_section', 'name': 'Customs Clearance Charges'}),
+                (0, 0, {'name': 'Forwarding Fees'}),
+                (0, 0, {'name': 'Customs Examination'}),
+                (0, 0, {'name': 'Customs Attendance'}),
+                (0, 0, {'name': 'Labour Attendance'}),
+                (0, 0, {'name': 'EFT Fees'}),
+                (0, 0, {'name': 'Const Recovery Measurements'}),
+                (0, 0, {'name': 'Post Storage/SSR Charges/D&D Charges'}),
+                (0, 0, {'display_type': 'line_section', 'name': 'Transportation Charges'}),
+                (0, 0, {'name': 'Haulage Charges'}),
+                (0, 0, {'name': 'Depot Gate Charges'}),
+                (0, 0, {'name': 'Warehouse Charges'}),
             ]
-            for pname in products_clearance:
-                product = self.env["product.product"].search([("name", "=", pname)], limit=1)
-                if not product:
-                    product = self.env["product.product"].create({
-                        "name": pname,
-                        "type": "service",
-                        "list_price": 0.0,
-                    })
-                order_lines.append((0, 0, {
-                    "product_id": product.id,
-                    "product_uom_qty": 1,
-                }))
 
-            # Section 2: Transportation
-            order_lines.append((0, 0, {
-                "display_type": "line_section",
-                "name": "Transportation Charges",
-            }))
+    def create(self, vals):
+        # No auto-fill here; handled by default
+        return super().create(vals)
 
-            products_transport = [
-                "Haulage Charges",
-                "Depot Gate Charges",
-                "Warehouse Charges",
-            ]
-            for pname in products_transport:
-                product = self.env["product.product"].search([("name", "=", pname)], limit=1)
-                if not product:
-                    product = self.env["product.product"].create({
-                        "name": pname,
-                        "type": "service",
-                        "list_price": 0.0,
-                    })
-                order_lines.append((0, 0, {
-                    "product_id": product.id,
-                    "product_uom_qty": 1,
-                }))
 
-            self.letter_order_line = order_lines
-        else:
-            self.letter_order_line = [(5, 0, 0)]  # clear letter lines
+class SaleOrderLetterLine(models.Model):
+    _name = 'sale.order.letter.line'
+    _description = 'Sale Order Letter Line'
+
+    order_id = fields.Many2one(
+        'sale.order',
+        string='Order Reference',
+        required=True,
+        ondelete='cascade'
+    )
+    product_id = fields.Many2one(
+        'product.product',
+        string='Product',
+    )
+    name = fields.Char(
+        string='Description',
+        required=False
+    )
+    product_uom_qty = fields.Float(
+        string='Quantity',
+        default=1.0,
+    )
+    product_uom = fields.Many2one(
+        'uom.uom',
+        string='Unit of Measure'
+    )
+    price_unit = fields.Float(
+        string='Unit Price'
+    )
+    price_subtotal = fields.Float(
+        string='Subtotal',
+        compute='_compute_amount',
+        store=True
+    )
+    display_type = fields.Selection([
+        ('line_section', 'Section'),
+        ('line_note', 'Note')
+    ], string='Display Type')
+
+    @api.depends('product_uom_qty', 'price_unit')
+    def _compute_amount(self):
+        for line in self:
+            if not line.display_type:
+                line.price_subtotal = line.product_uom_qty * line.price_unit
+            else:
+                line.price_subtotal = 0.0
