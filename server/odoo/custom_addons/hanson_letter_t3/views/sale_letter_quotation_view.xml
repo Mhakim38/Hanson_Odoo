@@ -38,7 +38,6 @@
 <!--            <xpath expr="//page[@name='customer_signature']" position="attributes">-->
 <!--                <attribute name="invisible">quotation_type == 'letter'</attribute>-->
 <!--            </xpath>-->
-
             <!-- Hide base Order Lines tab -->
             <xpath expr="//page[@name='order_lines']" position="attributes">
                 <attribute name="invisible">quotation_type == 'letter'</attribute>
@@ -48,14 +47,13 @@
             <xpath expr="//page[@name='optional_products']" position="after">
                 <page string="Letter Quotation Lines" name="letter_quotation_tab"
                       invisible="quotation_type != 'letter'">
-                    <field name="letter_line_ids" context="{'default_order_id': active_id}">
+                    <field name="letter_line_ids" context="{'default_order_id': active_id}" widget="section_and_note_one2many">
                         <tree editable="bottom">
-                            <field name="display_type" x-invisible="[('display_type','!=',False)]"/>
                             <field name="product_id" x-invisible="[('display_type','!=',False)]"/>
                             <field name="name"/>
                             <field name="product_uom_qty" x-invisible="[('display_type','!=',False)]"/>
-                            <field name="product_uom" x-invisible="[('display_type','!=',False)]"/>
                             <field name="price_unit" x-invisible="[('display_type','!=',False)]"/>
+                            <field name="tax_id" x-invisible="[('display_type','!=',False)]"/>
                             <field name="price_subtotal" readonly="1" x-invisible="[('display_type','!=',False)]"/>
                         </tree>
                     </field>

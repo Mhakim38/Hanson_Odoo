@@ -31,23 +31,30 @@ class SaleOrder(models.Model):
             order.show_order_line = order.quotation_type == 'base'
 
     @api.model
+    def _get_letter_item_line(self, name):
+        product = self.env['product.product'].search([('name', '=', name)], limit=1)
+        if product:
+            return {'product_id': product.id, 'name': product.name}
+        else:
+            return {'name': name}
+
+    @api.model
     def _default_letter_lines(self):
-        # Only provide default lines if context says letter quotation
         ctx = self.env.context or {}
         if ctx.get('default_quotation_type') == 'letter':
             return [
                 (0, 0, {'display_type': 'line_section', 'name': 'Customs Clearance Charges'}),
-                (0, 0, {'name': 'Forwarding Fees'}),
-                (0, 0, {'name': 'Customs Examination'}),
-                (0, 0, {'name': 'Customs Attendance'}),
-                (0, 0, {'name': 'Labour Attendance'}),
-                (0, 0, {'name': 'EFT Fees'}),
-                (0, 0, {'name': 'Const Recovery Measurements'}),
-                (0, 0, {'name': 'Post Storage/SSR Charges/D&D Charges'}),
+                (0, 0, self._get_letter_item_line('Forwarding Fees')),
+                (0, 0, self._get_letter_item_line('Customs Examination')),
+                (0, 0, self._get_letter_item_line('Customs Attendance')),
+                (0, 0, self._get_letter_item_line('Labour Attendance')),
+                (0, 0, self._get_letter_item_line('EFT Fees')),
+                (0, 0, self._get_letter_item_line('Const Recovery Measurements')),
+                (0, 0, self._get_letter_item_line('Post Storage/SSR Charges/D&D Charges')),
                 (0, 0, {'display_type': 'line_section', 'name': 'Transportation Charges'}),
-                (0, 0, {'name': 'Haulage Charges'}),
-                (0, 0, {'name': 'Depot Gate Charges'}),
-                (0, 0, {'name': 'Warehouse Charges'}),
+                (0, 0, self._get_letter_item_line('Haulage Charges')),
+                (0, 0, self._get_letter_item_line('Depot Gate Charges')),
+                (0, 0, self._get_letter_item_line('Warehouse Charges')),
             ]
         return []
 
@@ -56,17 +63,17 @@ class SaleOrder(models.Model):
         if self.quotation_type == 'letter' and not self.letter_line_ids:
             self.letter_line_ids = [
                 (0, 0, {'display_type': 'line_section', 'name': 'Customs Clearance Charges'}),
-                (0, 0, {'name': 'Forwarding Fees'}),
-                (0, 0, {'name': 'Customs Examination'}),
-                (0, 0, {'name': 'Customs Attendance'}),
-                (0, 0, {'name': 'Labour Attendance'}),
-                (0, 0, {'name': 'EFT Fees'}),
-                (0, 0, {'name': 'Const Recovery Measurements'}),
-                (0, 0, {'name': 'Post Storage/SSR Charges/D&D Charges'}),
+                (0, 0, self._get_letter_item_line('Forwarding Fees')),
+                (0, 0, self._get_letter_item_line('Customs Examination')),
+                (0, 0, self._get_letter_item_line('Customs Attendance')),
+                (0, 0, self._get_letter_item_line('Labour Attendance')),
+                (0, 0, self._get_letter_item_line('EFT Fees')),
+                (0, 0, self._get_letter_item_line('Const Recovery Measurements')),
+                (0, 0, self._get_letter_item_line('Post Storage/SSR Charges/D&D Charges')),
                 (0, 0, {'display_type': 'line_section', 'name': 'Transportation Charges'}),
-                (0, 0, {'name': 'Haulage Charges'}),
-                (0, 0, {'name': 'Depot Gate Charges'}),
-                (0, 0, {'name': 'Warehouse Charges'}),
+                (0, 0, self._get_letter_item_line('Haulage Charges')),
+                (0, 0, self._get_letter_item_line('Depot Gate Charges')),
+                (0, 0, self._get_letter_item_line('Warehouse Charges')),
             ]
 
     def create(self, vals):
@@ -112,6 +119,12 @@ class SaleOrderLetterLine(models.Model):
         ('line_section', 'Section'),
         ('line_note', 'Note')
     ], string='Display Type')
+    tax_id = fields.Many2many(
+        'account.tax',
+        'sale_order_letter_line_tax_rel',
+        'letter_line_id', 'tax_id',
+        string='Taxes'
+    )
 
     @api.depends('product_uom_qty', 'price_unit')
     def _compute_amount(self):
