@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <odoo>
     <template id="report_saleorder_document_inherit_mail_body" inherit_id="sale.report_saleorder_document">
-        <xpath expr="//div[@class='page']" position="before">
-            <t t-if="doc.mail_body">
-                <div style="margin-bottom: 20px;">
-                    <div t-field="doc.mail_body"/>
+        <xpath expr="//div[contains(@class, 'page')]" position="inside">
+            <t t-if="doc.cleaned_mail_body" style="border: none !important;">
+                <div style="margin: 0 0 20px 0; padding: 0; border: none !important; background: none !important; box-shadow: none !important;">
+                    <t t-raw="doc.cleaned_mail_body"/>
                 </div>
             </t>
         </xpath>
