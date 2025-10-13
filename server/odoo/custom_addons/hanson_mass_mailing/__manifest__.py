@@ -7,6 +7,7 @@
     'data': [
         'security/ir.model.access.csv',
         'views/sale_order_view.xml',
+        'views/report_saleorder_inherit.xml',
     ],
     'installable': True,
     'application': False,
