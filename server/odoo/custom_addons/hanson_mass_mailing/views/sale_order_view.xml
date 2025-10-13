@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <record id="view_order_form_inherit_mail_body" model="ir.ui.view">
+        <field name="name">sale.order.form.mail.body</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//notebook" position="inside">
+                <page string="Mail Body">
+                    <group>
+                        <field name="mailing_id"
+                               context="{'default_body_html': '&lt;p&gt;Hello, this is a new mail template.&lt;/p&gt;'}"/>
+                    </group>
+                    <separator string="Body Preview"/>
+                    <div class="o_row">
+                        <field name="mail_body" widget="html" nolabel="1"/>
+                    </div>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>
