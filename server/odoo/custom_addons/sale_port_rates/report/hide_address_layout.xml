@@ -1,0 +1,22 @@
+<odoo>
+    <template id="remove_address_from_layout" inherit_id="web.external_layout_standard">
+
+        <!-- Remove the address layout -->
+        <xpath expr="//t[@t-call='web.address_layout']" position="replace"/>
+
+        <!-- Remove the company address/details block -->
+        <xpath expr="//div[@name='company_address']" position="replace"/>
+
+        <!-- Replace header with a true full-width logo -->
+        <xpath expr="//div[@class='row']//img[@t-att-src='image_data_uri(company.logo)']/ancestor::div[@class='row'][1]" position="replace">
+            <div class="header-fullwidth" style="width: 100%; text-align: center; margin: 0; padding: 0;">
+                <img t-if="company.logo"
+                     t-att-src="image_data_uri(company.logo)"
+                     style="width: 100%; max-height: 120px; object-fit: contain; margin: 0; padding: 0;"
+                     alt="Company Logo"/>
+                <div style="border-bottom: 1px solid #000; margin-top: 5px;"></div>
+            </div>
+        </xpath>
+
+    </template>
+</odoo>

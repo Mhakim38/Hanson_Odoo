@@ -6,11 +6,12 @@
     'category': 'Sales',
     'author': 'Alif Hykal',
     'license': 'LGPL-3',
-    'depends': ['sale_management'],
+    'depends': ['sale_management', 'hanson_mass_mailing', 'hanson_letter_t3'],
     'data': [
         'security/ir.model.access.csv',
         'views/sale_order_views.xml',
         'report/sale_order_report.xml',
+        'report/hide_address_layout.xml',
     ],
     'installable': True,
     'application': False,

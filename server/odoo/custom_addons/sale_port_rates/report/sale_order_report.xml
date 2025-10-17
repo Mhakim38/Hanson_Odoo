@@ -1,6 +1,16 @@
 <!-- server/odoo/custom_addons/sale_port_rates/report/sale_order_report.xml -->
 <odoo>
     <template id="report_saleorder_port_rates" inherit_id="sale.report_saleorder_document">
+        <!-- Hide the original customer address block from the informations row (first column) -->
+        <xpath expr="//div[@id='informations']/div[1]" position="attributes">
+            <attribute name="style">display:none;</attribute>
+        </xpath>
+        <!-- Insert the customer address block above Dear section, left-aligned -->
+        <xpath expr="//div[contains(@class,'page')]" position="before">
+            <div style="text-align:left; margin-bottom: 20px;">
+                <div t-field="doc.partner_id" t-options='{"widget": "contact", "fields": ["address", "name"], "no_marker": True}'/>
+            </div>
+        </xpath>
         <xpath expr="//div[contains(@class,'page')]" position="replace">
             <div class="page">
                 <!-- Letter Quotation Header -->
@@ -16,8 +26,8 @@
                     <t t-if="doc.quotation_type == 'letter'">Letter Quotation</t>
                     <t t-else="">Port Rates Quotation</t>
                 </h2>
+                <!-- Date field only -->
                 <div style="margin-top:20px; margin-bottom:20px;">
-                    <p><strong>Customer:</strong> <span t-field="doc.partner_id.display_name"/></p>
                     <p><strong>Date:</strong>
                         <span t-field="doc.date_order" t-options="{'format': 'dd/MM/yyyy HH:mm:ss'}"/>
                     </p>
