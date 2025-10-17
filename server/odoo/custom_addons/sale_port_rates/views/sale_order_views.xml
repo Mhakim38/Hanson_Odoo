@@ -6,9 +6,14 @@
         <field name="inherit_id" ref="sale.view_order_form"/>
         <field name="arch" type="xml">
 
-            <!-- Replace Order Lines tab with Port Rates -->
-            <xpath expr="//page[@name='order_lines']" position="replace">
-                <page string="Port Rates" name="port_rates">
+            <!-- Hide original Order Lines tab for port_rate and letter -->
+            <xpath expr="//page[@name='order_lines']" position="attributes">
+                <attribute name="invisible">quotation_type != 'quotation'</attribute>
+            </xpath>
+
+            <!-- Add Port Rates tab, only visible for port_rate -->
+            <xpath expr="//page[@name='order_lines']" position="after">
+                <page string="Port Rates" name="port_rates" invisible="quotation_type != 'port_rate'">
                     <field name="port_order_line_ids" nolabel="1">
                         <tree string="Port Rates" editable="bottom">
                             <field name="port"/>
