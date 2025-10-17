@@ -17,28 +17,28 @@
                 <field name="subject" invisible="quotation_type != 'letter'"/>
             </xpath>
 
-            <!-- Hide fields for Letter Quotation -->
+            <!-- Hide fields for Port Rate Quotation and Letter Quotation -->
             <xpath expr="//field[@name='validity_date']" position="attributes">
-                <attribute name="invisible">quotation_type == 'letter'</attribute>
+                <attribute name="invisible">quotation_type in ('port_rate','letter')</attribute>
             </xpath>
             <xpath expr="//field[@name='date_order']" position="attributes">
-                <attribute name="invisible">quotation_type == 'letter'</attribute>
+                <attribute name="invisible">quotation_type in ('port_rate','letter')</attribute>
             </xpath>
             <xpath expr="//field[@name='payment_term_id']" position="attributes">
-                <attribute name="invisible">quotation_type == 'letter'</attribute>
+                <attribute name="invisible">quotation_type in ('port_rate','letter')</attribute>
             </xpath>
 
-            <!-- Hide tabs for Letter Quotation -->
+            <!-- Hide tabs for Port Rate Quotation and Letter Quotation -->
             <xpath expr="//page[@name='optional_products']" position="attributes">
-                <attribute name="invisible">quotation_type == 'letter'</attribute>
+                <attribute name="invisible">quotation_type in ('port_rate','letter')</attribute>
             </xpath>
             <xpath expr="//page[@name='other_information']" position="attributes">
-                <attribute name="invisible">quotation_type == 'letter'</attribute>
+                <attribute name="invisible">quotation_type in ('port_rate','letter')</attribute>
             </xpath>
 <!--            <xpath expr="//page[@name='customer_signature']" position="attributes">-->
-<!--                <attribute name="invisible">quotation_type == 'letter'</attribute>-->
+<!--                <attribute name="invisible">quotation_type in ('port_rate','letter')</attribute>-->
 <!--            </xpath>-->
-            <!-- Hide base Order Lines tab -->
+            <!-- Hide base Order Lines tab for Letter Quotation -->
             <xpath expr="//page[@name='order_lines']" position="attributes">
                 <attribute name="invisible">quotation_type == 'letter'</attribute>
             </xpath>

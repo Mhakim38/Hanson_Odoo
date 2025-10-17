@@ -5,9 +5,10 @@ class SaleOrder(models.Model):
     _inherit = 'sale.order'
 
     quotation_type = fields.Selection([
-        ('base', 'Base Quotation'),
+        ('quotation', 'Quotation'),
+        ('port_rate', 'Port Rate Quotation'),
         ('letter', 'Letter Quotation'),
-    ], string="Quotation Type", default='base')
+    ], string="Quotation Type", default='quotation')
 
     letter_line_ids = fields.One2many(
         'sale.order.letter.line',
@@ -28,7 +29,7 @@ class SaleOrder(models.Model):
     def _compute_order_line_visibility(self):
         """Control visibility of base order lines."""
         for order in self:
-            order.show_order_line = order.quotation_type == 'base'
+            order.show_order_line = order.quotation_type == 'port_rate'
 
     @api.model
     def _get_letter_item_line(self, name):
