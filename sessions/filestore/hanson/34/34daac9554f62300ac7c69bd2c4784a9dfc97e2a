@@ -17050,23 +17050,23 @@ li.oe-nested {
 }
 
 .o_company_1_layout.o_report_layout_standard h2, .o_company_1_layout.o_report_layout_standard .h2 {
-  color: black;
+  color: #198295;
 }
 
 .o_company_1_layout.o_report_layout_standard #informations strong {
-  color: black;
+  color: #98a4af;
 }
 
 .o_company_1_layout.o_report_layout_standard #total strong {
-  color: black;
+  color: #198295;
 }
 
 .o_company_1_layout.o_report_layout_standard .totals_taxes_company_currency strong {
-  color: black;
+  color: #198295;
 }
 
 .o_company_1_layout.o_report_layout_standard table thead {
-  color: black;
+  color: #98a4af;
 }
 
 
@@ -21475,4 +21475,4 @@ section, .oe_img_bg, [data-oe-shape-data], section > *, .oe_img_bg > *, [data-oe
 .sale_tbody .o_line_note {
   word-break: break-word;
 }
-/*# sourceMappingURL=/web/assets/6352758/web.report_assets_common.css.map */
+/*# sourceMappingURL=/web/assets/d7282cf/web.report_assets_common.css.map */
