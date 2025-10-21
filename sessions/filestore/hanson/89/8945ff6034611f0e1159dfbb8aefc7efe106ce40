@@ -3,20 +3,20 @@
                 font-family: Lato;
                 &.o_report_layout_standard {
                     h2 {
-                        color: black;
+                        color: #198295;
                     }
                     #informations strong {
-                        color: black;
+                        color: #98a4af;
                     }
                     #total strong{
-                        color: black;
+                        color: #198295;
                     }
                     .totals_taxes_company_currency strong{
-                        color: black;
+                        color: #198295;
                     }
                     table {
                         thead {
-                            color: black;
+                            color: #98a4af;
                         }
                     }
                 }
