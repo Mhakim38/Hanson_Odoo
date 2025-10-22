@@ -51,19 +51,19 @@
                         <div class="row" style="margin-bottom: 8px;">
                             <div class="col-3">
                                 <strong>Type:</strong><br></br>
-                                <span class="ms-5"></span><t t-esc="dict(doc._fields['type_selection'].selection).get(doc.type_selection) or '-'"/>
+                                <span class="ms-3"></span><t t-esc="dict(doc._fields['type_selection'].selection).get(doc.type_selection) or '-'"/>
                             </div>
                             <div class="col-3">
                                 <strong>Size:</strong><br></br>
-                                <span class="ms-5"></span><t t-esc="dict(doc._fields['size_selection'].selection).get(doc.size_selection) or '-'"/>
+                                <span class="ms-3"></span><t t-esc="dict(doc._fields['size_selection'].selection).get(doc.size_selection) or '-'"/>
                             </div>
                             <div class="col-3">
                                 <strong>Mode:</strong><br></br>
-                                <span class="ms-5"></span><t t-esc="dict(doc._fields['mode_selection'].selection).get(doc.mode_selection) or '-'"/>
+                                <span class="ms-3"></span><t t-esc="dict(doc._fields['mode_selection'].selection).get(doc.mode_selection) or '-'"/>
                             </div>
                             <div class="col-3">
                                 <strong>Port:</strong><br></br>
-                                <span class="ms-5"></span><t t-esc="dict(doc._fields['port_selection'].selection).get(doc.port_selection) or '-'"/>
+                                <span class="ms-3"></span><t t-esc="dict(doc._fields['port_selection'].selection).get(doc.port_selection) or '-'"/>
                             </div>
                         </div>
 
@@ -182,6 +182,26 @@
                         </tbody>
                     </table>
                 </t>
+
+                <!-- =============================
+                     Signature Section
+                     Only visible for standard quotations
+                     ============================= -->
+                <t t-if="doc.quotation_type == 'quotation'">
+                    <div class="mt-5" style="margin-top: 50px;">
+                        <p class="m-0"><strong>Yours sincerely,</strong></p>
+                        <p class="m-0"><t t-esc="doc.user_id.name or 'ERROR'"/></p>
+                        <p class="m-0"><t t-esc="doc.company_id.name or 'ERROR'"/></p>
+                        <p class="m-0">
+                            <strong>Email:</strong>
+                            <t t-esc="doc.user_id.email or 'ERROR'"/>
+                            <br/>
+                            <strong>Tel:</strong>
+                            <t t-esc="doc.user_id.phone or 'ERROR'"/>
+                        </p>
+                    </div>
+                </t>
+
 
             </div>
         </xpath>
