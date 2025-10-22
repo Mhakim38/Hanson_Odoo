@@ -18,11 +18,13 @@
             </xpath>
 
             <xpath expr="//field[@name='payment_term_id']" position="after">
-                <group invisible="quotation_type != 'quotation'">
+                <group class="col-12 col-lg-12" invisible="quotation_type != 'quotation'">
                     <field name="type_selection" widget="radio" options="{'horizontal': true}"/>
                     <field name="size_selection" widget="radio" options="{'horizontal': true}"/>
                     <field name="mode_selection" widget="radio" options="{'horizontal': true}"/>
                     <field name="port_selection" widget="radio" options="{'horizontal': true}"/>
+                    <field name="service_type_id"/>
+                    <field name="incoterm_id"/>
                 </group>
             </xpath>
 

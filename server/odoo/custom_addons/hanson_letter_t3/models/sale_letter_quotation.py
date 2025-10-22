@@ -123,6 +123,18 @@ class SaleOrder(models.Model):
         default='pod'
     )
 
+    service_type_id = fields.Many2one(
+        'service.type',
+        string='Service Type',
+        help='Select or create a service type for this quotation.'
+    )
+
+    incoterm_id = fields.Many2one(
+        'account.incoterms',
+        string='Incoterm',
+        help='International Commercial Term for this quotation.'
+    )
+
 
 class SaleOrderLetterLine(models.Model):
     _name = 'sale.order.letter.line'
