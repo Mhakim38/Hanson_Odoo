@@ -1,11 +1,12 @@
 <odoo>
     <template id="report_saleorder_port_rates" inherit_id="sale.report_saleorder_document">
-        <!-- Hide the original customer address block from the informations row (first column) -->
+
+        <!-- Hide default customer address in top-left -->
         <xpath expr="//div[@id='informations']/div[1]" position="attributes">
             <attribute name="style">display:none;</attribute>
         </xpath>
 
-        <!-- Insert the customer address block above Dear section, left-aligned -->
+        <!-- Insert customer address block before main page content -->
         <xpath expr="//div[contains(@class,'page')]" position="before">
             <div style="text-align:left; margin-bottom: 20px;">
                 <div t-field="doc.partner_id"
@@ -14,79 +15,68 @@
         </xpath>
 
         <xpath expr="//div[contains(@class,'page')]" position="replace">
-            <div class="page">
+            <div class="page" style="font-size:13px; line-height:1.5;">
 
-                <!-- Letter Quotation Header -->
+                <!-- =============================
+                     Header Section (for Letter Type)
+                     ============================= -->
                 <t t-if="doc.quotation_type == 'letter'">
                     <div style="margin-bottom: 30px;">
                         <p><strong>Dear </strong><t t-esc="doc.partner_id.name"/></p>
-                        <p style="font-size:30px; font-weight:900; text-decoration:underline;">
+                        <p style="font-size:22px; font-weight:700; text-decoration:underline;">
                             <strong>Subject:</strong> <t t-esc="doc.subject"/>
                         </p>
                     </div>
                 </t>
 
-                <!-- Quotation Title -->
-                <h2 style="text-align:center; margin-top:40px; margin-bottom:20px;">
+                <!-- =============================
+                     Title
+                     ============================= -->
+                <h2 style="text-align:center; margin-top:40px; margin-bottom:20px; font-weight:700;">
                     <t t-if="doc.quotation_type == 'letter'">Letter Quotation</t>
                     <t t-elif="doc.quotation_type == 'port_rate'">Port Rates Quotation</t>
                     <t t-else="">Quotation</t>
                 </h2>
 
-                <!-- Date field only -->
+                <!-- =============================
+                     Date
+                     ============================= -->
                 <div style="margin-top:20px; margin-bottom:20px;">
-                    <p><strong>Date:</strong>
+                    <p>
+                        <strong>Date:</strong>
                         <span t-field="doc.date_order" t-options="{'format': 'dd/MM/yyyy HH:mm:ss'}"/>
                     </p>
                 </div>
 
                 <!-- =============================
-                     New Quotation Fields Section
-                     Only visible when type == 'quotation'
+                     Quotation Information Fields
                      ============================= -->
                 <t t-if="doc.quotation_type == 'quotation'">
-                    <div class="container w-100" style="margin-bottom: 20px;">
+                    <div class="container w-100" style="margin-bottom: 30px;">
 
-                        <!-- Inline display of the 4 radio selection fields -->
-                        <div class="row" style="margin-bottom: 8px;">
-                            <div class="col-3">
-                                <strong>Type:</strong><br></br>
-                                <span class="ms-3"></span><t t-esc="dict(doc._fields['type_selection'].selection).get(doc.type_selection) or '-'"/>
-                            </div>
-                            <div class="col-3">
-                                <strong>Size:</strong><br></br>
-                                <span class="ms-3"></span><t t-esc="dict(doc._fields['size_selection'].selection).get(doc.size_selection) or '-'"/>
-                            </div>
-                            <div class="col-3">
-                                <strong>Mode:</strong><br></br>
-                                <span class="ms-3"></span><t t-esc="dict(doc._fields['mode_selection'].selection).get(doc.mode_selection) or '-'"/>
-                            </div>
-                            <div class="col-3">
-                                <strong>Port:</strong><br></br>
-                                <span class="ms-3"></span><t t-esc="dict(doc._fields['port_selection'].selection).get(doc.port_selection) or '-'"/>
-                            </div>
+                        <!-- Radio selection fields -->
+                        <div class="row mb-2 text-capitalize">
+                            <div class="col-3"><strong>Type:</strong><br/><t t-esc="dict(doc._fields['type_selection'].selection).get(doc.type_selection) or '-'"/></div>
+                            <div class="col-3"><strong>Size:</strong><br/><t t-esc="dict(doc._fields['size_selection'].selection).get(doc.size_selection) or '-'"/></div>
+                            <div class="col-3"><strong>Mode:</strong><br/><t t-esc="dict(doc._fields['mode_selection'].selection).get(doc.mode_selection) or '-'"/></div>
+                            <div class="col-3"><strong>Port:</strong><br/><t t-esc="dict(doc._fields['port_selection'].selection).get(doc.port_selection) or '-'"/></div>
                         </div>
 
-                        <!-- Service Type and Incoterm fields -->
-                        <div class="row" style="margin-bottom: 8px;">
-                            <div class="col-6">
-                                <strong>Service Type:</strong>
-                                <t t-esc="doc.service_type_id.display_name or '-'"/>
-                            </div>
-                            <div class="col-6">
-                                <strong>Incoterm:</strong>
-                                <t t-esc="doc.incoterm_id.display_name or '-'"/>
-                            </div>
+                        <!-- Service type and Incoterm -->
+                        <div class="row">
+                            <div class="col-6"><strong>Service Type:</strong> <t t-esc="doc.service_type_id.display_name or '-'"/></div>
+                            <div class="col-6"><strong>Incoterm:</strong> <t t-esc="doc.incoterm_id.display_name or '-'"/></div>
                         </div>
-
                     </div>
                 </t>
 
-                <!-- Port Rates Table -->
+                <!-- =============================
+                     Port Rates Table
+                     ============================= -->
                 <t t-if="doc.quotation_type == 'port_rate'">
-                    <table class="table table-sm table-bordered" style="border-collapse: collapse; width:100%;">
+                    <table class="table table-sm table-bordered" style="border-collapse: collapse; width:100%; font-size:12px;">
                         <thead>
-                            <tr style="background-color:#f0f0f0;">
+                            <tr style="background-color:#f5f5f5; text-align:center;">
                                 <th style="border:1px solid #000; padding:5px;">Port</th>
                                 <th style="border:1px solid #000; padding:5px;">Validation</th>
                                 <th style="border:1px solid #000; padding:5px;">Export Rate</th>
@@ -107,14 +97,16 @@
                     </table>
                 </t>
 
-                <!-- Standard Quotation Table -->
+                <!-- =============================
+                     Standard Quotation Table
+                     ============================= -->
                 <t t-if="doc.quotation_type == 'quotation'">
-                    <table class="table table-sm">
+                    <table class="table table-sm" style="width:100%; font-size:12px;">
                         <thead>
                             <tr>
                                 <th>Product / Description</th>
                                 <th class="text-right">Quantity</th>
-                                <th class="text-right">Unit of Measure</th>
+                                <th class="text-right">UoM</th>
                                 <th class="text-right">Unit Price</th>
                                 <th class="text-right">Taxes</th>
                                 <th class="text-right">Subtotal</th>
@@ -123,38 +115,28 @@
                         <tbody>
                             <t t-foreach="doc.order_line" t-as="line">
                                 <tr t-if="line.display_type == 'line_section'">
-                                    <td colspan="6" style="font-weight:bold; font-size: 16px; border-top: 2px solid #000;">
+                                    <td colspan="6" style="font-weight:bold; font-size:14px; border-top:1px solid #000;">
                                         <t t-esc="line.name"/>
                                     </td>
                                 </tr>
                                 <tr t-if="not line.display_type">
-                                    <td>
-                                        <t t-esc="line.product_id.display_name or line.name"/>
-                                    </td>
-                                    <td class="text-right">
-                                        <t t-esc="line.product_uom_qty"/>
-                                    </td>
-                                    <td class="text-right">
-                                        <t t-esc="line.product_uom.name or ''"/>
-                                    </td>
-                                    <td class="text-right">
-                                        <span t-field="line.price_unit" t-options="{'widget': 'monetary', 'display_currency': doc.currency_id}"/>
-                                    </td>
-                                    <td class="text-right">
-                                        <t t-esc="', '.join([tax.display_name for tax in line.tax_id])"/>
-                                    </td>
-                                    <td class="text-right">
-                                        <span t-field="line.price_subtotal" t-options="{'widget': 'monetary', 'display_currency': doc.currency_id}"/>
-                                    </td>
+                                    <td><t t-esc="line.product_id.display_name or line.name"/></td>
+                                    <td class="text-right"><t t-esc="line.product_uom_qty"/></td>
+                                    <td class="text-right"><t t-esc="line.product_uom.name or ''"/></td>
+                                    <td class="text-right"><span t-field="line.price_unit" t-options="{'widget': 'monetary', 'display_currency': doc.currency_id}"/></td>
+                                    <td class="text-right"><t t-esc="', '.join([tax.display_name for tax in line.tax_id])"/></td>
+                                    <td class="text-right"><span t-field="line.price_subtotal" t-options="{'widget': 'monetary', 'display_currency': doc.currency_id}"/></td>
                                 </tr>
                             </t>
                         </tbody>
                     </table>
                 </t>
 
-                <!-- Letter Quotation Table -->
+                <!-- =============================
+                     Letter Quotation Table
+                     ============================= -->
                 <t t-if="doc.quotation_type == 'letter'">
-                    <table class="table table-sm">
+                    <table class="table table-sm" style="width:100%; font-size:12px;">
                         <thead>
                             <tr>
                                 <th>Product</th>
@@ -167,7 +149,7 @@
                         <tbody>
                             <t t-foreach="doc.letter_line_ids" t-as="line">
                                 <tr t-if="line.display_type == 'line_section'">
-                                    <td colspan="5" style="font-weight:bold; font-size: 16px; border-top: 2px solid #000;">
+                                    <td colspan="5" style="font-weight:bold; font-size:14px; border-top:1px solid #000;">
                                         <t t-esc="line.name"/>
                                     </td>
                                 </tr>
@@ -185,23 +167,20 @@
 
                 <!-- =============================
                      Signature Section
-                     Only visible for standard quotations
                      ============================= -->
                 <t t-if="doc.quotation_type == 'quotation'">
-                    <div class="mt-5" style="margin-top: 50px;">
-                        <p class="m-0"><strong>Yours sincerely,</strong></p>
-                        <p class="m-0"><t t-esc="doc.user_id.name or 'ERROR'"/></p>
-                        <p class="m-0"><t t-esc="doc.company_id.name or 'ERROR'"/></p>
-                        <p class="m-0">
+                    <div style="margin-top: 60px; text-align: left;">
+                        <p style="margin-bottom: 5px;"><strong>Yours sincerely,</strong></p>
+                        <p style="margin: 0;"><t t-esc="doc.user_id.name or 'ERROR'"/></p>
+                        <p style="margin: 0;"><t t-esc="doc.company_id.name or 'ERROR'"/></p>
+                        <p style="margin: 0;">
                             <strong>Email:</strong>
-                            <t t-esc="doc.user_id.email or 'ERROR'"/>
-                            <br/>
+                            <t t-esc="doc.user_id.email or '-'"/><br/>
                             <strong>Tel:</strong>
-                            <t t-esc="doc.user_id.phone or 'ERROR'"/>
+                            <t t-esc="doc.user_id.phone or doc.company_id.phone or '-'"/>
                         </p>
                     </div>
                 </t>
-
 
             </div>
         </xpath>
