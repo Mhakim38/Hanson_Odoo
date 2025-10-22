@@ -8,7 +8,6 @@
     "data": [
         'security/ir.model.access.csv',
         "views/sale_letter_quotation_view.xml",
-        # "views/report_t3.xml",
     ],
     "installable": True,
     "application": False,

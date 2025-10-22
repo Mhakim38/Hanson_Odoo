@@ -1,18 +1,21 @@
-<!-- server/odoo/custom_addons/sale_port_rates/report/sale_order_report.xml -->
 <odoo>
     <template id="report_saleorder_port_rates" inherit_id="sale.report_saleorder_document">
         <!-- Hide the original customer address block from the informations row (first column) -->
         <xpath expr="//div[@id='informations']/div[1]" position="attributes">
             <attribute name="style">display:none;</attribute>
         </xpath>
+
         <!-- Insert the customer address block above Dear section, left-aligned -->
         <xpath expr="//div[contains(@class,'page')]" position="before">
             <div style="text-align:left; margin-bottom: 20px;">
-                <div t-field="doc.partner_id" t-options='{"widget": "contact", "fields": ["address", "name"], "no_marker": True}'/>
+                <div t-field="doc.partner_id"
+                     t-options='{"widget": "contact", "fields": ["address", "name"], "no_marker": True}'/>
             </div>
         </xpath>
+
         <xpath expr="//div[contains(@class,'page')]" position="replace">
             <div class="page">
+
                 <!-- Letter Quotation Header -->
                 <t t-if="doc.quotation_type == 'letter'">
                     <div style="margin-bottom: 30px;">
@@ -22,11 +25,14 @@
                         </p>
                     </div>
                 </t>
+
+                <!-- Quotation Title -->
                 <h2 style="text-align:center; margin-top:40px; margin-bottom:20px;">
                     <t t-if="doc.quotation_type == 'letter'">Letter Quotation</t>
                     <t t-elif="doc.quotation_type == 'port_rate'">Port Rates Quotation</t>
                     <t t-else="">Quotation</t>
                 </h2>
+
                 <!-- Date field only -->
                 <div style="margin-top:20px; margin-bottom:20px;">
                     <p><strong>Date:</strong>
@@ -34,7 +40,49 @@
                     </p>
                 </div>
 
-                <!-- Port Rates Table (only for port_rate) -->
+                <!-- =============================
+                     New Quotation Fields Section
+                     Only visible when type == 'quotation'
+                     ============================= -->
+                <t t-if="doc.quotation_type == 'quotation'">
+                    <div class="container w-100" style="margin-bottom: 20px;">
+
+                        <!-- Inline display of the 4 radio selection fields -->
+                        <div class="row" style="margin-bottom: 8px;">
+                            <div class="col-3">
+                                <strong>Type:</strong><br></br>
+                                <span class="ms-5"></span><t t-esc="dict(doc._fields['type_selection'].selection).get(doc.type_selection) or '-'"/>
+                            </div>
+                            <div class="col-3">
+                                <strong>Size:</strong><br></br>
+                                <span class="ms-5"></span><t t-esc="dict(doc._fields['size_selection'].selection).get(doc.size_selection) or '-'"/>
+                            </div>
+                            <div class="col-3">
+                                <strong>Mode:</strong><br></br>
+                                <span class="ms-5"></span><t t-esc="dict(doc._fields['mode_selection'].selection).get(doc.mode_selection) or '-'"/>
+                            </div>
+                            <div class="col-3">
+                                <strong>Port:</strong><br></br>
+                                <span class="ms-5"></span><t t-esc="dict(doc._fields['port_selection'].selection).get(doc.port_selection) or '-'"/>
+                            </div>
+                        </div>
+
+                        <!-- Service Type and Incoterm fields -->
+                        <div class="row" style="margin-bottom: 8px;">
+                            <div class="col-6">
+                                <strong>Service Type:</strong>
+                                <t t-esc="doc.service_type_id.display_name or '-'"/>
+                            </div>
+                            <div class="col-6">
+                                <strong>Incoterm:</strong>
+                                <t t-esc="doc.incoterm_id.display_name or '-'"/>
+                            </div>
+                        </div>
+
+                    </div>
+                </t>
+
+                <!-- Port Rates Table -->
                 <t t-if="doc.quotation_type == 'port_rate'">
                     <table class="table table-sm table-bordered" style="border-collapse: collapse; width:100%;">
                         <thead>
@@ -124,26 +172,17 @@
                                     </td>
                                 </tr>
                                 <tr t-if="not line.display_type">
-                                    <td>
-                                        <t t-esc="line.product_id.display_name"/>
-                                    </td>
-                                    <td class="text-right">
-                                        <t t-esc="line.product_uom_qty"/>
-                                    </td>
-                                    <td class="text-right">
-                                        <t t-esc="line.price_unit"/>
-                                    </td>
-                                    <td class="text-right">
-                                        <t t-esc="', '.join([tax.display_name for tax in line.tax_id])"/>
-                                    </td>
-                                    <td class="text-right">
-                                        <t t-esc="line.price_subtotal"/>
-                                    </td>
+                                    <td><t t-esc="line.product_id.display_name"/></td>
+                                    <td class="text-right"><t t-esc="line.product_uom_qty"/></td>
+                                    <td class="text-right"><t t-esc="line.price_unit"/></td>
+                                    <td class="text-right"><t t-esc="', '.join([tax.display_name for tax in line.tax_id])"/></td>
+                                    <td class="text-right"><t t-esc="line.price_subtotal"/></td>
                                 </tr>
                             </t>
                         </tbody>
                     </table>
                 </t>
+
             </div>
         </xpath>
     </template>
