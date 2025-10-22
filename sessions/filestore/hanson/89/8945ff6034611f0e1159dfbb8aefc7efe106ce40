@@ -6,7 +6,7 @@
                         color: #198295;
                     }
                     #informations strong {
-                        color: #000000;
+                        color: #98a4af;
                     }
                     #total strong{
                         color: #198295;
@@ -16,7 +16,7 @@
                     }
                     table {
                         thead {
-                            color: #000000;
+                            color: #98a4af;
                         }
                     }
                 }
