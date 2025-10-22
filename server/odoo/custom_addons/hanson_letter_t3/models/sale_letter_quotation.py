@@ -86,6 +86,43 @@ class SaleOrder(models.Model):
         # No auto-fill here; handled by default
         return super().create(vals)
 
+    # Selection fields (radio buttons)
+    type_selection = fields.Selection(
+        [
+            ('import', 'Import'),
+            ('export', 'Export'),
+        ],
+        string="Type",
+        default='import'
+    )
+
+    size_selection = fields.Selection(
+        [
+            ('fcl', 'FCL'),
+            ('lcl', 'LCL'),
+        ],
+        string="Size",
+        default='fcl'
+    )
+
+    mode_selection = fields.Selection(
+        [
+            ('air', 'Air'),
+            ('sea', 'Sea'),
+        ],
+        string="Mode",
+        default='air'
+    )
+
+    port_selection = fields.Selection(
+        [
+            ('pod', 'POD'),
+            ('pol', 'POL'),
+        ],
+        string="Port",
+        default='pod'
+    )
+
 
 class SaleOrderLetterLine(models.Model):
     _name = 'sale.order.letter.line'

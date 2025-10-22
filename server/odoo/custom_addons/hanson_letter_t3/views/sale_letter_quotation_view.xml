@@ -17,6 +17,15 @@
                 <field name="subject" invisible="quotation_type != 'letter'"/>
             </xpath>
 
+            <xpath expr="//field[@name='payment_term_id']" position="after">
+                <group invisible="quotation_type != 'quotation'">
+                    <field name="type_selection" widget="radio" options="{'horizontal': true}"/>
+                    <field name="size_selection" widget="radio" options="{'horizontal': true}"/>
+                    <field name="mode_selection" widget="radio" options="{'horizontal': true}"/>
+                    <field name="port_selection" widget="radio" options="{'horizontal': true}"/>
+                </group>
+            </xpath>
+
             <!-- Hide fields for Port Rate Quotation and Letter Quotation -->
             <xpath expr="//field[@name='validity_date']" position="attributes">
                 <attribute name="invisible">quotation_type in ('port_rate','letter')</attribute>
@@ -35,9 +44,7 @@
             <xpath expr="//page[@name='other_information']" position="attributes">
                 <attribute name="invisible">quotation_type in ('port_rate','letter')</attribute>
             </xpath>
-<!--            <xpath expr="//page[@name='customer_signature']" position="attributes">-->
-<!--                <attribute name="invisible">quotation_type in ('port_rate','letter')</attribute>-->
-<!--            </xpath>-->
+
             <!-- Hide base Order Lines tab for Letter Quotation -->
             <xpath expr="//page[@name='order_lines']" position="attributes">
                 <attribute name="invisible">quotation_type == 'letter'</attribute>
