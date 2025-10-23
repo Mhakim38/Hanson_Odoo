@@ -43,46 +43,54 @@
                      ============================= -->
                 <div style="margin-top:20px; margin-bottom:20px;">
                     <p>
-                        <strong>Date:</strong>
-                        <span t-field="doc.date_order" t-options="{'format': 'dd/MM/yyyy HH:mm:ss'}"/>
+
                     </p>
                 </div>
 
                 <!-- =============================
                      Quotation Information Fields
                      ============================= -->
-                <t t-if="doc.quotation_type == 'quotation'">
-                    <div class="container w-50 float-end mb-4">
-                        <table class="table table-sm table-borderless mb-0" style="width: 100%; border-collapse: collapse;">
-                            <tbody>
-                                <tr>
-                                    <td style="padding: 2px 6px;"><strong>Type</strong></td>
-                                    <td style="padding: 2px 6px;">: <t t-esc="dict(doc._fields['type_selection'].selection).get(doc.type_selection) or '-'"/></td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 2px 6px;"><strong>Size</strong></td>
-                                    <td style="padding: 2px 6px;">: <t t-esc="dict(doc._fields['size_selection'].selection).get(doc.size_selection) or '-'"/></td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 2px 6px;"><strong>Mode</strong></td>
-                                    <td style="padding: 2px 6px;">: <t t-esc="dict(doc._fields['mode_selection'].selection).get(doc.mode_selection) or '-'"/></td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 2px 6px;"><strong>Port</strong></td>
-                                    <td style="padding: 2px 6px;">: <t t-esc="dict(doc._fields['port_selection'].selection).get(doc.port_selection) or '-'"/></td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 2px 6px;"><strong>Service Type</strong></td>
-                                    <td style="padding: 2px 6px;">: <t t-esc="doc.service_type_id.display_name or '-'"/></td>
-                                </tr>
-                                <tr>
-                                    <td style="padding: 2px 6px;"><strong>Incoterm</strong></td>
-                                    <td style="padding: 2px 6px;">: <t t-esc="doc.incoterm_id.display_name or '-'"/></td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </t>
+<t t-if="doc.quotation_type == 'quotation'">
+    <div class="container w-50 float-end mb-4">
+        <table class="table table-sm table-borderless mb-0" style="width: 100%; border-collapse: collapse;">
+            <tbody>
+                <tr>
+                    <td style="padding: 2px 6px;"><strong>Date</strong></td>
+                    <td style="padding: 2px 6px;">: <span t-field="doc.date_order" t-options="{'format': 'dd/MM/yyyy'}"/></td>
+                </tr>
+                <tr>
+                    <td style="padding: 2px 6px;"><strong>Expiry Date</strong></td>
+                    <td style="padding: 2px 6px;">: <span t-field="doc.validity_date" t-options="{'format': 'dd/MM/yyyy'}"/></td>
+                </tr>
+                <tr>
+                    <td style="padding: 2px 6px;"><strong>Type</strong></td>
+                    <td style="padding: 2px 6px;">: <t t-esc="dict(doc._fields['type_selection'].selection).get(doc.type_selection) or '-'"/></td>
+                </tr>
+                <tr>
+                    <td style="padding: 2px 6px;"><strong>Size</strong></td>
+                    <td style="padding: 2px 6px;">: <t t-esc="dict(doc._fields['size_selection'].selection).get(doc.size_selection) or '-'"/></td>
+                </tr>
+                <tr>
+                    <td style="padding: 2px 6px;"><strong>Mode</strong></td>
+                    <td style="padding: 2px 6px;">: <t t-esc="dict(doc._fields['mode_selection'].selection).get(doc.mode_selection) or '-'"/></td>
+                </tr>
+                <tr>
+                    <td style="padding: 2px 6px;"><strong>Port</strong></td>
+                    <td style="padding: 2px 6px;">: <t t-esc="dict(doc._fields['port_selection'].selection).get(doc.port_selection) or '-'"/></td>
+                </tr>
+                <tr>
+                    <td style="padding: 2px 6px;"><strong>Service Type</strong></td>
+                    <td style="padding: 2px 6px;">: <t t-esc="doc.service_type_id.display_name or '-'"/></td>
+                </tr>
+                <tr>
+                    <td style="padding: 2px 6px;"><strong>Incoterm</strong></td>
+                    <td style="padding: 2px 6px;">: <t t-esc="doc.incoterm_id.display_name or '-'"/></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</t>
+
 
                 <!-- =============================
                      Port Rates Table
