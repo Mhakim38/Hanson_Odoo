@@ -52,21 +52,35 @@
                      Quotation Information Fields
                      ============================= -->
                 <t t-if="doc.quotation_type == 'quotation'">
-                    <div class="container w-100" style="margin-bottom: 30px;">
-
-                        <!-- Radio selection fields -->
-                        <div class="row mb-2 text-capitalize">
-                            <div class="col-3"><strong>Type:</strong><br/><t t-esc="dict(doc._fields['type_selection'].selection).get(doc.type_selection) or '-'"/></div>
-                            <div class="col-3"><strong>Size:</strong><br/><t t-esc="dict(doc._fields['size_selection'].selection).get(doc.size_selection) or '-'"/></div>
-                            <div class="col-3"><strong>Mode:</strong><br/><t t-esc="dict(doc._fields['mode_selection'].selection).get(doc.mode_selection) or '-'"/></div>
-                            <div class="col-3"><strong>Port:</strong><br/><t t-esc="dict(doc._fields['port_selection'].selection).get(doc.port_selection) or '-'"/></div>
-                        </div>
-
-                        <!-- Service type and Incoterm -->
-                        <div class="row">
-                            <div class="col-6"><strong>Service Type:</strong> <t t-esc="doc.service_type_id.display_name or '-'"/></div>
-                            <div class="col-6"><strong>Incoterm:</strong> <t t-esc="doc.incoterm_id.display_name or '-'"/></div>
-                        </div>
+                    <div class="container w-50 float-end mb-4">
+                        <table class="table table-sm table-borderless mb-0" style="width: 100%; border-collapse: collapse;">
+                            <tbody>
+                                <tr>
+                                    <td style="padding: 2px 6px;"><strong>Type</strong></td>
+                                    <td style="padding: 2px 6px;">: <t t-esc="dict(doc._fields['type_selection'].selection).get(doc.type_selection) or '-'"/></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 2px 6px;"><strong>Size</strong></td>
+                                    <td style="padding: 2px 6px;">: <t t-esc="dict(doc._fields['size_selection'].selection).get(doc.size_selection) or '-'"/></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 2px 6px;"><strong>Mode</strong></td>
+                                    <td style="padding: 2px 6px;">: <t t-esc="dict(doc._fields['mode_selection'].selection).get(doc.mode_selection) or '-'"/></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 2px 6px;"><strong>Port</strong></td>
+                                    <td style="padding: 2px 6px;">: <t t-esc="dict(doc._fields['port_selection'].selection).get(doc.port_selection) or '-'"/></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 2px 6px;"><strong>Service Type</strong></td>
+                                    <td style="padding: 2px 6px;">: <t t-esc="doc.service_type_id.display_name or '-'"/></td>
+                                </tr>
+                                <tr>
+                                    <td style="padding: 2px 6px;"><strong>Incoterm</strong></td>
+                                    <td style="padding: 2px 6px;">: <t t-esc="doc.incoterm_id.display_name or '-'"/></td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </t>
 
