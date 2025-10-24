@@ -13,7 +13,7 @@
                      Header Section (for Letter Type)
                      ============================= -->
                 <t t-if="doc.quotation_type == 'letter'">
-                    <div style="margin-bottom: 30px;">
+                    <div style="margin-bottom: 0px;">
                         <p><strong>Dear </strong><t t-esc="doc.partner_id.name"/></p>
                         <p style="font-size:22px; font-weight:700; text-decoration:underline;">
                             <strong>Subject:</strong> <t t-esc="doc.subject"/>
@@ -24,20 +24,11 @@
                 <!-- =============================
                      Title
                      ============================= -->
-                <h2 style="text-align:center; margin-top:40px; margin-bottom:20px; font-weight:700;">
+                <h2 style="text-align:center; margin-top:0px; margin-bottom:20px; font-weight:700;">
                     <t t-if="doc.quotation_type == 'letter'">Letter Quotation</t>
                     <t t-elif="doc.quotation_type == 'port_rate'">Port Rates Quotation</t>
                     <t t-else="">Quotation</t>
                 </h2>
-
-                <!-- =============================
-                     Date
-                     ============================= -->
-                <div style="margin-top:20px; margin-bottom:20px;">
-                    <p>
-
-                    </p>
-                </div>
 
                 <!-- =============================
                      Quotation Information Fields
