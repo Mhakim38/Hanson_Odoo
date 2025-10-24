@@ -10,18 +10,6 @@
             <div class="page" style="font-size:13px; line-height:1.5;">
 
                 <!-- =============================
-                     Header Section (for Letter Type)
-                     ============================= -->
-                <t t-if="doc.quotation_type == 'letter'">
-                    <div style="margin-bottom: 0px;">
-                        <p><strong>Dear </strong><t t-esc="doc.partner_id.name"/></p>
-                        <p style="font-size:22px; font-weight:700; text-decoration:underline;">
-                            <strong>Subject:</strong> <t t-esc="doc.subject"/>
-                        </p>
-                    </div>
-                </t>
-
-                <!-- =============================
                      Title
                      ============================= -->
                 <h2 style="text-align:center; margin-top:0px; margin-bottom:20px; font-weight:700;">
@@ -30,6 +18,25 @@
                     <t t-else="">Quotation</t>
                 </h2>
 
+                <div class="col-6" style="text-align:left; margin-bottom: 20px;" t-if="doc.quotation_type != 'quotation'">
+                    <div t-field="doc.partner_id"
+                         t-options='{"widget": "contact", "fields": ["address", "name", "phone"], "no_marker": True}'/>
+                </div>
+
+                <!-- =============================
+                     Header Section (for Letter Type)
+                     ============================= -->
+
+                <t t-if="doc.quotation_type == 'letter'">
+                    <div class="mb-5">
+                        <p><strong>Dear </strong><t t-esc="doc.partner_id.name"/></p>
+                        <h5 style="font-weight:700; text-decoration:underline; margin-bottom: 0px;">
+                            <strong>Subject:</strong> <t t-esc="doc.subject"/><br></br>
+                        </h5>
+                        <p class="m-0 fw-normal" style="font-size: 15px;">Kindly refer to the below quotation for your reference</p>
+                    </div>
+                </t>
+
                 <!-- =============================
                      Quotation Information Fields
                      ============================= -->
@@ -37,45 +44,49 @@
                     <div class="container mb-4">
                         <div class="row">
                             <!-- Left Side (LHS) -->
-                            <div class="col-6" style="text-align:left; margin-bottom: 20px;">
+                            <div class="col-6" style="text-align: left; margin-bottom: 20px; font-size: 14px;">
                                 <div t-field="doc.partner_id"
-                                     t-options='{"widget": "contact", "fields": ["address", "name"], "no_marker": True}'/>
+                                     t-options='{"widget": "contact", "fields": ["name", "address", "phone"], "no_marker": True}'/>
+
+                                <h5 class="mt-5 mb-0" style="font-size: 16px; font-weight: 600; text-decoration: underline; margin-bottom: 0;">
+                                    <strong>Subject:</strong> <t t-esc="doc.subject"/>
+                                </h5>
                             </div>
 
                             <!-- Right Side (RHS) -->
-                            <div class="col-6">
+                            <div class="col-6" style="font-size: 13px;">
                                 <table class="table table-sm table-borderless mb-0" style="width: 100%; border-collapse: collapse;">
                                     <tbody>
                                         <tr>
-                                            <td style="padding: 2px 6px;"><strong>Date</strong></td>
+                                            <td style="padding: 2px 6px; font-weight: 600;">Date</td>
                                             <td style="padding: 2px 6px;">: <span t-field="doc.date_order" t-options="{'format': 'dd/MM/yyyy'}"/></td>
                                         </tr>
                                         <tr>
-                                            <td style="padding: 2px 6px;"><strong>Expiry Date</strong></td>
+                                            <td style="padding: 2px 6px; font-weight: 600;">Expiry Date</td>
                                             <td style="padding: 2px 6px;">: <span t-field="doc.validity_date" t-options="{'format': 'dd/MM/yyyy'}"/></td>
                                         </tr>
                                         <tr>
-                                            <td style="padding: 2px 6px;"><strong>Type</strong></td>
+                                            <td style="padding: 2px 6px; font-weight: 600;">Type</td>
                                             <td style="padding: 2px 6px;">: <t t-esc="dict(doc._fields['type_selection'].selection).get(doc.type_selection) or '-'"/></td>
                                         </tr>
                                         <tr>
-                                            <td style="padding: 2px 6px;"><strong>Size</strong></td>
+                                            <td style="padding: 2px 6px; font-weight: 600;">Size</td>
                                             <td style="padding: 2px 6px;">: <t t-esc="dict(doc._fields['size_selection'].selection).get(doc.size_selection) or '-'"/></td>
                                         </tr>
                                         <tr>
-                                            <td style="padding: 2px 6px;"><strong>Mode</strong></td>
+                                            <td style="padding: 2px 6px; font-weight: 600;">Mode</td>
                                             <td style="padding: 2px 6px;">: <t t-esc="dict(doc._fields['mode_selection'].selection).get(doc.mode_selection) or '-'"/></td>
                                         </tr>
                                         <tr>
-                                            <td style="padding: 2px 6px;"><strong>Port</strong></td>
+                                            <td style="padding: 2px 6px; font-weight: 600;">Port</td>
                                             <td style="padding: 2px 6px;">: <t t-esc="dict(doc._fields['port_selection'].selection).get(doc.port_selection) or '-'"/></td>
                                         </tr>
                                         <tr>
-                                            <td style="padding: 2px 6px;"><strong>Service Type</strong></td>
+                                            <td style="padding: 2px 6px; font-weight: 600;">Service Type</td>
                                             <td style="padding: 2px 6px;">: <t t-esc="doc.service_type_id.display_name or '-'"/></td>
                                         </tr>
                                         <tr>
-                                            <td style="padding: 2px 6px;"><strong>Incoterm</strong></td>
+                                            <td style="padding: 2px 6px; font-weight: 600;">Incoterm</td>
                                             <td style="padding: 2px 6px;">: <t t-esc="doc.incoterm_id.display_name or '-'"/></td>
                                         </tr>
                                     </tbody>
@@ -183,7 +194,7 @@
                 <!-- =============================
                      Signature Section
                      ============================= -->
-                <t t-if="doc.quotation_type == 'quotation'">
+                <t>
                     <div style="margin-top: 60px; text-align: left;">
                         <p style="margin-bottom: 5px;"><strong>Yours sincerely,</strong></p>
                         <p style="margin: 0;"><t t-esc="doc.user_id.name or 'ERROR'"/></p>

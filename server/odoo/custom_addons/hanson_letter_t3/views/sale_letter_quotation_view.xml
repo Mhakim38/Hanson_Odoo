@@ -14,7 +14,7 @@
 
             <!-- Add subject below customer field -->
             <xpath expr="//field[@name='partner_id']" position="after">
-                <field name="subject" invisible="quotation_type != 'letter'"/>
+                <field name="subject" invisible="quotation_type != 'letter' and quotation_type != 'quotation'"  />
             </xpath>
 
             <xpath expr="//field[@name='payment_term_id']" position="after">
