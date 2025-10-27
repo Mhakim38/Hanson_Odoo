@@ -1,10 +1,13 @@
-<odoo>
+    <odoo>
   <template id="guard_visitors_page" name="Guard Visitor List">
     <t t-call="portal.portal_layout">
       <div class="container my-4">
-        <div class="d-flex justify-content-between align-items-center mb-3">
-          <h2>Guard Visitor List</h2>
-          <a href="/my/home" class="btn btn-secondary">Back to Home</a>
+        <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
+          <h2 class="mb-0">Guard Visitor List</h2>
+          <div class="d-flex gap-2">
+            <a href="/my/home" class="btn btn-secondary">Back to Home</a>
+            <a href="/visitor/scan" class="btn btn-info">Scanner</a>
+          </div>
         </div>
 
         <!-- Filters -->
