@@ -1,0 +1,49 @@
+<odoo>
+  <template id="portal_navbar" name="Portal Navigation Bar">
+    <nav class="navbar navbar-expand-lg navbar-light bg-light border-bottom mb-4">
+      <div class="container">
+        <a class="navbar-brand fw-bold" href="/my/home"
+               t-attf-class="nav-link #{'active' if request.httprequest.path == '/my/home' else ''}">Resident Portal</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#portalNavbar">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="portalNavbar">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+            <li class="nav-item">
+
+              <li class="nav-item">
+                <a href="/portal/my-properties"
+                   t-attf-class="nav-link #{'active' if request.httprequest.path == '/portal/my-properties' else ''}">
+                   My Properties
+                </a>
+              </li>
+
+              <li class="nav-item">
+                <a href="/estate/vehicle"
+                   t-attf-class="nav-link #{'active' if request.httprequest.path == '/estate/vehicle' else ''}">
+                   My Vehicle
+                </a>
+              </li>
+
+            </li>
+
+            <li class="nav-item">
+              <a href="/portal/visitor-log"
+                 t-attf-class="nav-link #{'active' if request.httprequest.path == '/portal/visitor-log' else ''}">
+                 Visit Log
+              </a>
+            </li>
+
+            <li class="nav-item">
+              <a href="/estate/visit"
+                 t-attf-class="nav-link #{'active' if request.httprequest.path == '/estate/visit' else ''}">
+                 Visitor Registration
+              </a>
+            </li>
+
+          </ul>
+        </div>
+      </div>
+    </nav>
+  </template>
+</odoo>

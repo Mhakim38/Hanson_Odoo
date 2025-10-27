@@ -1,0 +1,12 @@
+<!-- guard_patrol/views/portal_not_found.xml -->
+<odoo>
+    <template id="portal_not_found" name="Portal Not Found">
+        <t t-call="website.layout">
+            <div class="container my-5 text-center">
+                <h2 class="text-danger mb-3">Not Found</h2>
+                <p t-esc="message or 'The requested page or record could not be found.'"/>
+                <a href="/my/patrols" class="btn btn-primary mt-3">Back to My Patrols</a>
+            </div>
+        </t>
+    </template>
+</odoo>

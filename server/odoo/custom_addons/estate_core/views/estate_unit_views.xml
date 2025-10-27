@@ -1,0 +1,123 @@
+<odoo>
+  <!-- Tree View -->
+  <record id="view_estate_unit_tree" model="ir.ui.view">
+    <field name="name">estate.unit.tree</field>
+    <field name="model">estate.unit</field>
+    <field name="arch" type="xml">
+      <tree>
+        <field name="display_name"/>
+        <field name="owner_id"/>
+        <field name="status"/>
+        <field name="street"/>
+        <field name="unit_type"/>
+      </tree>
+    </field>
+  </record>
+
+  <!-- Form View -->
+  <record id="view_estate_unit_form" model="ir.ui.view">
+    <field name="name">estate.unit.form</field>
+    <field name="model">estate.unit</field>
+    <field name="arch" type="xml">
+      <form>
+        <sheet>
+          <group>
+            <field name="property_id"/>
+            <field name="name"/>
+            <field name="street"/>
+            <field name="bedrooms"/>
+            <field name="unit_type"/>
+            <field name="status"/>
+            <field name="owner_id"/>
+          </group>
+          <notebook>
+            <page string="Residents">
+              <field name="resident_partner_ids"
+                     mode="kanban"
+                     context="{'default_is_company': False, 'default_type': 'contact'}">
+                <kanban>
+                  <field name="id"/>
+                  <field name="color"/>
+                  <field name="name"/>
+                  <field name="title"/>
+                  <field name="type"/>
+                  <field name="email"/>
+                  <field name="parent_id"/>
+                  <field name="is_company"/>
+                  <field name="function"/>
+                  <field name="phone"/>
+                  <field name="street"/>
+                  <field name="street2"/>
+                  <field name="zip"/>
+                  <field name="city"/>
+                  <field name="country_id"/>
+                  <field name="mobile"/>
+                  <field name="state_id"/>
+                  <field name="image_128"/>
+                  <field name="avatar_128"/>
+                  <field name="lang"/>
+                  <field name="comment"/>
+                  <field name="display_name"/>
+
+                  <templates>
+                    <t t-name="kanban-box">
+                      <t t-set="color" t-value="kanban_color(record.color.raw_value)"/>
+                      <div t-att-class="color + (record.title.raw_value == 1 ? ' oe_kanban_color_alert' : '') + ' oe_kanban_global_click'">
+                        <div class="o_kanban_image">
+                          <img alt="Contact image"
+                               t-att-src="kanban_image('res.partner', 'avatar_128', record.id.raw_value)"/>
+                        </div>
+                        <div class="oe_kanban_details">
+                          <field name="name"/>
+                          <div t-if="record.function.raw_value">
+                            <field name="function"/>
+                          </div>
+                          <div t-if="record.email.raw_value">
+                            <field name="email" widget="email"/>
+                          </div>
+                          <div t-if="record.type.raw_value != 'contact'">
+                            <div>
+                              <field name="zip"/><t t-if="record.city"> </t>
+                              <field name="city"/>
+                            </div>
+                            <field t-if="record.state_id.raw_value" name="state_id"/>
+                            <t t-if="record.country_id"> </t>
+                            <field name="country_id"/>
+                          </div>
+                          <div t-if="record.phone.raw_value">
+                            Phone: <t t-esc="record.phone.value"/>
+                          </div>
+                          <div t-if="record.mobile.raw_value">
+                            Mobile: <t t-esc="record.mobile.value"/>
+                          </div>
+                        </div>
+                      </div>
+                    </t>
+                  </templates>
+                </kanban>
+              </field>
+            </page>
+
+            <page string="Vehicles">
+              <field name="vehicle_ids">
+                <tree editable="bottom">
+                  <field name="plate_no"/>
+                  <field name="make"/>
+                  <field name="model"/>
+                  <field name="color"/>
+                </tree>
+              </field>
+            </page>
+          </notebook>
+        </sheet>
+      </form>
+    </field>
+  </record>
+
+  <!-- Action -->
+  <record id="action_estate_unit" model="ir.actions.act_window">
+    <field name="name">Units</field>
+    <field name="res_model">estate.unit</field>
+    <field name="view_mode">tree,form</field>
+  </record>
+</odoo>

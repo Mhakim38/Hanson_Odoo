@@ -1,0 +1,47 @@
+<odoo>
+  <!-- Tree View -->
+  <record id="view_estate_guard_tree" model="ir.ui.view">
+    <field name="name">estate.guard.tree</field>
+    <field name="model">estate.guard</field>
+    <field name="arch" type="xml">
+      <tree>
+        <field name="image_128" string="Photo" widget="image"/>
+        <field name="name"/>
+        <field name="company_id"/>
+        <field name="property_id"/>
+        <field name="shift"/>
+        <field name="phone"/>
+        <field name="active"/>
+      </tree>
+    </field>
+  </record>
+
+  <!-- Form View -->
+  <record id="view_estate_guard_form" model="ir.ui.view">
+    <field name="name">estate.guard.form</field>
+    <field name="model">estate.guard</field>
+    <field name="arch" type="xml">
+      <form>
+        <sheet>
+          <field name="image_128" widget="image"/>
+          <div class="oe_title">
+            <h1><field name="name"/></h1>
+          </div>
+          <group>
+            <group>
+              <field name="employee_id"/>
+              <field name="property_id"/>
+              <field name="company_id"/>
+              <field name="shift"/>
+              <field name="active"/>
+            </group>
+            <group>
+              <field name="phone" readonly="1"/>
+              <field name="note"/>
+            </group>
+          </group>
+        </sheet>
+      </form>
+    </field>
+  </record>
+</odoo>

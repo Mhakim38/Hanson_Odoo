@@ -1,0 +1,14 @@
+<odoo>
+  <record id="group_security_guards" model="res.groups">
+    <field name="name">Security / Guards</field>
+    <field name="category_id" ref="base.module_category_hidden"/>
+  </record>
+  <record id="group_security_supervisors" model="res.groups">
+    <field name="name">Security / Supervisors</field>
+    <field name="category_id" ref="base.module_category_hidden"/>
+  </record>
+  <record id="group_estate_management" model="res.groups">
+    <field name="name">Estate / Management</field>
+    <field name="category_id" ref="base.module_category_hidden"/>
+  </record>
+</odoo>

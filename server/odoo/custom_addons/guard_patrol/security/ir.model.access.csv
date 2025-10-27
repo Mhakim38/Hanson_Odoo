@@ -1,0 +1,8 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_patrol_route,patrol.route,model_patrol_route,base.group_user,1,1,1,1
+access_patrol_checkpoint,patrol.checkpoint,model_patrol_checkpoint,base.group_user,1,1,1,1
+access_patrol_tour,patrol.tour,model_patrol_tour,base.group_user,1,1,1,1
+access_patrol_log,patrol.log,model_patrol_log,base.group_user,1,1,1,1
+access_security_incident,security.incident,model_security_incident,base.group_user,1,1,1,1
+access_estate_guard,estate.guard,model_estate_guard,base.group_user,1,1,1,1
+access_patrol_portal_user,patrol.portal.user,model_patrol_log,base.group_portal,1,1,1,0

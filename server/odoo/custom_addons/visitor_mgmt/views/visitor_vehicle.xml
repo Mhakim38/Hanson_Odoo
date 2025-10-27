@@ -1,0 +1,35 @@
+<odoo>
+    <!-- Tree (List) View -->
+    <record id="view_estate_visitor_vehicle_tree" model="ir.ui.view">
+        <field name="name">estate.visitor.vehicle.tree</field>
+        <field name="model">estate.visitor.vehicle</field>
+        <field name="arch" type="xml">
+            <tree string="Visitor Vehicles">
+                <field name="visitor_id"/>
+                <field name="plate_no"/>
+                <field name="make"/>
+                <field name="model"/>
+                <field name="color"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_estate_visitor_vehicle_form" model="ir.ui.view">
+        <field name="name">estate.visitor.vehicle.form</field>
+        <field name="model">estate.visitor.vehicle</field>
+        <field name="arch" type="xml">
+            <form string="Visitor Vehicle">
+                <sheet>
+                    <group>
+                        <field name="visitor_id"/>
+                        <field name="plate_no"/>
+                        <field name="make"/>
+                        <field name="model"/>
+                        <field name="color"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,49 @@
+<odoo>
+  <record id="view_partner_form_estate" model="ir.ui.view">
+    <field name="name">res.partner.form.estate</field>
+    <field name="model">res.partner</field>
+    <field name="inherit_id" ref="base.view_partner_form"/>
+    <field name="arch" type="xml">
+      <xpath expr="//sheet/notebook" position="inside">
+        <page string="Property">
+          <group>
+            <field name="is_owner"/>
+            <field name="is_resident"/>
+            <field name="is_tenant"/>
+          </group>
+
+          <group>
+            <field name="id_type"/>
+            <field name="id_number"/>
+            <field name="valid_from"/>
+            <field name="valid_to"/>
+          </group>
+
+          <separator string="Owned Units"/>
+
+          <!-- Full-width owned units table -->
+          <field name="estate_unit_ids" nolabel="1" colspan="4">
+            <tree editable="bottom">
+              <field name="display_name"/>
+              <field name="property_id"/>
+              <field name="unit_type"/>
+              <field name="status"/>
+            </tree>
+            <form>
+              <sheet>
+                <group>
+                  <field name="property_id"/>
+                  <field name="name"/>
+                  <field name="unit_type"/>
+                  <field name="status"/>
+                  <field name="street"/>
+                  <field name="bedrooms"/>
+                </group>
+              </sheet>
+            </form>
+          </field>
+        </page>
+      </xpath>
+    </field>
+  </record>
+</odoo>

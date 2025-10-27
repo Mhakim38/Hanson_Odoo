@@ -1,0 +1,26 @@
+{
+    "name": "Visitor Management",
+    "version": "17.0.1.0.0",
+    "summary": "Visitors, visits, gates, and ad-hoc check-in",
+    "depends": ["estate_core",
+                "base", "mail"],
+    "data": [
+        "security/groups.xml",
+        "security/ir.model.access.csv",
+        "security/record_rules.xml",
+        "data/sequence.xml",
+        "views/visitor_views.xml",
+        "views/visit_views.xml",
+        "views/gate_views.xml",
+        "views/visitor_vehicle.xml",
+        "views/visitor_form_template.xml",
+        "views/visitors_log.xml",
+        "views/portal_visit_verify_templates.xml",
+        "views/guard_visitors_page.xml",
+        "views/navigation_bar.xml",
+        "views/menus.xml",
+    ],
+    "license": "LGPL-3",
+    "installable": True,
+    "application": True
+}

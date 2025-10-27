@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_estate_visitor_mgmt,estate.visitor all,model_estate_visitor,base.group_user,1,1,1,1
+access_estate_visitor_vehicle_mgmt,estate.visitor.vehicle all,model_estate_visitor_vehicle,base.group_user,1,1,1,1
+access_estate_visit_mgmt,estate.visit all,model_estate_visit,base.group_user,1,1,1,1
+access_guard_visit_create_adhoc,guard create adhoc visits,model_estate_visit,visitor_mgmt.group_security_guards,1,1,1,0

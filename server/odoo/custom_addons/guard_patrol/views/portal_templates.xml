@@ -1,0 +1,162 @@
+<odoo>
+  <template id="portal_patrol_detail" name="Patrol Detail with QR Scan">
+    <t t-call="website.layout">
+      <div class="container mt-4">
+        <h2><t t-esc="tour.route_id.name"/></h2>
+        <p><b>Assigned Guard:</b> <t t-esc="tour.assigned_user_id.name"/></p>
+        <p><b>Property:</b> <t t-esc="tour.property_id.name"/></p>
+        <p><b>Shift:</b> <t t-esc="tour.state"/></p>
+
+        <!-- Checkpoints -->
+        <h4>Checkpoints</h4>
+        <ul class="list-group mb-4">
+          <t t-foreach="tour.route_id.checkpoint_ids" t-as="cp">
+            <li class="list-group-item d-flex justify-content-between align-items-center">
+              <span><t t-esc="cp.name"/></span>
+              <div>
+                <code><t t-esc="cp.qr_code"/></code>
+                <!-- Keep your button simple with a class or data attribute -->
+                <button class="btn btn-sm btn-primary ms-2 scan-btn"
+                        t-att-data-code="cp.qr_code">
+                  Scan
+                </button>
+
+              </div>
+            </li>
+          </t>
+        </ul>
+
+        <!-- Scan Log History -->
+        <h4>Scan Log History</h4>
+        <t t-if="logs">
+          <div class="table-responsive">
+            <table class="table table-bordered table-striped">
+              <thead class="table-light">
+                <tr>
+                  <th>Checkpoint</th>
+                  <th>Date / Time</th>
+                  <th>Latitude</th>
+                  <th>Longitude</th>
+                </tr>
+              </thead>
+              <tbody>
+                <t t-foreach="logs" t-as="log">
+                  <tr>
+                    <td><t t-esc="log.checkpoint_id.name"/></td>
+                    <td><t t-esc="log.scan_time"/></td>
+                    <td><t t-esc="log.geo_lat"/></td>
+                    <td><t t-esc="log.geo_lng"/></td>
+                  </tr>
+                </t>
+              </tbody>
+            </table>
+          </div>
+        </t>
+        <t t-else="">
+          <p>No logs recorded yet.</p>
+        </t>
+
+        <!-- Hidden video element for scanner -->
+        <video id="preview" width="100%" height="300" style="border-radius:10px; background:#000; display:none;"></video>
+
+        <!-- Include jsQR -->
+        <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+
+        <!-- JavaScript for scanner -->
+        <script type="text/javascript"><![CDATA[
+          var video = document.getElementById('preview');
+          var scanning = false;
+          var currentCode = null;
+          var tourId = <t t-js-esc="tour.id"/>;
+
+          function stopScanner() {
+              scanning = false;
+              video.style.display = 'none';
+              if (video.srcObject) video.srcObject.getTracks().forEach(t => t.stop());
+          }
+
+          async function logCheckpoint(code) {
+              try {
+                  const pos = await new Promise((res, rej) =>
+                      navigator.geolocation.getCurrentPosition(res, rej)
+                  );
+
+                  const response = await fetch('/my/patrol/checkin', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                          jsonrpc: '2.0',
+                          params: {
+                              tour_id: tourId,
+                              checkpoint_code: code,
+                              lat: pos.coords.latitude,
+                              lng: pos.coords.longitude
+                          }
+                      })
+                  });
+
+                  const result = await response.json();
+                  if (result.result && result.result.success) {
+                      alert("Checkpoint logged successfully!");
+                      window.location.reload();
+                  } else {
+                      alert(result.result.error || "Error logging checkpoint");
+                  }
+              } catch (err) {
+                  alert("GPS access required.");
+              }
+          }
+
+          async function startScanner(code) {
+              if (scanning) return;
+              currentCode = code;
+              video.style.display = 'block';
+              scanning = true;
+
+              try {
+                  const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+                  video.srcObject = stream;
+
+                  const canvas = document.createElement('canvas');
+                  const ctx = canvas.getContext('2d');
+
+                  const loop = async () => {
+                      if (!scanning) return;
+                      if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                          canvas.height = video.videoHeight;
+                          canvas.width = video.videoWidth;
+                          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                          const qr = jsQR(imageData.data, imageData.width, imageData.height, { inversionAttempts: "dontInvert" });
+                          if (qr && qr.data === currentCode) {
+                              scanning = false;
+                              await logCheckpoint(qr.data);
+                              stopScanner();
+                          }
+                      }
+                      requestAnimationFrame(loop);
+                  };
+                  loop();
+              } catch (err) {
+                  alert("Camera not accessible or permissions denied.");
+                  stopScanner();
+              }
+          }
+
+            // Attach click event after a small delay to ensure DOM is ready
+            setTimeout(function(){
+                document.querySelectorAll('.scan-btn').forEach(function(btn) {
+                    btn.addEventListener('click', function() {
+                        var code = btn.getAttribute('data-code');
+                        startScanner(code);
+                    });
+                });
+            }, 1000);
+        ]]></script>
+
+
+
+      </div>
+    </t>
+  </template>
+</odoo>

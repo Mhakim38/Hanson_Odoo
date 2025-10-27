@@ -1,0 +1,198 @@
+<odoo>
+  <template id="guard_visitors_page" name="Guard Visitor List">
+    <t t-call="portal.portal_layout">
+      <div class="container my-4">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+          <h2>Guard Visitor List</h2>
+          <a href="/my/home" class="btn btn-secondary">Back to Home</a>
+        </div>
+
+        <!-- Filters -->
+        <form method="get" class="row g-2 mb-3">
+          <div class="col-md-3 col-6">
+            <input type="date" name="date" class="form-control" t-att-value="today.strftime('%Y-%m-%d')"/>
+          </div>
+          <div class="col-md-3 col-6">
+            <select name="status" class="form-select">
+              <option value="">All Status</option>
+              <option value="scheduled">Scheduled</option>
+              <option value="check_in">Checked In</option>
+              <option value="check_out">Checked Out</option>
+            </select>
+          </div>
+          <div class="col-md-3 col-6">
+            <select name="unit_id" class="form-select">
+              <option value="">All Units</option>
+              <t t-foreach="units" t-as="u">
+                <option t-att-value="u.id" t-esc="u.display_name"/>
+              </t>
+            </select>
+          </div>
+          <div class="col-md-3 col-6">
+            <button class="btn btn-primary w-100" type="submit">Filter</button>
+          </div>
+        </form>
+
+        <div class="text-end mb-3">
+          <a t-att-href="'/guard/visitors/pdf?date=%s&amp;status=%s&amp;unit_id=%s' % (today.strftime('%Y-%m-%d'), request.params.get('status') or '', request.params.get('unit_id') or '')"
+             class="btn btn-outline-danger">Export PDF</a>
+        </div>
+
+        <!-- Visitor Table (Desktop) -->
+        <div class="table-responsive d-none d-md-block">
+          <table class="table table-striped">
+            <thead>
+              <tr>
+                <th>Visitor</th>
+                <th>Host</th>
+                <th>Unit</th>
+                <th>Purpose</th>
+                <th>Schedule</th>
+                <th>Status</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              <t t-foreach="visits" t-as="v">
+                <tr>
+                  <td t-esc="v.visitor_id.name or '-'"/>
+                  <td t-esc="v.host_id.name or '-'"/>
+                  <td t-esc="v.unit_id.display_name or '-'"/>
+                  <td t-esc="v.purpose or '-'"/>
+                  <td><t t-esc="v.schedule_from"/> → <t t-esc="v.schedule_to"/></td>
+                  <td><t t-esc="dict(v._fields['state'].selection).get(v.state, v.state or '-')"/></td>
+                  <td>
+                    <t t-if="v.state in ['draft', 'scheduled']">
+                      <a t-att-href="'/guard/visitors/checkin/%d' % v.id" class="btn btn-success btn-sm btn-checkin">Check-in</a>
+                    </t>
+                    <t t-if="v.state == 'check_in'">
+                      <a t-att-href="'/guard/visitors/checkout/%d' % v.id" class="btn btn-warning btn-sm btn-checkout">Check-out</a>
+                    </t>
+                  </td>
+                </tr>
+              </t>
+            </tbody>
+          </table>
+        </div>
+
+        <!-- Visitor Cards (Mobile) -->
+        <div class="d-md-none">
+          <t t-foreach="visits" t-as="v">
+            <div class="card mb-2 shadow-sm">
+              <div class="card-body">
+                <h5 class="card-title"><t t-esc="v.visitor_id.name or '-'"/></h5>
+                <p class="mb-1"><strong>Host:</strong> <t t-esc="v.host_id.name or '-'"/></p>
+                <p class="mb-1"><strong>Unit:</strong> <t t-esc="v.unit_id.display_name or '-'"/></p>
+                <p class="mb-1"><strong>Purpose:</strong> <t t-esc="v.purpose or '-'"/></p>
+                <p class="mb-1"><strong>Schedule:</strong> <t t-esc="v.schedule_from"/> → <t t-esc="v.schedule_to"/></p>
+                <p><strong>Status:</strong> <t t-esc="dict(v._fields['state'].selection).get(v.state, v.state or '-')"/></p>
+
+                <t t-if="v.state in ['draft', 'scheduled']">
+                  <a t-att-href="'/guard/visitors/checkin/%d' % v.id" class="btn btn-success btn-sm w-100 mb-1 btn-checkin">Check-in</a>
+                </t>
+                <t t-if="v.state == 'check_in'">
+                  <a t-att-href="'/guard/visitors/checkout/%d' % v.id" class="btn btn-warning btn-sm w-100 mb-1 btn-checkout">Check-out</a>
+                </t>
+              </div>
+            </div>
+          </t>
+        </div>
+      </div>
+
+      <!-- ✅ AJAX Logic -->
+      <script>
+          document.addEventListener('DOMContentLoaded', function() {
+
+            async function handleClick(e) {
+              e.preventDefault();
+              const btn = e.target;
+              const url = btn.getAttribute('href');
+              const card = btn.closest('.card, tr');
+
+              btn.disabled = true;
+              const originalText = btn.textContent;
+              btn.textContent = 'Processing...';
+
+              try {
+                const response = await fetch(url, { method: 'GET' });
+                const result = await response.json();
+
+                if (!result.success) {
+                  alert(result.message || 'Error processing request');
+                  btn.disabled = false;
+                  btn.textContent = originalText;
+                  return;
+                }
+
+                // ✅ UI Update
+                if (btn.classList.contains('btn-checkin')) {
+                  // Switch to checkout state
+                  btn.classList.remove('btn-success', 'btn-checkin');
+                  btn.classList.add('btn-warning', 'btn-checkout');
+                  btn.textContent = 'Check-out';
+                  btn.setAttribute('href', url.replace('checkin', 'checkout'));
+                  updateStatus(card, 'Checked In', 'bg-success');
+
+                } else if (btn.classList.contains('btn-checkout')) {
+                  // After checkout, remove button
+                  btn.remove();
+
+                  // Add “No Action” for desktop
+                  const actionCell = card.querySelector('td:last-child');
+                  if (actionCell) {
+                    const noAction = document.createElement('span');
+                    noAction.className = 'text-muted small';
+                    noAction.textContent = 'No Action';
+                    actionCell.appendChild(noAction);
+                  }
+
+                  updateStatus(card, 'Checked Out', 'bg-warning text-dark');
+                }
+
+              } catch (err) {
+                alert('Error: ' + err.message);
+                btn.disabled = false;
+                btn.textContent = originalText;
+              }
+            }
+
+            // 🧩 Update the status cell or paragraph
+            function updateStatus(card, newText, newClass) {
+              // 🖥️ Desktop table (td:nth-child(6) = Status column)
+              const statusCell = card.querySelector('td:nth-child(6)');
+              if (statusCell) {
+                statusCell.innerHTML = `<span class="badge ${newClass}">${newText}</span>`;
+                return;
+              }
+
+              // 📱 Mobile card (Status paragraph)
+              const pTags = card.querySelectorAll('p');
+              pTags.forEach(p => {
+                if (p.textContent.includes('Status')) {
+                  let span = p.querySelector('span');
+                  if (!span) {
+                    span = document.createElement('span');
+                    p.appendChild(span);
+                  }
+                  span.textContent = newText;
+                  span.className = 'badge ' + newClass;
+                }
+              });
+            }
+
+            // Attach events to all buttons
+            document.querySelectorAll('a.btn-success, a.btn-warning').forEach(btn => {
+              btn.classList.add(
+                btn.textContent.includes('Check-in') ? 'btn-checkin' : 'btn-checkout'
+              );
+              btn.addEventListener('click', handleClick);
+            });
+          });
+        </script>
+
+
+
+
+    </t>
+  </template>
+</odoo>

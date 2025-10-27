@@ -1,0 +1,8 @@
+<odoo>
+  <record id="rule_guard_visit_adhoc_only" model="ir.rule">
+    <field name="name">Guards: Ad-Hoc visits only</field>
+    <field name="model_id" ref="model_estate_visit"/>
+    <field name="domain_force">['|',('is_adhoc','=',True),('id','=',False)]</field>
+    <field name="groups" eval="[(4, ref('visitor_mgmt.group_security_guards'))]"/>
+  </record>
+</odoo>

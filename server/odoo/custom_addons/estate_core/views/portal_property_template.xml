@@ -1,0 +1,44 @@
+<odoo>
+  <template id="portal_property_template" name="My Properties">
+    <t t-call="website.layout">
+      <t t-call="visitor_mgmt.portal_navbar"/>
+
+      <div class="container my-5">
+        <h2 class="mb-4 text-center">My Properties</h2>
+
+        <t t-if="not units">
+          <div class="alert alert-warning text-center">
+            You have no registered property units.
+          </div>
+        </t>
+
+        <t t-if="units">
+          <div class="row">
+            <t t-foreach="units" t-as="u">
+              <div class="col-md-6 mb-4">
+                  <div class="card mb-3 shadow-sm">
+                  <div class="card-body">
+                    <h5 class="card-title" t-esc="u.display_name"/>
+                    <p><strong>Property:</strong> <t t-esc="u.property_id.name or 'N/A'"/></p>
+                    <p>
+                      <strong>Unit Type:</strong>
+                      <t t-set="unit_type_label" t-value="u._fields['unit_type'].convert_to_export(u.unit_type, u)"/>
+                      <t t-esc="unit_type_label or 'N/A'"/>
+                    </p>
+
+                    <p>
+                      <strong>Status:</strong>
+                      <t t-set="status_label" t-value="u._fields['status'].convert_to_export(u.status, u)"/>
+                      <t t-esc="status_label or 'N/A'"/>
+                    </p>
+
+                  </div>
+                </div>
+              </div>
+            </t>
+          </div>
+        </t>
+      </div>
+    </t>
+  </template>
+</odoo>

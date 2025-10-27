@@ -1,0 +1,107 @@
+<odoo>
+
+  <!-- Visitor Registration -->
+  <template id="visitor_form_template" name="Visitor Form">
+    <t t-call="website.layout">
+      <t t-call="visitor_mgmt.portal_navbar"/>
+      <div class="oe_structure oe_empty"/>
+      <div class="container my-5">
+        <div class="row justify-content-center">
+          <div class="col-lg-7 col-md-9">
+            <div class="card shadow-lg border-0">
+              <div class="card-header bg-primary text-white text-center">
+                <h2 class="mb-0">Visitor Registration</h2>
+              </div>
+              <div class="card-body">
+
+                <!-- Error Display -->
+                <t t-if="error">
+                  <div class="alert alert-danger"><t t-esc="error"/></div>
+                </t>
+
+                <!-- If user has no linked units -->
+                <t t-if="not units">
+                  <div class="alert alert-warning text-center">
+                    You don't have any registered property units. Please contact the management office.
+                  </div>
+                </t>
+
+                <t t-if="units">
+                  <form action="/estate/visit/submit" method="post" class="o_form">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+
+                    <!-- Visitor Name -->
+                    <div class="mb-3">
+                      <label for="visitor_name" class="form-label fw-semibold">Visitor Name</label>
+                      <input type="text" name="visitor_name" class="form-control form-control-lg" placeholder="Enter full name" required="required"/>
+                    </div>
+
+                    <!-- Unit -->
+                   <div class="mb-3">
+                    <label for="unit_id" class="form-label fw-semibold">Select Unit</label>
+                    <select name="unit_id" class="form-select form-select-lg" required="required">
+                      <option disabled="disabled" selected="selected" value="">Select your unit</option>
+                      <t t-foreach="units" t-as="u">
+                        <option t-att-value="u.id">
+                          <t t-esc="u.display_name"/>
+                          <t t-if="u.street"> (<t t-esc="u.street"/>)</t>
+                        </option>
+                      </t>
+                    </select>
+                  </div>
+
+
+
+                    <!-- Vehicle -->
+                    <div class="mb-3">
+                      <label for="vehicle_no" class="form-label fw-semibold">Vehicle No</label>
+                      <input type="text" name="vehicle_no" class="form-control" placeholder="Optional"/>
+                    </div>
+
+                    <!-- Schedule -->
+                    <div class="row mb-4">
+                      <div class="col">
+                        <label for="schedule_from" class="form-label fw-semibold">Schedule From</label>
+                        <input type="datetime-local" name="schedule_from" class="form-control" required="required"/>
+                      </div>
+                      <div class="col">
+                        <label for="schedule_to" class="form-label fw-semibold">Schedule To</label>
+                        <input type="datetime-local" name="schedule_to" class="form-control" required="required"/>
+                      </div>
+                    </div>
+
+                    <!-- Submit -->
+                    <div class="d-grid">
+                      <button type="submit" class="btn btn-primary btn-lg">Submit</button>
+                    </div>
+                  </form>
+                </t>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </t>
+  </template>
+
+  <!-- Thank You Page -->
+  <template id="visitor_form_thanks" name="Thank You">
+    <t t-call="website.layout">
+      <div class="container my-5">
+        <div class="row justify-content-center">
+          <div class="col-lg-6 col-md-8 text-center">
+            <div class="card shadow-sm border-0">
+              <div class="card-body">
+                <h2 class="text-success mb-3">Thank you!</h2>
+                <p class="lead mb-4">Your visit has been successfully logged for <strong><t t-esc="host_name"/></strong>.</p>
+                <a href="/estate/visit" class="btn btn-outline-primary">Register Another Visitor</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </t>
+  </template>
+
+</odoo>

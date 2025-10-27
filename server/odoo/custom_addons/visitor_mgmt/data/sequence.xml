@@ -1,0 +1,8 @@
+<odoo>
+  <record id="seq_visit_badge" model="ir.sequence">
+    <field name="name">Visitor Badge</field>
+    <field name="code">estate.visit.badge</field>
+    <field name="prefix">VB%(y)s%(month)s-</field>
+    <field name="padding">4</field>
+  </record>
+</odoo>

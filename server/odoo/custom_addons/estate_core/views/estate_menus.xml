@@ -1,0 +1,7 @@
+<odoo>
+  <menuitem id="menu_estate_root" name="Property" sequence="10"/>
+  <menuitem id="menu_estate_master" name="Master Data" parent="menu_estate_root" sequence="10"/>
+  <menuitem id="menu_estate_property" name="Properties" parent="menu_estate_master" action="action_estate_property"/>
+  <menuitem id="menu_estate_unit" name="Units" parent="menu_estate_master" action="action_estate_unit"/>
+  <menuitem id="menu_estate_vehicle" name="Vehicles" parent="menu_estate_master" action="action_estate_vehicle"/>
+</odoo>

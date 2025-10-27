@@ -1,0 +1,68 @@
+<odoo>
+  <!-- Visitor Log Portal -->
+  <template id="portal_visitor_log" name="Visitor Log">
+    <t t-call="website.layout">
+      <t t-call="visitor_mgmt.portal_navbar"/>
+      <div class="container my-5">
+        <div class="row justify-content-center">
+          <div class="col-lg-10 col-md-12">
+            <div class="card shadow-lg border-0">
+              <div class="card-header bg-primary text-white text-center">
+                <h2 class="mb-0">Visi Log for <t t-esc="partner.name"/></h2>
+              </div>
+              <div class="card-body">
+
+                <!-- Table of Visits -->
+                <t t-if="visits">
+                  <div class="table-responsive">
+                    <table class="table table-striped table-bordered">
+                      <thead class="table-light">
+                        <tr>
+                          <th>Visitor</th>
+                          <th>Unit</th>
+                          <th>Purpose</th>
+                          <th>Window</th>
+                          <th>Status</th>
+                          <th>Badge No</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <t t-foreach="visits" t-as="v">
+                          <tr>
+                            <td><t t-esc="v.visitor_id.name"/></td>
+                            <td><t t-esc="v.unit_id.display_name"/></td>
+                            <td><t t-esc="v.purpose or '-'"/></td>
+                            <td><t t-esc="v.schedule_from"/> → <t t-esc="v.schedule_to"/></td>
+                            <td>
+                              <t t-set="state_label" t-value="v._fields['state'].convert_to_export(v.state, v)"/>
+                              <span t-attf-class="badge
+                                #{'bg-secondary' if v.state == 'draft' else ''}
+                                #{'bg-info' if v.state == 'scheduled' else ''}
+                                #{'bg-success' if v.state == 'check_in' else ''}
+                                #{'bg-warning text-dark' if v.state == 'check_out' else ''}
+                                #{'bg-danger' if v.state == 'cancel' else ''}">
+                                <t t-esc="state_label"/>
+                              </span>
+                            </td>
+
+                            <td><t t-esc="v.badge_no or '-'"/></td>
+                          </tr>
+                        </t>
+                      </tbody>
+                    </table>
+                  </div>
+                </t>
+
+                <!-- No Visits Message -->
+                <t t-if="not visits">
+                  <p class="text-muted">No visitor records found for you.</p>
+                </t>
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </t>
+  </template>
+</odoo>

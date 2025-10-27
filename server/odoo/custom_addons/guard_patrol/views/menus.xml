@@ -1,0 +1,35 @@
+<odoo>
+  <data>
+    <!-- Root Menu -->
+    <menuitem id="menu_patrol_root" name="Patrol" sequence="30"/>
+
+    <!-- Routes -->
+    <record id="action_patrol_route" model="ir.actions.act_window">
+      <field name="name">Routes</field>
+      <field name="res_model">patrol.route</field>
+      <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Tours -->
+    <record id="action_patrol_tour" model="ir.actions.act_window">
+      <field name="name">Tours</field>
+      <field name="res_model">patrol.tour</field>
+      <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Guards -->
+    <record id="action_estate_guard" model="ir.actions.act_window">
+      <field name="name">Guards</field>
+      <field name="res_model">estate.guard</field>
+      <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Submenus -->
+    <menuitem id="menu_patrol_routes" name="Routes" parent="menu_patrol_root" action="action_patrol_route" sequence="10"/>
+    <menuitem id="menu_patrol_tours" name="Tours" parent="menu_patrol_root" action="action_patrol_tour" sequence="20"/>
+    <menuitem id="menu_patrol_guards" name="Guards" parent="menu_patrol_root" action="action_estate_guard" sequence="30"/>
+    <menuitem id="menu_guard_portal_root" name="Guard Portal" sequence="99"/>
+
+
+  </data>
+</odoo>

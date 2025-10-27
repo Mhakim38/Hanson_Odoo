@@ -1,0 +1,77 @@
+<odoo>
+  <!-- Tree View -->
+  <record id="view_estate_visit_tree" model="ir.ui.view">
+    <field name="name">estate.visit.tree</field>
+    <field name="model">estate.visit</field>
+    <field name="arch" type="xml">
+      <tree>
+        <field name="visitor_id"/>
+        <field name="host_id"/>
+        <field name="unit_id"/>
+        <field name="purpose"/>
+        <field name="schedule_from"/>
+        <field name="schedule_to"/>
+        <field name="state"/>
+        <field name="badge_no"/>
+        <field name="is_adhoc"/>
+      </tree>
+    </field>
+  </record>
+
+  <!-- Form View -->
+  <record id="view_estate_visit_form" model="ir.ui.view">
+    <field name="name">estate.visit.form</field>
+    <field name="model">estate.visit</field>
+    <field name="arch" type="xml">
+      <form>
+        <sheet>
+          <group>
+            <group string="Visitor Details" colspan="2">
+              <field name="visitor_id"/>
+              <field name="visitor_vehicle_ids"/>
+              <field name="host_id"/>
+              <field name="unit_id"/>
+              <field name="purpose"/>
+            </group>
+
+            <group string="Visit Window">
+              <field name="schedule_from"/>
+              <field name="schedule_to"/>
+              <field name="state" widget="statusbar"/>
+            </group>
+
+            <group string="Access Gates">
+              <field name="gate_in_id"/>
+              <field name="gate_out_id"/>
+              <field name="check_in_at" readonly="1"/>
+              <field name="check_out_at" readonly="1"/>
+            </group>
+
+            <group string="QR &amp; Badge Info" colspan="2">
+              <field name="badge_no" readonly="1"/>
+              <field name="qr_token" readonly="1"/>
+              <field name="qr_expiry" readonly="1"/>
+              <field name="qr_image" widget="image" class="oe_avatar" readonly="1"/>
+            </group>
+
+            <group string="Meta Info" colspan="2">
+              <field name="is_adhoc"/>
+              <field name="origin"/>
+              <field name="valid_minutes"/>
+              <field name="check_in_mode"/>
+            </group>
+          </group>
+        </sheet>
+
+        <footer>
+          <button name="action_checkin_adhoc"
+                  string="Ad-Hoc Check-In"
+                  type="object"
+                  class="btn-primary"
+                  invisible="state == 'check_in'"/>
+          <button string="Close" class="btn-secondary" special="cancel"/>
+        </footer>
+      </form>
+    </field>
+  </record>
+</odoo>
