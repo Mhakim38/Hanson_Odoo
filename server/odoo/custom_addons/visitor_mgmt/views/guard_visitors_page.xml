@@ -113,7 +113,7 @@
                 <p><strong>Status:</strong>
                   <t t-set="m_state_label" t-value="dict(v._fields['state'].selection).get(v.state, v.state or '-')"/>
                   <t t-if="v.state in ['draft', 'scheduled']">
-                    <span class="badge bg-secondary" t-esc="m_state_label"/>
+                    <span class="badge btn btn-dark" t-esc="m_state_label"/>
                   </t>
                   <t t-elif="v.state == 'check_in'">
                     <span class="badge bg-success" t-esc="m_state_label"/>
@@ -128,11 +128,11 @@
 
                 <!-- Mobile actions: both buttons visible (full width) -->
                 <div class="d-flex gap-2">
-                  <a t-att-href="'/guard/visitors/checkin/%d' % v.id" class="btn btn-success btn-sm btn-checkin flex-fill" t-att-title="'Check in %s' % (v.visitor_id.name or '')">
+                  <a t-att-href="'/guard/visitors/checkin/%d' % v.id" class="btn btn-success btn-sm btn-checkin flex-fill" t-att-title="'Check in'">
                     <span aria-hidden="true">✓</span>
                     <span class="visually-hidden">Check-in</span>
                   </a>
-                  <a t-att-href="'/guard/visitors/checkout/%d' % v.id" class="btn btn-warning btn-sm btn-checkout flex-fill" t-att-title="'Check out %s' % (v.visitor_id.name or '')">
+                  <a t-att-href="'/guard/visitors/checkout/%d' % v.id" class="btn btn-danger btn-sm btn-checkout flex-fill" t-att-title="'Check out'">
                     <span aria-hidden="true">⤴</span>
                     <span class="visually-hidden">Check-out</span>
                   </a>
