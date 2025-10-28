@@ -83,14 +83,24 @@
 
                     <!-- Action td -->
                   <td>
-                    <a t-att-href="'/guard/visitors/checkin/%d' % v.id" class="btn btn-success btn-sm btn-checkin" t-att-title="'Check in'">
-                      <span aria-hidden="true">✓</span>
-                      <span class="visually-hidden">Check-in</span>
-                    </a>
-                    <a t-att-href="'/guard/visitors/checkout/%d' % v.id" class="btn btn-danger btn-sm btn-checkout ms-1" t-att-title="'Check out'">
-                      <span aria-hidden="true">⤴</span>
-                      <span class="visually-hidden">Check-out</span>
-                    </a>
+                    <t t-if="v.state == 'check_out'">
+                      <span class="text-muted small">No Action</span>
+                    </t>
+                    <t t-else="">
+                      <a t-att-href="'/guard/visitors/checkin/%d' % v.id if v.state != 'check_in' else False"
+                         t-att-class="'btn btn-success btn-sm btn-checkin' + (' disabled' if v.state == 'check_in' else '')"
+                         t-att-title="'Check in'"
+                         t-att-aria-disabled="'true' if v.state == 'check_in' else False">
+                        <span aria-hidden="true">✓</span>
+                        <span class="visually-hidden">Check-in</span>
+                      </a>
+                      <a t-att-href="'/guard/visitors/checkout/%d' % v.id"
+                         class="btn btn-danger btn-sm btn-checkout ms-1"
+                         t-att-title="'Check out'">
+                        <span aria-hidden="true">⤴</span>
+                        <span class="visually-hidden">Check-out</span>
+                      </a>
+                    </t>
                   </td>
                 </tr>
               </t>
@@ -126,17 +136,25 @@
                   </t>
                 </p>
 
-                <!-- Mobile actions: both buttons visible (full width) -->
-                <div class="d-flex gap-2">
-                  <a t-att-href="'/guard/visitors/checkin/%d' % v.id" class="btn btn-success btn-sm btn-checkin flex-fill" t-att-title="'Check in'">
-                    <span aria-hidden="true">✓</span>
-                    <span class="visually-hidden">Check-in</span>
-                  </a>
-                  <a t-att-href="'/guard/visitors/checkout/%d' % v.id" class="btn btn-danger btn-sm btn-checkout flex-fill" t-att-title="'Check out'">
-                    <span aria-hidden="true">⤴</span>
-                    <span class="visually-hidden">Check-out</span>
-                  </a>
-                </div>
+                <!-- Mobile actions: both buttons visible (full width) OR No Action -->
+                <t t-if="v.state == 'check_out'">
+                  <div class="text-muted small">No Action</div>
+                </t>
+                <t t-else="">
+                  <div class="d-flex gap-2">
+                    <a t-att-href="'/guard/visitors/checkin/%d' % v.id if v.state != 'check_in' else False"
+                       t-att-class="'btn btn-success btn-sm btn-checkin flex-fill' + (' disabled' if v.state == 'check_in' else '')"
+                       t-att-title="'Check in'"
+                       t-att-aria-disabled="'true' if v.state == 'check_in' else False">
+                      <span aria-hidden="true">✓</span>
+                      <span class="visually-hidden">Check-in</span>
+                    </a>
+                    <a t-att-href="'/guard/visitors/checkout/%d' % v.id" class="btn btn-danger btn-sm btn-checkout flex-fill" t-att-title="'Check out'">
+                      <span aria-hidden="true">⤴</span>
+                      <span class="visually-hidden">Check-out</span>
+                    </a>
+                  </div>
+                </t>
 
               </div>
             </div>
@@ -151,10 +169,15 @@
             async function handleClick(e) {
               e.preventDefault();
               const btn = e.currentTarget;
+              // Ignore clicks on disabled-style anchors or anchors without href
+              if (btn.classList.contains('disabled') || !btn.getAttribute('href')) {
+                return;
+              }
               const url = btn.getAttribute('href');
               const card = btn.closest('.card, tr');
 
-              btn.disabled = true;
+              btn.classList.add('disabled');
+              btn.setAttribute('aria-disabled', 'true');
               const originalHTML = btn.innerHTML;
               btn.innerHTML = '<span aria-hidden="true">...</span>';
 
@@ -164,7 +187,8 @@
 
                 if (!result.success) {
                   alert(result.message || 'Error processing request');
-                  btn.disabled = false;
+                  btn.classList.remove('disabled');
+                  btn.removeAttribute('aria-disabled');
                   btn.innerHTML = originalHTML;
                   return;
                 }
@@ -174,16 +198,19 @@
                   // Mark as checked in: update badge and toggle buttons
                   updateStatus(card, 'Checked In', 'bg-success');
 
-                  // hide/disable checkin button, show/enable checkout button
+                  // disable checkin anchor (remove href and mark disabled), show/enable checkout anchor
                   const actionCell = card.querySelector('td:last-child') || card.querySelector('.d-flex');
                   if (actionCell) {
                     const checkinBtn = actionCell.querySelector('a.btn-checkin');
                     const checkoutBtn = actionCell.querySelector('a.btn-checkout');
                     if (checkinBtn) {
-                      checkinBtn.classList.add('d-none');
+                      checkinBtn.classList.add('disabled', 'opacity-75');
+                      checkinBtn.setAttribute('aria-disabled', 'true');
+                      try { checkinBtn.removeAttribute('href'); } catch (err) {}
                     }
                     if (checkoutBtn) {
-                      checkoutBtn.classList.remove('d-none');
+                      checkoutBtn.classList.remove('d-none', 'disabled');
+                      checkoutBtn.removeAttribute('aria-disabled');
                       checkoutBtn.disabled = false;
                     }
                   }
@@ -215,7 +242,8 @@
 
               } catch (err) {
                 alert('Error: ' + err.message);
-                btn.disabled = false;
+                btn.classList.remove('disabled');
+                btn.removeAttribute('aria-disabled');
                 btn.innerHTML = originalHTML;
               }
             }
@@ -251,6 +279,7 @@
             });
           });
       ]]></script>
+
 
 
 
