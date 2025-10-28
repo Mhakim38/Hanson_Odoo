@@ -94,9 +94,11 @@
                         <span aria-hidden="true">✓</span>
                         <span class="visually-hidden">Check-in</span>
                       </a>
-                      <a t-att-href="'/guard/visitors/checkout/%d' % v.id"
-                         class="btn btn-danger btn-sm btn-checkout ms-1"
-                         t-att-title="'Check out'">
+                      <!-- Checkout: only clickable when already checked-in; disabled when scheduled -->
+                      <a t-att-href="'/guard/visitors/checkout/%d' % v.id if v.state == 'check_in' else False"
+                         t-att-class="'btn btn-danger btn-sm btn-checkout ms-1' + (' disabled' if v.state == 'scheduled' else '')"
+                         t-att-title="'Check out'"
+                         t-att-aria-disabled="'true' if v.state == 'scheduled' else False">
                         <span aria-hidden="true">⤴</span>
                         <span class="visually-hidden">Check-out</span>
                       </a>
@@ -149,7 +151,11 @@
                       <span aria-hidden="true">✓</span>
                       <span class="visually-hidden">Check-in</span>
                     </a>
-                    <a t-att-href="'/guard/visitors/checkout/%d' % v.id" class="btn btn-danger btn-sm btn-checkout flex-fill" t-att-title="'Check out'">
+                    <!-- Mobile checkout: clickable only when check_in, disabled when scheduled -->
+                    <a t-att-href="'/guard/visitors/checkout/%d' % v.id if v.state == 'check_in' else False"
+                       t-att-class="'btn btn-danger btn-sm btn-checkout flex-fill' + (' disabled' if v.state == 'scheduled' else '')"
+                       t-att-title="'Check out'"
+                       t-att-aria-disabled="'true' if v.state == 'scheduled' else False">
                       <span aria-hidden="true">⤴</span>
                       <span class="visually-hidden">Check-out</span>
                     </a>
@@ -209,6 +215,15 @@
                       try { checkinBtn.removeAttribute('href'); } catch (err) {}
                     }
                     if (checkoutBtn) {
+                      // If checkout was rendered without href (scheduled state), set it now using the visit id from the checkin URL
+                      try {
+                        if (!checkoutBtn.getAttribute('href')) {
+                          const idMatch = url.match(/\/checkin\/(\d+)/);
+                          if (idMatch && idMatch[1]) {
+                            checkoutBtn.setAttribute('href', '/guard/visitors/checkout/' + idMatch[1]);
+                          }
+                        }
+                      } catch (err) { /* ignore */ }
                       checkoutBtn.classList.remove('d-none', 'disabled');
                       checkoutBtn.removeAttribute('aria-disabled');
                       checkoutBtn.disabled = false;
