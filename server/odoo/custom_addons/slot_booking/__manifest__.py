@@ -6,7 +6,7 @@
     "category": "Operations/Inventory",
     "author": "Alif Hykal",
     "license": "LGPL-3",
-    "depends": ["base", "base_geolocalize"],
+    "depends": ["base", "base_geolocalize", "website"],
     "data": [
         # Security first
         "security/ir.model.access.csv",
@@ -27,6 +27,9 @@
         "views/booking_list_views.xml",
         "views/slot_views.xml",
         "views/criteria_views.xml",
+
+        # QWeb templates for website frontend
+        "views/transporter_templates.xml",
 
         # Now load menus so menu items can reference the actions above and other views can reference menus
         "views/menu.xml",
