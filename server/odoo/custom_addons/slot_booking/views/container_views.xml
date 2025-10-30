@@ -53,6 +53,9 @@
                             <field name="equipment_category"/>
                             <field name="serial_number"/>
                             <field name="check_digit"/>
+                            <field name="depot_id"/>
+                            <field name="yard_id"/>
+                            <field name="block"/>
                         </group>
 
                         <group string="Classification">
