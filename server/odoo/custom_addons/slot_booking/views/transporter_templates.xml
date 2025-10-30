@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="transporters_template" name="Transporters List">
+        <t t-call="website.layout">
+            <div class="container">
+                <h1>Transporters</h1>
+
+                <!-- Search / Filter form -->
+                <form action="/slot_booking/transporters" method="get" class="mb-3">
+                    <div class="input-group">
+                        <input type="text" name="q" t-att-value="q" class="form-control" placeholder="Search transporters..."/>
+                        <select name="active" class="form-select" style="max-width:160px;">
+                            <option t-att-value="'1'" t-att-selected="active=='1'">Active</option>
+                            <option t-att-value="'0'" t-att-selected="active=='0'">Inactive</option>
+                            <option t-att-value="'all'" t-att-selected="active=='all'">All</option>
+                        </select>
+                        <input type="hidden" name="limit" t-att-value="pager and pager.get('limit') or 12"/>
+                        <button class="btn btn-primary" type="submit">Search</button>
+                    </div>
+                </form>
+
+                <div class="row">
+                    <t t-if="not transporters">
+                        <p>No transporters found.</p>
+                    </t>
+                    <t t-foreach="transporters" t-as="trans">
+                        <div class="col-md-4">
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <h5 class="card-title">
+                                        <a t-att-href="'/slot_booking/transporters/' + str(trans.id)">
+                                            <t t-esc="trans.name.display_name if trans.name else ''"/>
+                                        </a>
+                                    </h5>
+                                    <p class="card-text"><strong>Code:</strong> <t t-esc="trans.transporter_code or '—'"/></p>
+                                    <p class="card-text"><strong>Contact:</strong> <t t-esc="trans.contact_number or '—'"/></p>
+                                    <t t-if="not trans.active">
+                                        <p class="text-muted"><small>Inactive</small></p>
+                                    </t>
+                                </div>
+                            </div>
+                        </div>
+                    </t>
+                </div>
+
+                <!-- Pager -->
+                <t t-if="pager and pager.get('pages') &gt; 1">
+                    <nav aria-label="Transporters pagination">
+                        <ul class="pagination">
+                            <li class="page-item" t-att-class="'disabled' if pager.get('page') &lt;= 1 else ''">
+                                <a class="page-link" t-att-href="'/slot_booking/transporters?page=%s&amp;limit=%s&amp;q=%s&amp;active=%s' % (pager.get('page')-1, pager.get('limit'), q or '', active or '1')">Previous</a>
+                            </li>
+
+                            <t t-foreach="range(1, pager.get('pages') + 1)" t-as="p">
+                                <li class="page-item" t-att-class="'active' if p == pager.get('page') else ''">
+                                    <a class="page-link" t-att-href="'/slot_booking/transporters?page=%s&amp;limit=%s&amp;q=%s&amp;active=%s' % (p, pager.get('limit'), q or '', active or '1')">
+                                        <t t-esc="p"/>
+                                    </a>
+                                </li>
+                            </t>
+
+                            <li class="page-item" t-att-class="'disabled' if pager.get('page') &gt;= pager.get('pages') else ''">
+                                <a class="page-link" t-att-href="'/slot_booking/transporters?page=%s&amp;limit=%s&amp;q=%s&amp;active=%s' % (pager.get('page')+1, pager.get('limit'), q or '', active or '1')">Next</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </t>
+
+            </div>
+        </t>
+    </template>
+
+    <template id="transporter_detail_template" name="Transporter Detail">
+        <t t-call="website.layout">
+            <div class="container">
+                <a href="/slot_booking/transporters">&#8592; Back to list</a>
+                <h1><t t-esc="transporter.name.display_name if transporter.name else ''"/></h1>
+                <p><strong>Code:</strong> <t t-esc="transporter.transporter_code or '—'"/></p>
+                <p><strong>Contact:</strong> <t t-esc="transporter.contact_number or '—'"/></p>
+                <p><strong>Email:</strong> <t t-esc="transporter.email or '—'"/></p>
+                <h3>Drivers</h3>
+                <t t-if="not transporter.driver_ids">
+                    <p>No drivers recorded.</p>
+                </t>
+                <t t-foreach="transporter.driver_ids" t-as="d">
+                    <div>
+                        <t t-esc="d.name.display_name if d.name else ''"/>
+                        <t t-if="d.driver_license_no"> — <t t-esc="d.driver_license_no"/></t>
+                    </div>
+                </t>
+
+                <h3>Vehicles</h3>
+                <t t-if="not transporter.vehicle_ids">
+                    <p>No vehicles recorded.</p>
+                </t>
+                <t t-foreach="transporter.vehicle_ids" t-as="v">
+                    <div><t t-esc="v.name"/> — <t t-esc="v.vehicle_plate_no or '—'"/></div>
+                </t>
+
+                <h3>Trailers</h3>
+                <t t-if="not transporter.trailer_ids">
+                    <p>No trailers recorded.</p>
+                </t>
+                <t t-foreach="transporter.trailer_ids" t-as="tr">
+                    <div><t t-esc="tr.name"/> — <t t-esc="tr.trailer_plate_no or '—'"/></div>
+                </t>
+            </div>
+        </t>
+    </template>
+</odoo>

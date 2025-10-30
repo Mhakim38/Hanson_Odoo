@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="rots_template" name="ROT List">
+        <t t-call="website.layout">
+            <div class="container">
+                <h1>ROT Requests</h1>
+
+                <!-- Status filter -->
+                <form action="/slot_booking/rots" method="get" class="mb-3">
+                    <div class="input-group">
+                        <select name="status" class="form-select" style="max-width:200px;">
+                            <option t-att-value="'all'" t-att-selected="status=='all'">All</option>
+                            <option t-att-value="'draft'" t-att-selected="status=='draft'">Draft</option>
+                            <option t-att-value="'sent'" t-att-selected="status=='sent'">Sent to Haulier</option>
+                            <option t-att-value="'pending'" t-att-selected="status=='pending'">Pending Acceptance</option>
+                            <option t-att-value="'acknowledged'" t-att-selected="status=='acknowledged'">Acknowledged</option>
+                            <option t-att-value="'cancelled'" t-att-selected="status=='cancelled'">Cancelled</option>
+                        </select>
+                        <input type="hidden" name="limit" t-att-value="pager and pager.get('limit') or 12"/>
+                        <button class="btn btn-primary" type="submit">Filter</button>
+                        <a class="btn btn-success ms-2" href="/slot_booking/rots/new">New ROT</a>
+                    </div>
+                </form>
+
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>ROT Number</th>
+                                <th>ROT Date</th>
+                                <th>Gate Pass Ref</th>
+                                <th>Transporter</th>
+                                <th>Container</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-if="not rots">
+                                <tr><td colspan="6">No ROT requests found.</td></tr>
+                            </t>
+                            <t t-foreach="rots" t-as="r">
+                                <tr>
+                                    <td><t t-esc="r.rot_number"/></td>
+                                    <td><t t-esc="(r.rot_date or '')"/></td>
+                                    <td><t t-esc="r.gate_pass_ref or '—'"/></td>
+                                    <td><t t-esc="r.transporter_id.name.display_name if r.transporter_id and r.transporter_id.name else (r.transporter_id.name or '—')"/></td>
+                                    <td><t t-esc="r.container_id.container_number if r.container_id else '—'"/></td>
+                                    <td><t t-esc="dict(r._fields['status'].selection).get(r.status) if r.status else '—'"/></td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pager -->
+                <t t-if="pager and pager.get('pages') &gt; 1">
+                    <nav aria-label="ROTs pagination">
+                        <ul class="pagination">
+                            <li class="page-item" t-att-class="'disabled' if pager.get('page') &lt;= 1 else ''">
+                                <a class="page-link" t-att-href="'/slot_booking/rots?page=%s&amp;limit=%s&amp;status=%s' % (pager.get('page')-1, pager.get('limit'), status or 'all')">Previous</a>
+                            </li>
+                            <t t-foreach="range(1, pager.get('pages') + 1)" t-as="p">
+                                <li class="page-item" t-att-class="'active' if p == pager.get('page') else ''">
+                                    <a class="page-link" t-att-href="'/slot_booking/rots?page=%s&amp;limit=%s&amp;status=%s' % (p, pager.get('limit'), status or 'all')">
+                                        <t t-esc="p"/>
+                                    </a>
+                                </li>
+                            </t>
+                            <li class="page-item" t-att-class="'disabled' if pager.get('page') &gt;= pager.get('pages') else ''">
+                                <a class="page-link" t-att-href="'/slot_booking/rots?page=%s&amp;limit=%s&amp;status=%s' % (pager.get('page')+1, pager.get('limit'), status or 'all')">Next</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </t>
+
+            </div>
+        </t>
+    </template>
+
+    <template id="rot_registration_template" name="ROT Registration">
+        <t t-call="website.layout">
+            <div class="container">
+                <h1>Register New ROT</h1>
+                <t t-if="error">
+                    <div class="alert alert-danger"><t t-esc="error"/></div>
+                </t>
+                <!-- Include CSRF token for POST submissions to avoid "Session expired (invalid CSRF token)" -->
+                <form action="/slot_booking/rots/new" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <div class="mb-3">
+                        <label class="form-label">Gate Pass Reference</label>
+                        <input type="text" name="gate_pass_ref" class="form-control" t-att-value="vals and vals.get('gate_pass_ref') or ''" required="required"/>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Gate Pass Request Date</label>
+                        <input type="date" name="gate_pass_request_date" class="form-control" t-att-value="vals and vals.get('gate_pass_request_date') or ''"/>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Transporter</label>
+                        <select name="transporter_id" class="form-select" required="required">
+                            <option value="">-- Select transporter --</option>
+                            <t t-foreach="transporters" t-as="t">
+                                <option t-att-value="t.id" t-att-selected="vals and vals.get('transporter_id') and int(vals.get('transporter_id'))==t.id"> <t t-esc="t.name.display_name if t.name else (t.name or '')"/> </option>
+                            </t>
+                        </select>
+                    </div>
+
+                    <div class="mb-3 row">
+                        <div class="col-md-6">
+                            <label class="form-label">Vehicle</label>
+                            <select name="vehicle_id" class="form-select">
+                                <option value="">-- Select vehicle --</option>
+                                <t t-foreach="vehicles" t-as="v">
+                                    <option t-att-value="v.id" t-att-selected="vals and vals.get('vehicle_id') and int(vals.get('vehicle_id'))==v.id"><t t-esc="v.name or ''"/></option>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Trailer</label>
+                            <select name="trailer_id" class="form-select">
+                                <option value="">-- Select trailer --</option>
+                                <t t-foreach="trailers" t-as="tr">
+                                    <option t-att-value="tr.id" t-att-selected="vals and vals.get('trailer_id') and int(vals.get('trailer_id'))==tr.id"><t t-esc="tr.name or ''"/></option>
+                                </t>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 row">
+                        <div class="col-md-6">
+                            <label class="form-label">Driver</label>
+                            <select name="driver_id" class="form-select">
+                                <option value="">-- Select driver --</option>
+                                <t t-foreach="drivers" t-as="d">
+                                    <option t-att-value="d.id" t-att-selected="vals and vals.get('driver_id') and int(vals.get('driver_id'))==d.id"><t t-esc="d.name.display_name if d.name else (d.name or '')"/></option>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Container</label>
+                            <select name="container_id" class="form-select">
+                                <option value="">-- Select container --</option>
+                                <t t-foreach="containers" t-as="c">
+                                    <option t-att-value="c.id" t-att-selected="vals and vals.get('container_id') and int(vals.get('container_id'))==c.id"><t t-esc="c.container_number or ''"/></option>
+                                </t>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Remarks</label>
+                        <textarea name="remarks" class="form-control" rows="4"><t t-esc="vals and vals.get('remarks') or ''"/></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Attachments</label>
+                        <input type="file" name="attachment" class="form-control"/>
+                        <small class="form-text text-muted">Attachments uploaded here will not be linked automatically in this simple form. Use backend to add attachments if needed.</small>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Create ROT</button>
+                    <a class="btn btn-secondary ms-2" href="/slot_booking/rots">Cancel</a>
+                </form>
+            </div>
+        </t>
+    </template>
+</odoo>
