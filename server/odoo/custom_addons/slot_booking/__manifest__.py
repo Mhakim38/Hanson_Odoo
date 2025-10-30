@@ -30,6 +30,7 @@
 
         # QWeb templates for website frontend
         "views/transporter_templates.xml",
+        "views/rot_templates.xml",
 
         # Now load menus so menu items can reference the actions above and other views can reference menus
         "views/menu.xml",
