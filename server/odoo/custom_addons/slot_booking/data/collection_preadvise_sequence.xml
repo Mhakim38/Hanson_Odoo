@@ -1,0 +1,8 @@
+<odoo>
+    <record id="seq_res_collection_preadvise" model="ir.sequence">
+        <field name="name">Collection Pre-advise Sequence</field>
+        <field name="code">res.collection.preadvise</field>
+        <field name="prefix">PREADV%(year)s-</field>
+        <field name="padding">4</field>
+    </record>
+</odoo>

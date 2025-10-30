@@ -1,0 +1,34 @@
+<odoo>
+    <record id="view_res_criteria_tree" model="ir.ui.view">
+        <field name="name">res.criteria.tree</field>
+        <field name="model">res.criteria</field>
+        <field name="arch" type="xml">
+            <tree string="Criteria Configurations">
+                <field name="criteria_id"/>
+                <field name="criteria_content"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_res_criteria_form" model="ir.ui.view">
+        <field name="name">res.criteria.form</field>
+        <field name="model">res.criteria</field>
+        <field name="arch" type="xml">
+            <form string="Criteria Configuration">
+                <sheet>
+                    <group>
+                        <field name="criteria_id"/>
+                        <field name="criteria_content"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_res_criteria" model="ir.actions.act_window">
+        <field name="name">Criteria</field>
+        <field name="res_model">res.criteria</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+</odoo>

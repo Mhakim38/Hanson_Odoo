@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- List View -->
+    <record id="view_res_rot_tree" model="ir.ui.view">
+        <field name="name">res.rot.tree</field>
+        <field name="model">res.rot</field>
+        <field name="arch" type="xml">
+            <tree string="ROT Requests" default_order="rot_date desc">
+                <field name="rot_number"/>
+                <field name="rot_date"/>
+                <field name="gate_pass_ref"/>
+                <field name="transporter_id"/>
+                <field name="container_id"/>
+                <field name="status"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_res_rot_form" model="ir.ui.view">
+        <field name="name">res.rot.form</field>
+        <field name="model">res.rot</field>
+        <field name="arch" type="xml">
+            <form string="ROT Form">
+                <header>
+                    <button name="action_send_to_haulier"
+                            type="object"
+                            string="Send to Haulier"
+                            class="btn-primary"
+                            invisible="status != 'draft'"/>
+
+                    <button name="action_mark_pending"
+                            type="object"
+                            string="Mark Pending"
+                            class="btn-secondary"
+                            invisible="status != 'sent'"/>
+
+                    <button name="action_acknowledge"
+                            type="object"
+                            string="Acknowledge"
+                            class="btn-success"
+                            invisible="status != 'pending'"/>
+
+                    <field name="status" widget="statusbar" clickable="false"/>
+                </header>
+
+                <sheet>
+                    <group>
+                        <group string="Basic Information">
+                            <field name="rot_number" readonly="1"/>
+                            <field name="rot_date" readonly="1"/>
+                            <field name="gate_pass_ref"/>
+                            <field name="gate_pass_request_date"/>
+                        </group>
+
+                        <group string="Transport Details">
+                            <field name="transporter_id"/>
+                            <field name="vehicle_id"/>
+                            <field name="trailer_id"/>
+                            <field name="driver_id"/>
+                            <field name="container_id"/>
+                        </group>
+                    </group>
+
+                    <group string="Attachments">
+                        <field name="attachment_ids" widget="many2many_binary"/>
+                    </group>
+
+                    <group string="Remarks">
+                        <field name="remarks"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_res_rot" model="ir.actions.act_window">
+        <field name="name">ROT</field>
+        <field name="res_model">res.rot</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Menu -->
+    <menuitem id="menu_res_rot"
+              name="ROT"
+              parent="menu_slot_booking_operations"
+              sequence="3"
+              action="action_res_rot"/>
+</odoo>

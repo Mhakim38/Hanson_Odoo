@@ -1,0 +1,25 @@
+<odoo>
+    <data noupdate="1">
+
+        <!-- User -->
+        <record id="group_attendance_user" model="res.groups">
+            <field name="name">Attendance / User</field>
+            <field name="category_id" ref="base.module_category_human_resources"/>
+        </record>
+
+        <!-- Manager -->
+        <record id="group_attendance_manager" model="res.groups">
+            <field name="name">Attendance / Manager</field>
+            <field name="implied_ids" eval="[(4, ref('attendance.group_attendance_user'))]"/>
+            <field name="category_id" ref="base.module_category_human_resources"/>
+        </record>
+
+        <!-- Admin -->
+        <record id="group_attendance_admin" model="res.groups">
+            <field name="name">Attendance / Admin</field>
+            <field name="implied_ids" eval="[(4, ref('attendance.group_attendance_manager'))]"/>
+            <field name="category_id" ref="base.module_category_human_resources"/>
+        </record>
+
+    </data>
+</odoo>

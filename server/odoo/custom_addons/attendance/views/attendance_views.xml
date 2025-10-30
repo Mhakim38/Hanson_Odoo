@@ -1,0 +1,126 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- LIST / TREE VIEW -->
+    <record id="view_attendance_hanson_tree" model="ir.ui.view">
+        <field name="name">attendance.hanson.tree</field>
+        <field name="model">attendance.hanson</field>
+        <field name="arch" type="xml">
+            <tree string="Attendance Records" default_order="date desc">
+                <field name="office"/>
+                <field name="department_id"/>
+                <field name="employee_id_bio" string="Employee ID"/>
+                <field name="employee_id" string="Employee Name"/>
+                <field name="nickname"/>
+                <field name="date" string="Date"/>
+                <field name="day" string="Day"/>
+                <field name="in_time_char" string="Clock In"/>
+                <field name="out_time_char" string="Clock Out"/>
+                <field name="late" string="Late In"
+                    decoration-danger="late != '0 min'"/>
+                <field name="early" string="Early Out"
+                    decoration-danger="early != '0 min'"/>
+                <field name="total_hours" string="Total Hours"/>
+                <field name="remarks"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- FORM VIEW -->
+    <record id="view_attendance_hanson_form" model="ir.ui.view">
+        <field name="name">attendance.hanson.form</field>
+        <field name="model">attendance.hanson</field>
+        <field name="arch" type="xml">
+            <form string="Attendance">
+                <sheet>
+                    <group>
+                        <!-- LEFT SIDE -->
+                        <group>
+                            <!-- OFFICE/DEPARTMENT -->
+                            <separator string="OFFICE/DEPARTMENT" colspan="2"/>
+                            <group>
+                                <field name="office" readonly="1"/>
+                                <field name="department_id" readonly="1"/>
+                            </group>
+
+                            <!-- EMPLOYEE DETAILS -->
+                            <separator string="EMPLOYEE DETAILS" colspan="2"/>
+                            <group>
+                                <field name="employee_id_bio" string="Employee ID" readonly="1"/>
+                                <field name="employee_id" string="Employee"/>
+                                <field name="nickname" readonly="1"/>
+                            </group>
+
+                            <!-- EMPLOYEE ATTENDANCE -->
+                            <separator string="EMPLOYEE'S ATTENDANCE" colspan="2"/>
+                            <group>
+                                <field name="date" string="Date"/>
+                                <field name="day" string="Day" readonly="1"/>
+                                <field name="in_time_char" string="Clock In" placeholder="09:00 or 09:00:00"/>
+                                <field name="out_time_char" string="Clock Out" placeholder="18:00 or 18:00:00"/>
+                                <field name="late" string="Late In (Minutes)" readonly="1" decoration-danger="late != '0 min'"/>
+                                <field name="early" string="Early Out (Minutes)" readonly="1" decoration-danger="early != '0 min'"/>
+                                <field name="total_hours" string="Total Hours" readonly="1"/>
+                            </group>
+                        </group>
+
+                        <!-- RIGHT SIDE -->
+                        <group>
+                            <separator string="REMARKS" colspan="2"/>
+                            <field name="remarks" nolabel="1" placeholder="Enter remarks..." colspan="2" rows="4"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- SEARCH VIEW -->
+    <record id="view_attendance_hanson_search" model="ir.ui.view">
+        <field name="name">attendance.hanson.search</field>
+        <field name="model">attendance.hanson</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="employee_id"/>
+                <field name="department_id"/>
+                <field name="date"/>
+                <field name="office"/>
+                <field name="employee_id_bio"/>
+                <!--filter string="Today's Records" name="today" domain="[('date', '=', context_today())]"/>
+                <filter string="This Week" name="this_week" domain="[('date', '>=', (context_today() - datetime.timedelta(days=7)).strftime('%Y-%m-%d'))]"/>
+                <filter string="Late Arrivals" name="late" domain="[('late', '!=', '0 min')]"/>
+                <filter string="Early Departures" name="early" domain="[('early', '!=', '0 min')]"/>
+                <filter string="On Time" name="on_time" domain="[('late', '=', '0 min'), ('early', '=', '0 min')]"/-->
+                <group expand="0" string="Group By">
+                    <filter string="Department" name="department" context="{'group_by': 'department_id'}"/>
+                    <filter string="Employee" name="employee" context="{'group_by': 'employee_id'}"/>
+                    <filter string="Date" name="date" context="{'group_by': 'date'}"/>
+                    <filter string="Office" name="office" context="{'group_by': 'office'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ACTION + MENU -->
+    <record id="action_attendance_hanson" model="ir.actions.act_window">
+        <field name="name">Attendance</field>
+        <field name="res_model">attendance.hanson</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="view_attendance_hanson_tree"/>
+        <field name="search_view_id" ref="view_attendance_hanson_search"/>
+        <field name="context">{'search_default_today': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Create your first attendance record!
+            </p>
+            <p>
+                Track employee attendance with clock in/out times. <br/>
+                Records with late arrivals or early departures are highlighted in <span style="color: red;">red</span> in the list view.
+            </p>
+        </field>
+    </record>
+
+    <!-- MENU STRUCTURE -->
+    <menuitem id="menu_hr_root" name="Attendance"/>
+    <menuitem id="menu_attendance_root" name="Attendance" parent="menu_hr_root"/>
+    <menuitem id="menu_attendance_records" name="Records" parent="menu_attendance_root" action="action_attendance_hanson"/>
+</odoo>

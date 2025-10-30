@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_res_container_maintenance_tree" model="ir.ui.view">
+        <field name="name">res.container.maintenance.tree</field>
+        <field name="model">res.container.maintenance</field>
+        <field name="arch" type="xml">
+            <tree string="Container Maintenance">
+                <field name="container_id"/>
+                <field name="container_owner"/>
+                <field name="container_type"/>
+                <field name="status"/>
+                <field name="pre_inspection_date"/>
+                <field name="pre_repair_score"/>
+                <field name="post_inspection_date"/>
+                <field name="post_repair_score"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_res_container_maintenance_form" model="ir.ui.view">
+        <field name="name">res.container.maintenance.form</field>
+        <field name="model">res.container.maintenance</field>
+        <field name="arch" type="xml">
+            <form string="Container Maintenance">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="container_id"/>
+                            <field name="container_owner" readonly="1"/>
+                            <field name="container_type" readonly="1"/>
+                            <field name="status"/>
+                        </group>
+                        <group>
+                            <field name="pre_inspection_date"/>
+                            <field name="pre_repair_score"/>
+                            <field name="post_inspection_date"/>
+                            <field name="post_repair_score"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Additional Maintenance Logs">
+                            <field name="log_ids">
+                                <tree editable="bottom" string="Maintenance Logs">
+                                    <field name="date"/>
+                                    <field name="remarks"/>
+                                    <field name="attachment" filename="attachment_filename"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_res_container_maintenance" model="ir.actions.act_window">
+        <field name="name">Container Maintenance</field>
+        <field name="res_model">res.container.maintenance</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{'default_container_id': active_id}</field>
+        <field name="domain">[('container_id', '=', active_id)]</field>
+    </record>
+</odoo>

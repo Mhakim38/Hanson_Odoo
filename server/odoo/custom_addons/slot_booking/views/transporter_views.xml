@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tree View -->
+    <record id="view_res_transporter_tree" model="ir.ui.view">
+        <field name="name">res.transporter.tree</field>
+        <field name="model">res.transporter</field>
+        <field name="arch" type="xml">
+            <tree string="Transporters">
+                <field name="name"/>
+                <field name="transporter_code"/>
+                <field name="contact_number"/>
+                <field name="email"/>
+                <field name="active"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_res_transporter_form" model="ir.ui.view">
+        <field name="name">res.transporter.form</field>
+        <field name="model">res.transporter</field>
+        <field name="arch" type="xml">
+            <form string="Transporter">
+                <header>
+                    <button name="action_view_drivers" type="object"
+                            class="oe_stat_button text-primary">
+                        <field name="driver_count" widget="statinfo" string="&amp;nbsp;Drivers"/>
+                    </button>
+                    <button name="action_view_vehicles" type="object"
+                            class="oe_stat_button text-primary">
+                        <field name="vehicle_count" widget="statinfo" string="&amp;nbsp;Vehicles"/>
+                    </button>
+                    <button name="action_view_trailers" type="object"
+                            class="oe_stat_button text-primary">
+                        <field name="trailer_count" widget="statinfo" string="&amp;nbsp;Trailers"/>
+                    </button>
+                </header>
+
+                <sheet>
+                    <group>
+                        <group>
+                            <!-- ✅ Company relation field -->
+                            <field name="name" options="{'no_open': False}" context="{'default_company_type': 'company'}"/>
+                            <field name="transporter_code"/>
+                            <field name="contact_number"/>
+                            <field name="email"/>
+                            <field name="company_address"/>
+                            <field name="active"/>
+                        </group>
+                        <group>
+                            <field name="remarks"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Drivers">
+                            <field name="driver_ids">
+                                <tree editable="bottom">
+                                    <field name="name"/>
+                                    <field name="driver_license_no"/>
+                                    <field name="driver_license_expiry"/>
+                                    <field name="driver_ic"/>
+                                </tree>
+                            </field>
+                        </page>
+
+                        <page string="Vehicles">
+                            <field name="vehicle_ids">
+                                <tree editable="bottom">
+                                    <field name="name"/>
+                                    <field name="vehicle_plate_no"/>
+                                    <field name="vehicle_type"/>
+                                    <field name="vehicle_capacity"/>
+                                    <field name="insurance_expiry"/>
+                                </tree>
+                            </field>
+                        </page>
+
+                        <page string="Trailers">
+                            <field name="trailer_ids">
+                                <tree editable="bottom">
+                                    <field name="name"/>
+                                    <field name="trailer_plate_no"/>
+                                    <field name="trailer_capacity"/>
+                                    <field name="container_id"/>
+                                    <field name="insurance_expiry"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_res_transporter" model="ir.actions.act_window">
+        <field name="name">Transporters</field>
+        <field name="res_model">res.transporter</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

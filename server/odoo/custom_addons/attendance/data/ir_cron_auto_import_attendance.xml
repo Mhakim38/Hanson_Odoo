@@ -1,0 +1,28 @@
+<odoo>
+    <!-- =========================================================
+         Scheduled Action: Auto Import Attendance (FTP)
+         Runs daily at 1:00 AM Malaysia time (UTC+8)
+         ========================================================= -->
+    <record id="ir_cron_auto_import_attendance" model="ir.cron">
+        <field name="name">Auto Import Attendance (FTP)</field>
+        <field name="model_id" ref="model_attendance_ftp_import_cron"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_auto_import_yesterday()</field>
+
+        <!-- Repeat every 1 day -->
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+
+        <!-- Run indefinitely -->
+        <field name="numbercall">-1</field>
+
+        <!-- Run if missed while Odoo was down -->
+        <field name="doall" eval="True"/>
+
+        <!-- Enable cron -->
+        <field name="active" eval="True"/>
+
+        <!-- 🕐 1 AM Malaysia (UTC+8) = 17:00 UTC previous day, Malaysia is UTC+8, so: 1:00 AM (MYT) – 8 hours = 17:00 UTC (previous day)-->
+        <field name="nextcall">2025-10-17 17:00:00</field>
+    </record>
+</odoo>

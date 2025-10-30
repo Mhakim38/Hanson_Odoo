@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_res_trailer_tree" model="ir.ui.view">
+        <field name="name">res.trailer.tree</field>
+        <field name="model">res.trailer</field>
+        <field name="arch" type="xml">
+            <tree string="Trailers">
+                <field name="name"/>
+                <field name="trailer_plate_no"/>
+                <field name="transporter_id"/>
+                <field name="trailer_permit"/>
+                <field name="insurance_expiry"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_res_trailer_form" model="ir.ui.view">
+        <field name="name">res.trailer.form</field>
+        <field name="model">res.trailer</field>
+        <field name="arch" type="xml">
+            <form string="Trailer">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="trailer_plate_no"/>
+                            <field name="transporter_id" readonly="transporter_id != False"/>
+                            <field name="trailer_capacity"/>
+                            <field name="container_id"/>
+                        </group>
+                        <group>
+                            <field name="insurance_expiry"/>
+                            <field name="trailer_permit"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_res_trailer" model="ir.actions.act_window">
+        <field name="name">Trailers</field>
+        <field name="res_model">res.trailer</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>
