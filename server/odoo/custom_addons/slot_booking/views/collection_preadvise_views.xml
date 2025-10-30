@@ -225,6 +225,174 @@
                         <textarea name="remarks" class="form-control" rows="4"><t t-esc="vals and vals.get('remarks') or ''"/></textarea>
                     </div>
 
+                    <!-- Available Containers: add lines UI similar to backend notebook -->
+                    <div class="mb-4">
+                        <h5>Available Containers</h5>
+                        <p class="text-muted">Add one or more containers to include in this pre-advise.</p>
+
+                        <!-- Inline add row -->
+                        <div class="row g-2 align-items-end mb-2">
+                            <div class="col-md-3">
+                                <label class="form-label">Container</label>
+                                <select id="line_container" class="form-select">
+                                    <option value="">-- Select container --</option>
+                                    <t t-foreach="containers" t-as="c">
+                                        <option t-att-value="c.id"
+                                                t-att-data-number="c.container_number"
+                                                t-att-data-depot="c.depot_id and c.depot_id.id or ''"
+                                                t-att-data-yard="c.yard_id and c.yard_id.id or ''">
+                                            <t t-esc="c.container_number or ''"/>
+                                        </option>
+                                    </t>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Depot</label>
+                                <select id="line_depot" class="form-select">
+                                    <option value="">-- Depot --</option>
+                                    <t t-foreach="depots" t-as="d">
+                                        <option t-att-value="d.id"><t t-esc="d.name or ''"/></option>
+                                    </t>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Yard</label>
+                                <select id="line_yard" class="form-select">
+                                    <option value="">-- Yard --</option>
+                                    <t t-foreach="yards" t-as="y">
+                                        <option t-att-value="y.id"><t t-esc="y.name or ''"/></option>
+                                    </t>
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Block</label>
+                                <input id="line_block" class="form-control" />
+                            </div>
+                            <div class="col-md-2">
+                                <label class="form-label">Status</label>
+                                <select id="line_status" class="form-select">
+                                    <option value="">-- Status --</option>
+                                    <option value="Available">Available</option>
+                                    <option value="In Use">In Use</option>
+                                    <option value="Under Repair">Under Repair</option>
+                                    <option value="Out of Service">Out of Service</option>
+                                </select>
+                            </div>
+                            <div class="col-md-1">
+                                <label class="form-label">Add</label>
+                                <button type="button" id="add_line_btn" class="btn btn-primary w-100">Add</button>
+                            </div>
+                        </div>
+
+                        <!-- Booking ref input -->
+                        <div class="mb-2">
+                            <label class="form-label">Booking Reference (optional)</label>
+                            <input id="line_booking_ref" class="form-control" />
+                        </div>
+
+                        <!-- Lines table -->
+                        <div class="table-responsive mb-3">
+                            <table class="table table-sm" id="lines_table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Container</th>
+                                        <th>Depot</th>
+                                        <th>Yard</th>
+                                        <th>Block</th>
+                                        <th>Status</th>
+                                        <th>Booking Ref</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody><!-- rows will be injected by JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Hidden input that will contain JSON array of lines -->
+                        <input type="hidden" name="line_data" id="line_data" />
+
+                        <script type="text/javascript"><![CDATA[
+                        (function () {
+                            var lines = [];
+                            function renderLines(){
+                                var tbody = document.querySelector('#lines_table tbody');
+                                tbody.innerHTML = '';
+                                lines.forEach(function(ln,i){
+                                    var tr = document.createElement('tr');
+                                    tr.innerHTML = '<td>'+(i+1)+'</td>'+
+                                        '<td>'+(ln.container_number||'')+'</td>'+
+                                        '<td>'+(ln.depot_name||'')+'</td>'+
+                                        '<td>'+(ln.yard_name||'')+'</td>'+
+                                        '<td>'+(ln.block||'')+'</td>'+
+                                        '<td>'+(ln.status||'')+'</td>'+
+                                        '<td>'+(ln.booking_ref||'')+'</td>'+
+                                        '<td><button type="button" class="btn btn-sm btn-outline-danger" data-index="'+i+'">Remove</button></td>';
+                                    tbody.appendChild(tr);
+                                });
+                                document.getElementById('line_data').value = JSON.stringify(lines);
+                            }
+
+                            document.getElementById('add_line_btn').addEventListener('click', function(){
+                                var cid = document.getElementById('line_container').value;
+                                if(!cid){
+                                    alert('Please select a container');
+                                    return;
+                                }
+                                var containerSelect = document.getElementById('line_container');
+                                var containerNumber = containerSelect.options[containerSelect.selectedIndex].text;
+                                var depotSelect = document.getElementById('line_depot');
+                                var depotId = depotSelect.value;
+                                var depotName = depotSelect.options[depotSelect.selectedIndex] ? depotSelect.options[depotSelect.selectedIndex].text : '';
+                                var yardSelect = document.getElementById('line_yard');
+                                var yardId = yardSelect.value;
+                                var yardName = yardSelect.options[yardSelect.selectedIndex] ? yardSelect.options[yardSelect.selectedIndex].text : '';
+                                var block = document.getElementById('line_block').value || '';
+                                var status = document.getElementById('line_status').value || '';
+                                var booking_ref = document.getElementById('line_booking_ref').value || '';
+                                lines.push({
+                                    container_id: cid,
+                                    container_number: containerNumber,
+                                    depot_id: depotId,
+                                    depot_name: depotName,
+                                    yard_id: yardId,
+                                    yard_name: yardName,
+                                    block: block,
+                                    status: status,
+                                    booking_ref: booking_ref,
+                                });
+                                // clear inputs
+                                document.getElementById('line_container').value = '';
+                                document.getElementById('line_depot').value = '';
+                                document.getElementById('line_yard').value = '';
+                                document.getElementById('line_block').value = '';
+                                document.getElementById('line_status').value = '';
+                                document.getElementById('line_booking_ref').value = '';
+                                renderLines();
+                            });
+
+                            document.querySelector('#lines_table tbody').addEventListener('click', function(ev){
+                                var btn = ev.target;
+                                if(btn && btn.dataset && btn.dataset.index){
+                                    var idx = parseInt(btn.dataset.index,10);
+                                    lines.splice(idx,1);
+                                    renderLines();
+                                }
+                            });
+
+                            // ensure hidden input set before form submit
+                            var form = document.querySelector('form[action="/slot_booking/preadvises/new"]');
+                            if(form){
+                                form.addEventListener('submit', function(){
+                                    document.getElementById('line_data').value = JSON.stringify(lines);
+                                });
+                            }
+                        })();
+                        ]]></script>
+                    </div>
+                    <!-- end available containers UI -->
+
                     <button type="submit" class="btn btn-primary">Create Pre-advise</button>
                     <a class="btn btn-secondary ms-2" href="/slot_booking/preadvises">Cancel</a>
                 </form>
