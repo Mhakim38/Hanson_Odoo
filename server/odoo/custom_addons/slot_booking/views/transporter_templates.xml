@@ -4,6 +4,21 @@
         <t t-call="website.layout">
             <div class="container">
                 <h1>Transporters</h1>
+
+                <!-- Search / Filter form -->
+                <form action="/slot_booking/transporters" method="get" class="mb-3">
+                    <div class="input-group">
+                        <input type="text" name="q" t-att-value="q" class="form-control" placeholder="Search transporters..."/>
+                        <select name="active" class="form-select" style="max-width:160px;">
+                            <option t-att-value="'1'" t-att-selected="active=='1'">Active</option>
+                            <option t-att-value="'0'" t-att-selected="active=='0'">Inactive</option>
+                            <option t-att-value="'all'" t-att-selected="active=='all'">All</option>
+                        </select>
+                        <input type="hidden" name="limit" t-att-value="pager and pager.get('limit') or 12"/>
+                        <button class="btn btn-primary" type="submit">Search</button>
+                    </div>
+                </form>
+
                 <div class="row">
                     <t t-if="not transporters">
                         <p>No transporters found.</p>
@@ -19,11 +34,38 @@
                                     </h5>
                                     <p class="card-text"><strong>Code:</strong> <t t-esc="trans.transporter_code or '—'"/></p>
                                     <p class="card-text"><strong>Contact:</strong> <t t-esc="trans.contact_number or '—'"/></p>
+                                    <t t-if="not trans.active">
+                                        <p class="text-muted"><small>Inactive</small></p>
+                                    </t>
                                 </div>
                             </div>
                         </div>
                     </t>
                 </div>
+
+                <!-- Pager -->
+                <t t-if="pager and pager.get('pages') &gt; 1">
+                    <nav aria-label="Transporters pagination">
+                        <ul class="pagination">
+                            <li class="page-item" t-att-class="'disabled' if pager.get('page') &lt;= 1 else ''">
+                                <a class="page-link" t-att-href="'/slot_booking/transporters?page=%s&amp;limit=%s&amp;q=%s&amp;active=%s' % (pager.get('page')-1, pager.get('limit'), q or '', active or '1')">Previous</a>
+                            </li>
+
+                            <t t-foreach="range(1, pager.get('pages') + 1)" t-as="p">
+                                <li class="page-item" t-att-class="'active' if p == pager.get('page') else ''">
+                                    <a class="page-link" t-att-href="'/slot_booking/transporters?page=%s&amp;limit=%s&amp;q=%s&amp;active=%s' % (p, pager.get('limit'), q or '', active or '1')">
+                                        <t t-esc="p"/>
+                                    </a>
+                                </li>
+                            </t>
+
+                            <li class="page-item" t-att-class="'disabled' if pager.get('page') &gt;= pager.get('pages') else ''">
+                                <a class="page-link" t-att-href="'/slot_booking/transporters?page=%s&amp;limit=%s&amp;q=%s&amp;active=%s' % (pager.get('page')+1, pager.get('limit'), q or '', active or '1')">Next</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </t>
+
             </div>
         </t>
     </template>
