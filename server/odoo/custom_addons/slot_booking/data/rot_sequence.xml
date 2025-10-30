@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="seq_res_rot" model="ir.sequence">
+        <field name="name">ROT Sequence</field>
+        <field name="code">res.rot</field>
+        <field name="prefix">ROT%(year)s-</field>
+        <field name="padding">4</field>
+        <field name="company_id" eval="False"/>
+    </record>
+</odoo>

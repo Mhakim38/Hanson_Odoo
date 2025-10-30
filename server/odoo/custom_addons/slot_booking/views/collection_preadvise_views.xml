@@ -1,0 +1,69 @@
+<odoo>
+    <record id="view_res_collection_preadvise_tree" model="ir.ui.view">
+        <field name="name">res.collection.preadvise.tree</field>
+        <field name="model">res.collection.preadvise</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="preadvise_number"/>
+                <field name="preadvise_date"/>
+                <field name="container_id"/>
+                <field name="transporter_id"/>
+                <field name="readiness_status"/>
+                <field name="publish_status"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_res_collection_preadvise_form" model="ir.ui.view">
+        <field name="name">res.collection.preadvise.form</field>
+        <field name="model">res.collection.preadvise</field>
+        <field name="arch" type="xml">
+            <form string="Collection Pre-advise">
+                <header>
+                    <button name="action_publish_to_forwarder" type="object" string="Publish" class="btn-primary"
+                            invisible="publish_status != 'draft'"/>
+                    <button name="action_start_monitoring" type="object" string="Start Monitoring" class="btn-secondary"
+                            invisible="publish_status != 'published'"/>
+                    <button name="action_mark_completed" type="object" string="Complete" class="btn-success"
+                            invisible="publish_status != 'monitored'"/>
+                    <field name="publish_status" widget="statusbar"/>
+                </header>
+
+                <sheet>
+                    <group>
+                        <group string="Pre-advise Info">
+                            <field name="preadvise_number" readonly="1"/>
+                            <field name="preadvise_date" readonly="1"/>
+                            <field name="depot_id"/>
+                            <field name="location"/>
+                        </group>
+                        <group string="Container Info">
+                            <field name="container_id"/>
+                            <field name="transporter_id"/>
+                            <field name="readiness_status"/>
+                        </group>
+                    </group>
+
+                    <group string="Remarks">
+                        <field name="remarks"/>
+                    </group>
+                    <group string="Monitoring">
+                        <field name="monitor_notes"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_res_collection_preadvise" model="ir.actions.act_window">
+        <field name="name">Collection Pre-advise</field>
+        <field name="res_model">res.collection.preadvise</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem id="menu_res_collection_preadvise"
+              name="Collection Pre-advise"
+              parent="menu_slot_booking_operations"
+              sequence="5"
+              action="action_res_collection_preadvise"/>
+</odoo>

@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Default Container Stages (match with maintenance.status) -->
+    <record id="stage_available" model="res.container.stage">
+        <field name="name">Available</field>
+        <field name="sequence">1</field>
+        <field name="fold">False</field>
+        <field name="color">10</field> <!-- green -->
+    </record>
+
+    <record id="stage_in_use" model="res.container.stage">
+        <field name="name">In Use</field>
+        <field name="sequence">2</field>
+        <field name="fold">False</field>
+        <field name="color">2</field> <!-- blue -->
+    </record>
+
+    <record id="stage_under_repair" model="res.container.stage">
+        <field name="name">Under Repair</field>
+        <field name="sequence">3</field>
+        <field name="fold">False</field>
+        <field name="color">3</field> <!-- orange -->
+    </record>
+
+    <record id="stage_out_of_service" model="res.container.stage">
+        <field name="name">Out of Service</field>
+        <field name="sequence">4</field>
+        <field name="fold">True</field>
+        <field name="color">1</field> <!-- red -->
+    </record>
+</odoo>

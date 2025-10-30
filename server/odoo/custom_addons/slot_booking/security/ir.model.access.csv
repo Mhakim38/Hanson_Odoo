@@ -1,0 +1,11 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_res_depot_user,res.depot user,model_res_depot,base.group_user,1,1,1,1
+access_res_yard_user,res.yard user,model_res_yard,base.group_user,1,1,1,1
+access_res_container_user,res.container user,model_res_container,base.group_user,1,1,1,1
+access_res_transporter_user,res.transporter user,model_res_transporter,base.group_user,1,1,1,1
+access_res_driver_user,res.driver user,model_res_driver,base.group_user,1,1,1,1
+access_res_vehicle_user,res.vehicle user,model_res_vehicle,base.group_user,1,1,1,1
+access_res_trailer_user,res.trailer user,model_res_trailer,base.group_user,1,1,1,1
+access_res_rot,res.rot,model_res_rot,,1,1,1,1
+access_res_collection_preadvise,res.collection.preadvise,model_res_collection_preadvise,,1,1,1,1
+access_res_gatepass,res.gatepass,model_res_gatepass,,1,1,1,1

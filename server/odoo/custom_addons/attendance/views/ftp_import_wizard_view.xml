@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_attendance_ftp_import_wizard_simple" model="ir.ui.view">
+        <field name="name">attendance.ftp.import.wizard.simple.form</field>
+        <field name="model">attendance.ftp.import.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Update Attendance Records">
+                <group>
+                    <separator string="Import Latest Attendance (Yesterday)" colspan="2"/>
+                    <div style="white-space: nowrap; font-size:14px; margin-top:10px;">
+                        This will automatically import the latest attendance file from FTP for
+                        <b>yesterday’s date</b>.
+                    </div>
+                </group>
+                <footer>
+                    <button name="action_update_attendance"
+                            string="Update"
+                            type="object"
+                            class="btn-primary btn-lg"
+                            icon="fa-upload"/>
+                    <button string="Cancel"
+                            class="btn-secondary"
+                            special="cancel"/>
+                </footer>
+
+                <!-- Hidden Result Field -->
+                <field name="import_result"
+                       nolabel="1"
+                       readonly="1"
+                       invisible="0"
+                       widget="text"
+                       colspan="2"
+                       height="150"/>
+            </form>
+        </field>
+    </record>
+
+    <!-- Simple Action -->
+    <record id="action_attendance_ftp_import_update" model="ir.actions.act_window">
+        <field name="name">Update Attendance</field>
+        <field name="res_model">attendance.ftp.import.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_attendance_ftp_import_wizard_simple"/>
+        <field name="target">new</field>
+    </record>
+
+    <!-- Menu Button -->
+    <menuitem id="menu_attendance_update"
+              name="Update Attendance"
+              parent="menu_attendance_root"
+              action="action_attendance_ftp_import_update"/>
+</odoo>
