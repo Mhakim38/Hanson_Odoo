@@ -80,4 +80,156 @@
               parent="menu_slot_booking_operations"
               sequence="1"
               action="action_res_collection_preadvise"/>
+
+    <!-- Website templates: Collection Pre-advise list & registration -->
+    <template id="collection_preadvises_template" name="Collection Pre-advise List">
+        <t t-call="website.layout">
+            <div class="container">
+                <h1>Collection Pre-advise</h1>
+
+                <form action="/slot_booking/preadvises" method="get" class="mb-3">
+                    <div class="input-group">
+                        <select name="publish_status" class="form-select" style="max-width:220px;">
+                            <option t-att-value="'all'" t-att-selected="publish_status=='all'">All</option>
+                            <option t-att-value="'draft'" t-att-selected="publish_status=='draft'">Draft</option>
+                            <option t-att-value="'published'" t-att-selected="publish_status=='published'">Published</option>
+                            <option t-att-value="'monitored'" t-att-selected="publish_status=='monitored'">Under Monitoring</option>
+                            <option t-att-value="'completed'" t-att-selected="publish_status=='completed'">Completed</option>
+                        </select>
+                        <input type="hidden" name="limit" t-att-value="pager and pager.get('limit') or 12"/>
+                        <button class="btn btn-primary" type="submit">Filter</button>
+                        <a class="btn btn-success ms-2" href="/slot_booking/preadvises/new">New Pre-advise</a>
+                    </div>
+                </form>
+
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Pre-advise #</th>
+                                <th>Date</th>
+                                <th>Depot</th>
+                                <th>Container</th>
+                                <th>Transporter</th>
+                                <th>Readiness</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-if="not preadvises">
+                                <tr><td colspan="7">No pre-advise records found.</td></tr>
+                            </t>
+                            <t t-foreach="preadvises" t-as="p">
+                                <tr>
+                                    <td><t t-esc="p.preadvise_number or '—'"/></td>
+                                    <td><t t-esc="(p.preadvise_date or '')"/></td>
+                                    <td><t t-esc="p.depot_id.name if p.depot_id else '—'"/></td>
+                                    <td>
+                                        <t t-if="p.line_ids">
+                                            <t t-esc="', '.join([ln.container_id.container_number for ln in p.line_ids if ln.container_id])"/>
+                                        </t>
+                                        <t t-else="">
+                                            <t t-esc="'—'"/>
+                                        </t>
+                                    </td>
+                                    <td><t t-esc="p.transporter_id.name.display_name if p.transporter_id and p.transporter_id.name else (p.transporter_id.name or '—')"/></td>
+                                    <td><t t-esc="dict(p._fields['readiness_status'].selection).get(p.readiness_status) if p.readiness_status else '—'"/></td>
+                                    <td><t t-esc="dict(p._fields['publish_status'].selection).get(p.publish_status) if p.publish_status else '—'"/></td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                </div>
+
+                <t t-if="pager and pager.get('pages') &gt; 1">
+                    <nav aria-label="Preadvises pagination">
+                        <ul class="pagination">
+                            <li class="page-item" t-att-class="'disabled' if pager.get('page') &lt;= 1 else ''">
+                                <a class="page-link" t-att-href="'/slot_booking/preadvises?page=%s&amp;limit=%s&amp;publish_status=%s' % (pager.get('page')-1, pager.get('limit'), publish_status or 'all')">Previous</a>
+                            </li>
+                            <t t-foreach="range(1, pager.get('pages') + 1)" t-as="pnum">
+                                <li class="page-item" t-att-class="'active' if pnum == pager.get('page') else ''">
+                                    <a class="page-link" t-att-href="'/slot_booking/preadvises?page=%s&amp;limit=%s&amp;publish_status=%s' % (pnum, pager.get('limit'), publish_status or 'all')">
+                                        <t t-esc="pnum"/>
+                                    </a>
+                                </li>
+                            </t>
+                            <li class="page-item" t-att-class="'disabled' if pager.get('page') &gt;= pager.get('pages') else ''">
+                                <a class="page-link" t-att-href="'/slot_booking/preadvises?page=%s&amp;limit=%s&amp;publish_status=%s' % (pager.get('page')+1, pager.get('limit'), publish_status or 'all')">Next</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </t>
+
+            </div>
+        </t>
+    </template>
+
+    <template id="collection_preadvise_registration_template" name="Collection Pre-advise Registration">
+        <t t-call="website.layout">
+            <div class="container">
+                <h1>Create Collection Pre-advise</h1>
+                <t t-if="error">
+                    <div class="alert alert-danger"><t t-esc="error"/></div>
+                </t>
+
+                <form action="/slot_booking/preadvises/new" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+
+                    <div class="mb-3">
+                        <label class="form-label">Depot</label>
+                        <select name="depot_id" class="form-select">
+                            <option value="">-- Select depot --</option>
+                            <t t-foreach="depots" t-as="d">
+                                <option t-att-value="d.id" t-att-selected="vals and vals.get('depot_id') and int(vals.get('depot_id'))==d.id"><t t-esc="d.name or ''"/></option>
+                            </t>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Location / Address</label>
+                        <input type="text" name="location" class="form-control" t-att-value="vals and vals.get('location') or ''"/>
+                    </div>
+
+                    <div class="mb-3 row">
+                        <div class="col-md-6">
+                            <label class="form-label">Transporter</label>
+                            <select name="transporter_id" class="form-select">
+                                <option value="">-- Select transporter --</option>
+                                <t t-foreach="transporters" t-as="t">
+                                    <option t-att-value="t.id" t-att-selected="vals and vals.get('transporter_id') and int(vals.get('transporter_id'))==t.id"><t t-esc="t.name.display_name if t.name else (t.name or '')"/></option>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Container</label>
+                            <select name="container_id" class="form-select" required="required">
+                                <option value="">-- Select container --</option>
+                                <t t-foreach="containers" t-as="c">
+                                    <option t-att-value="c.id" t-att-selected="vals and vals.get('container_id') and int(vals.get('container_id'))==c.id"><t t-esc="c.container_number or ''"/></option>
+                                </t>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Readiness Status</label>
+                        <select name="readiness_status" class="form-select">
+                            <option t-att-value="'pending'" t-att-selected="vals and vals.get('readiness_status')=='pending'">Pending</option>
+                            <option t-att-value="'ready'" t-att-selected="vals and vals.get('readiness_status')=='ready'">Ready for Collection</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Remarks</label>
+                        <textarea name="remarks" class="form-control" rows="4"><t t-esc="vals and vals.get('remarks') or ''"/></textarea>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Create Pre-advise</button>
+                    <a class="btn btn-secondary ms-2" href="/slot_booking/preadvises">Cancel</a>
+                </form>
+            </div>
+        </t>
+    </template>
+
 </odoo>
