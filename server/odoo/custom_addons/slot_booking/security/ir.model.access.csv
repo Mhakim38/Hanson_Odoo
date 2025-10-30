@@ -9,3 +9,8 @@ access_res_trailer_user,res.trailer user,model_res_trailer,base.group_user,1,1,1
 access_res_rot,res.rot,model_res_rot,,1,1,1,1
 access_res_collection_preadvise,res.collection.preadvise,model_res_collection_preadvise,,1,1,1,1
 access_res_gatepass,res.gatepass,model_res_gatepass,,1,1,1,1
+access_res_forwarder,res.forwarder,model_res_forwarder,,1,1,1,1
+access_res_collection_preadvise_line,res.collection.preadvise.line,model_res_collection_preadvise_line,,1,1,1,1
+
+
+

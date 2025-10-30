@@ -33,6 +33,7 @@
         "views/rot_views.xml",
         "views/collection_preadvise_views.xml",
         "views/gatepass_views.xml",
+        "views/forwarder_views.xml",
 
         # Menus last (they reference the actions above)
         "views/menu.xml",

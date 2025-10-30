@@ -67,6 +67,6 @@
     <menuitem id="menu_res_gatepass"
               name="Gate Pass Application"
               parent="menu_slot_booking_operations"
-              sequence="10"
+              sequence="2"
               action="action_res_gatepass"/>
 </odoo>
