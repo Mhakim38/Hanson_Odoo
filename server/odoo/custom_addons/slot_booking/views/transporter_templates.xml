@@ -14,7 +14,7 @@
                                 <div class="card-body">
                                     <h5 class="card-title">
                                         <a t-att-href="'/slot_booking/transporters/' + str(trans.id)">
-                                            <t t-esc="trans.name"/>
+                                            <t t-esc="trans.name.display_name if trans.name else ''"/>
                                         </a>
                                     </h5>
                                     <p class="card-text"><strong>Code:</strong> <t t-esc="trans.transporter_code or '—'"/></p>
@@ -32,7 +32,7 @@
         <t t-call="website.layout">
             <div class="container">
                 <a href="/slot_booking/transporters">&#8592; Back to list</a>
-                <h1><t t-esc="transporter.name"/></h1>
+                <h1><t t-esc="transporter.name.display_name if transporter.name else ''"/></h1>
                 <p><strong>Code:</strong> <t t-esc="transporter.transporter_code or '—'"/></p>
                 <p><strong>Contact:</strong> <t t-esc="transporter.contact_number or '—'"/></p>
                 <p><strong>Email:</strong> <t t-esc="transporter.email or '—'"/></p>
@@ -41,7 +41,10 @@
                     <p>No drivers recorded.</p>
                 </t>
                 <t t-foreach="transporter.driver_ids" t-as="d">
-                    <div><t t-esc="d.name"/> — <t t-esc="d.driver_license_no or '—'"/></div>
+                    <div>
+                        <t t-esc="d.name.display_name if d.name else ''"/>
+                        <t t-if="d.driver_license_no"> — <t t-esc="d.driver_license_no"/></t>
+                    </div>
                 </t>
 
                 <h3>Vehicles</h3>
