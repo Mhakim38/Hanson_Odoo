@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- List (Tree) View -->
+    <record id="view_res_driver_tree" model="ir.ui.view">
+        <field name="name">res.driver.tree</field>
+        <field name="model">res.driver</field>
+        <field name="arch" type="xml">
+            <tree string="Drivers">
+                <field name="driver_image" widget="image"/>
+                <field name="name"/>
+                <field name="transporter_id"/>
+                <field name="driver_license_no"/>
+                <field name="driver_license_expiry"/>
+                <field name="driver_ic"/>
+                <field name="active"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_res_driver_form" model="ir.ui.view">
+        <field name="name">res.driver.form</field>
+        <field name="model">res.driver</field>
+        <field name="arch" type="xml">
+            <form string="Driver">
+                <header>
+                    <!-- Optional: Smart button to open linked contact -->
+                    <button name="%(base.action_partner_form)d"
+                            type="action"
+                            string="View Contact"
+                            icon="fa-address-card"
+                            context="{'id': active_id, 'model': 'res.partner'}"/>
+                </header>
+
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="transporter_id"/>
+                            <field name="name"/>
+                            <field name="driver_license_no"/>
+                            <field name="driver_license_expiry"/>
+                            <field name="driver_ic"/>
+                            <field name="active"/>
+                        </group>
+
+                        <group>
+                            <!-- Driver photo (self-contained, synced to Contact) -->
+                            <field name="driver_image" widget="image"/>
+                            <field name="driver_license_image" widget="image"/>
+                            <field name="driver_ic_image" widget="image"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_res_driver" model="ir.actions.act_window">
+        <field name="name">Drivers</field>
+        <field name="res_model">res.driver</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

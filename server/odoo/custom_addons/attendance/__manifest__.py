@@ -1,0 +1,21 @@
+{
+    'name': 'Attendance',
+    'version': '1.3.6',
+    'summary': 'Simple attendance records (custom)',
+    'description': 'Attendance module (custom) - records clock in/out, department, employee, remarks and computed total hours.',
+    'category': 'Human Resources',
+    'author': 'Alif Hykal',
+    'depends': ['base', 'hr'],
+    'data': [
+        'security/security.xml',
+        'security/ir.model.access.csv',
+        'security/attendance_record_rules.xml',
+        'views/attendance_views.xml',
+        'views/hr_employee_inherit_views.xml',
+        'views/ftp_import_wizard_view.xml',
+        'data/ir_cron_auto_import_attendance.xml',
+    ],
+    'installable': True,
+    'application': False,
+    'auto_install': False,
+}

@@ -1,0 +1,72 @@
+<odoo>
+    <record id="view_res_gatepass_tree" model="ir.ui.view">
+        <field name="name">res.gatepass.tree</field>
+        <field name="model">res.gatepass</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="gatepass_number"/>
+                <field name="application_date"/>
+                <field name="container_id"/>
+                <field name="haulier_id"/>
+                <field name="status"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_res_gatepass_form" model="ir.ui.view">
+        <field name="name">res.gatepass.form</field>
+        <field name="model">res.gatepass</field>
+        <field name="arch" type="xml">
+            <form string="Gate Pass Application">
+                <header>
+                    <button name="action_submit" type="object" string="Submit" class="btn-primary"
+                            invisible="status != 'draft'"/>
+                    <button name="action_validate" type="object" string="Validate" class="btn-secondary"
+                            invisible="status != 'submitted'"/>
+                    <button name="action_approve" type="object" string="Approve" class="btn-success"
+                            invisible="status != 'under_validation'"/>
+                    <button name="action_reject" type="object" string="Reject" class="btn-danger"
+                            invisible="status != 'under_validation'"/>
+                    <field name="status" widget="statusbar"/>
+                </header>
+
+                <sheet>
+                    <group>
+                        <group string="Application Info">
+                            <field name="gatepass_number" readonly="1"/>
+                            <field name="application_date" readonly="1"/>
+                            <field name="applicant_name"/>
+                            <field name="preadvise_id"/>
+                        </group>
+                        <group string="Container / Haulier Info">
+                            <field name="container_id"/>
+                            <field name="haulier_id"/>
+                            <field name="vehicle_id"/>
+                            <field name="driver_id"/>
+                        </group>
+                    </group>
+
+                    <group string="Attachments">
+                        <field name="attachment_ids" widget="many2many_binary"/>
+                    </group>
+
+                    <group string="Remarks">
+                        <field name="remarks"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_res_gatepass" model="ir.actions.act_window">
+        <field name="name">Gate Pass Application</field>
+        <field name="res_model">res.gatepass</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <menuitem id="menu_res_gatepass"
+              name="Gate Pass Application"
+              parent="menu_slot_booking_operations"
+              sequence="10"
+              action="action_res_gatepass"/>
+</odoo>

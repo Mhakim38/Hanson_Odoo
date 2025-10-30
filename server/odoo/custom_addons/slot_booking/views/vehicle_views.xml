@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_res_vehicle_tree" model="ir.ui.view">
+        <field name="name">res.vehicle.tree</field>
+        <field name="model">res.vehicle</field>
+        <field name="arch" type="xml">
+            <tree string="Vehicles">
+                <field name="name"/>
+                <field name="vehicle_plate_no"/>
+                <field name="transporter_id"/>
+                <field name="vehicle_type"/>
+                <field name="vehicle_capacity"/>
+                <field name="insurance_expiry"/>
+                <field name="vehicle_roadtax"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_res_vehicle_form" model="ir.ui.view">
+        <field name="name">res.vehicle.form</field>
+        <field name="model">res.vehicle</field>
+        <field name="arch" type="xml">
+            <form string="Vehicle">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="vehicle_plate_no"/>
+                            <field name="transporter_id" readonly="transporter_id != False"/>
+                            <field name="vehicle_type"/>
+                            <field name="vehicle_capacity"/>
+                        </group>
+                        <group>
+                            <field name="insurance_expiry"/>
+                            <field name="vehicle_roadtax"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_res_vehicle" model="ir.actions.act_window">
+        <field name="name">Vehicles</field>
+        <field name="res_model">res.vehicle</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

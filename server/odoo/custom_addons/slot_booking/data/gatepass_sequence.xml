@@ -1,0 +1,8 @@
+<odoo>
+    <record id="seq_res_gatepass" model="ir.sequence">
+        <field name="name">Gate Pass Sequence</field>
+        <field name="code">res.gatepass</field>
+        <field name="prefix">GP%(year)s-</field>
+        <field name="padding">4</field>
+    </record>
+</odoo>

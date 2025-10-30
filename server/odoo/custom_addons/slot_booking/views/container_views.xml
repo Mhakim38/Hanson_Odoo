@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ========================== -->
+    <!--  Tree (List) View          -->
+    <!-- ========================== -->
+    <record id="view_res_container_tree" model="ir.ui.view">
+        <field name="name">res.container.tree</field>
+        <field name="model">res.container</field>
+        <field name="arch" type="xml">
+            <tree string="Container Registry" default_order="container_number asc">
+                <field name="container_number" string="Container No."/>
+                <field name="owner_code"/>
+                <field name="container_owner"/>
+                <field name="container_type"/>
+                <field name="size"/>
+                <field name="stage_id"/>
+                <!--field name="current_loc"/-->
+                <field name="max_gross_weight" widget="float" string="Max Gross (kg)"/>
+                <field name="tare_weight" widget="float" string="Tare (kg)"/>
+                <field name="payload_capacity" widget="float" string="Payload (kg)"/>
+                <field name="last_inspection_date"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- ========================== -->
+    <!--  Form View                 -->
+    <!-- ========================== -->
+    <record id="view_res_container_form" model="ir.ui.view">
+        <field name="name">res.container.form</field>
+        <field name="model">res.container</field>
+        <field name="arch" type="xml">
+            <form string="Container Details">
+                <header>
+                    <button name="%(action_res_container_maintenance)d"
+                            type="action"
+                            string="Maintenance"
+                            class="oe_stat_button"
+                            icon="fa-wrench"/>
+                    <button name="%(action_res_container_journey)d"
+                            type="action"
+                            string="Journey"
+                            class="oe_stat_button"
+                            icon="fa-road"/>
+                    <field name="stage_id" widget="statusbar" clickable="False"/>
+                </header>
+
+                <sheet>
+                    <group>
+                        <group string="Identification">
+                            <field name="container_number"/>
+                            <field name="owner_code"/>
+                            <field name="equipment_category"/>
+                            <field name="serial_number"/>
+                            <field name="check_digit"/>
+                        </group>
+
+                        <group string="Classification">
+                            <field name="iso_size_type_code"/>
+                            <field name="container_type"/>
+                            <field name="size"/>
+                        </group>
+                    </group>
+
+                    <group string="Weight and Capacity">
+                        <group>
+                            <field name="max_gross_weight"/>
+                            <field name="tare_weight"/>
+                            <field name="payload_capacity"/>
+                        </group>
+                        <group>
+                            <!--field name="seal_number"/-->
+                            <!--field name="current_loc"/-->
+                            <field name="last_inspection_date"/>
+                        </group>
+                    </group>
+
+                    <group string="Ownership and Remarks">
+                        <field name="container_owner"/>
+                        <field name="remarks"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ========================== -->
+    <!--  Action                    -->
+    <!-- ========================== -->
+    <record id="action_res_container" model="ir.actions.act_window">
+        <field name="name">Containers</field>
+        <field name="res_model">res.container</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+</odoo>

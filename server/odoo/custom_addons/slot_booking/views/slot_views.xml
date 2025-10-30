@@ -1,0 +1,38 @@
+<odoo>
+    <record id="view_res_slot_tree" model="ir.ui.view">
+        <field name="name">res.slot.tree</field>
+        <field name="model">res.slot</field>
+        <field name="arch" type="xml">
+            <tree string="Slot Configurations">
+                <field name="slot_id"/>
+                <field name="slot_time"/>
+                <field name="criteria_id"/>
+                <field name="gate"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_res_slot_form" model="ir.ui.view">
+        <field name="name">res.slot.form</field>
+        <field name="model">res.slot</field>
+        <field name="arch" type="xml">
+            <form string="Slot Configuration">
+                <sheet>
+                    <group>
+                        <field name="slot_id"/>
+                        <field name="slot_time"/>
+                        <field name="criteria_id"/>
+                        <field name="gate"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_res_slot" model="ir.actions.act_window">
+        <field name="name">Slot</field>
+        <field name="res_model">res.slot</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+</odoo>

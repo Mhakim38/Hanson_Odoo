@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Root Slot Booking Menu -->
+    <menuitem id="menu_slot_booking_root" name="Slot Booking" sequence="10"/>
+
+    <!-- Masters -->
+    <menuitem id="menu_slot_booking_masters" name="Masters"
+              parent="menu_slot_booking_root" sequence="10"/>
+
+    <!-- Operations -->
+    <menuitem id="menu_slot_booking_operations" name="Operations"
+              parent="menu_slot_booking_root" sequence="20"/>
+
+    <!-- Masters Section -->
+    <menuitem id="menu_res_depot" name="Depots"
+              parent="menu_slot_booking_masters" action="action_res_depot"
+              sequence="10"/>
+
+    <menuitem id="menu_res_yard" name="Yards"
+              parent="menu_slot_booking_masters" action="action_res_yard"
+              sequence="20"/>
+
+    <!-- Operations Section -->
+    <menuitem id="menu_res_container" name="Containers"
+              parent="menu_slot_booking_operations" action="action_res_container"
+              sequence="10"/>
+
+    <menuitem id="menu_res_transporter" name="Transporters"
+              parent="menu_slot_booking_operations" action="action_res_transporter"
+              sequence="20"/>
+
+    <!-- ============================= -->
+    <!-- BOOKING LIST MAIN MENU        -->
+    <!-- ============================= -->
+    <menuitem id="menu_slot_booking_booking_root"
+              name="Booking List"
+              parent="menu_slot_booking_root"
+              sequence="30"/>
+
+    <!-- Main Booking List Action -->
+    <menuitem id="menu_res_booking_list"
+              name="Booking List"
+              parent="menu_slot_booking_booking_root"
+              action="action_res_booking_list"
+              sequence="10"/>
+
+    <!-- ============================= -->
+    <!-- SETTINGS SUBMENU              -->
+    <!-- ============================= -->
+    <menuitem id="menu_booking_settings_root"
+              name="Settings"
+              parent="menu_slot_booking_booking_root"
+              sequence="20"/>
+
+    <menuitem id="menu_res_slot"
+              name="Slots"
+              parent="menu_booking_settings_root"
+              action="action_res_slot"
+              sequence="10"/>
+
+    <menuitem id="menu_res_criteria"
+              name="Criteria"
+              parent="menu_booking_settings_root"
+              action="action_res_criteria"
+              sequence="20"/>
+
+
+</odoo>
