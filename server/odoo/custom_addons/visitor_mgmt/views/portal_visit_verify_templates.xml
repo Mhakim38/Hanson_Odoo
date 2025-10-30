@@ -16,12 +16,6 @@
                 <p><strong>Host:</strong> <t t-esc="visit.host_id.name"/></p>
                 <p><strong>Unit:</strong> <t t-esc="visit.unit_id.display_name"/></p>
               </div>
-              <div class="col-md-6 text-center">
-                <h5>Badge / QR Info</h5>
-                <p><strong>Badge No:</strong> <t t-esc="visit.badge_no or '-'"/></p>
-                <p><strong>QR Token:</strong> <t t-esc="visit.qr_token or '-'"/></p>
-                <img t-if="visit.qr_image" t-att-src="'data:image/png;base64,%s' % (visit.qr_image)" class="img-fluid rounded shadow mt-3" style="max-width:200px;"/>
-              </div>
             </div>
             <hr/>
             <div class="text-center">
