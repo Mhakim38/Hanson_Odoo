@@ -39,6 +39,12 @@ class CollectionPreadvise(models.Model):
     published_date = fields.Datetime(string="Published Date", readonly=True)
     monitor_notes = fields.Text(string="Monitoring Notes")
 
+    line_ids = fields.One2many(
+        "res.collection.preadvise.line",
+        "preadvise_id",
+        string="Pre-Advise Lines"
+    )
+
     def action_publish_to_forwarder(self):
         for rec in self:
             rec.publish_status = "published"

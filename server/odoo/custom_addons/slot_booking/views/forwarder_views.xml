@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tree View -->
+    <record id="view_res_forwarder_tree" model="ir.ui.view">
+        <field name="name">res.forwarder.tree</field>
+        <field name="model">res.forwarder</field>
+        <field name="arch" type="xml">
+            <tree string="Forwarders">
+                <!--field name="forwarder_code"/-->
+                <field name="name"/>
+                <field name="contact_number"/>
+                <field name="email"/>
+                <field name="company_address"/>
+                <field name="active"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_res_forwarder_form" model="ir.ui.view">
+        <field name="name">res.forwarder.form</field>
+        <field name="model">res.forwarder</field>
+        <field name="arch" type="xml">
+            <form string="Forwarder">
+                <sheet>
+                    <group>
+                        <group string="Forwarder Info">
+                            <!--field name="forwarder_code"/-->
+                            <field name="name"/>
+                            <field name="contact_number"/>
+                        </group>
+                        <group string="Contact Info">
+                            <field name="email"/>
+                            <field name="company_address"/>
+                            <field name="active"/>
+                        </group>
+                    </group>
+
+                    <group string="Remarks">
+                        <field name="remarks"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_res_forwarder" model="ir.actions.act_window">
+        <field name="name">Forwarders</field>
+        <field name="res_model">res.forwarder</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Menu Item -->
+    <menuitem id="menu_res_forwarder"
+              name="Forwarders"
+              parent="menu_slot_booking_masters"
+              action="action_res_forwarder"
+              sequence="25"/>
+</odoo>

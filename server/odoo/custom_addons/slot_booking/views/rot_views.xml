@@ -85,6 +85,6 @@
     <menuitem id="menu_res_rot"
               name="ROT"
               parent="menu_slot_booking_operations"
-              sequence="25"
+              sequence="3"
               action="action_res_rot"/>
 </odoo>
