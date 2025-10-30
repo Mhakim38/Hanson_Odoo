@@ -1,4 +1,4 @@
-    <odoo>
+<odoo>
   <template id="guard_visitors_page" name="Guard Visitor List">
     <t t-call="portal.portal_layout">
       <div class="container my-4">
@@ -63,13 +63,45 @@
                   <td t-esc="v.unit_id.display_name or '-'"/>
                   <td t-esc="v.purpose or '-'"/>
                   <td><t t-esc="v.schedule_from"/> → <t t-esc="v.schedule_to"/></td>
-                  <td><t t-esc="dict(v._fields['state'].selection).get(v.state, v.state or '-')"/></td>
+
+                  <!-- Status td -->
                   <td>
+                    <t t-set="state_label" t-value="dict(v._fields['state'].selection).get(v.state, v.state or '-')"/>
                     <t t-if="v.state in ['draft', 'scheduled']">
-                      <a t-att-href="'/guard/visitors/checkin/%d' % v.id" class="btn btn-success btn-sm btn-checkin">Check-in</a>
+                      <span class="badge btn btn-dark" t-esc="state_label"/>
                     </t>
-                    <t t-if="v.state == 'check_in'">
-                      <a t-att-href="'/guard/visitors/checkout/%d' % v.id" class="btn btn-warning btn-sm btn-checkout">Check-out</a>
+                    <t t-elif="v.state == 'check_in'">
+                      <span class="badge bg-success" t-esc="state_label"/>
+                    </t>
+                    <t t-elif="v.state == 'check_out'">
+                      <span class="badge bg-danger" t-esc="state_label"/>
+                    </t>
+                    <t t-else="">
+                      <span class="badge bg-light text-dark" t-esc="state_label"/>
+                    </t>
+                  </td>
+
+                    <!-- Action td -->
+                  <td>
+                    <t t-if="v.state == 'check_out'">
+                      <span class="text-muted small">No Action</span>
+                    </t>
+                    <t t-else="">
+                      <a t-att-href="'/guard/visitors/checkin/%d' % v.id if v.state != 'check_in' else False"
+                         t-att-class="'btn btn-success btn-sm btn-checkin' + (' disabled' if v.state == 'check_in' else '')"
+                         t-att-title="'Check in'"
+                         t-att-aria-disabled="'true' if v.state == 'check_in' else False">
+                        <span aria-hidden="true">✓</span>
+                        <span class="visually-hidden">Check-in</span>
+                      </a>
+                      <!-- Checkout: only clickable when already checked-in; disabled when scheduled -->
+                      <a t-att-href="'/guard/visitors/checkout/%d' % v.id if v.state == 'check_in' else False"
+                         t-att-class="'btn btn-danger btn-sm btn-checkout ms-1' + (' disabled' if v.state == 'scheduled' else '')"
+                         t-att-title="'Check out'"
+                         t-att-aria-disabled="'true' if v.state == 'scheduled' else False">
+                        <span aria-hidden="true">⤴</span>
+                        <span class="visually-hidden">Check-out</span>
+                      </a>
                     </t>
                   </td>
                 </tr>
@@ -88,14 +120,48 @@
                 <p class="mb-1"><strong>Unit:</strong> <t t-esc="v.unit_id.display_name or '-'"/></p>
                 <p class="mb-1"><strong>Purpose:</strong> <t t-esc="v.purpose or '-'"/></p>
                 <p class="mb-1"><strong>Schedule:</strong> <t t-esc="v.schedule_from"/> → <t t-esc="v.schedule_to"/></p>
-                <p><strong>Status:</strong> <t t-esc="dict(v._fields['state'].selection).get(v.state, v.state or '-')"/></p>
 
-                <t t-if="v.state in ['draft', 'scheduled']">
-                  <a t-att-href="'/guard/visitors/checkin/%d' % v.id" class="btn btn-success btn-sm w-100 mb-1 btn-checkin">Check-in</a>
+                <!-- Mobile status: badges -->
+                <p><strong>Status:</strong>
+                  <t t-set="m_state_label" t-value="dict(v._fields['state'].selection).get(v.state, v.state or '-')"/>
+                  <t t-if="v.state in ['draft', 'scheduled']">
+                    <span class="badge btn btn-dark" t-esc="m_state_label"/>
+                  </t>
+                  <t t-elif="v.state == 'check_in'">
+                    <span class="badge bg-success" t-esc="m_state_label"/>
+                  </t>
+                  <t t-elif="v.state == 'check_out'">
+                    <span class="badge bg-danger" t-esc="m_state_label"/>
+                  </t>
+                  <t t-else="">
+                    <span class="badge bg-light text-dark" t-esc="m_state_label"/>
+                  </t>
+                </p>
+
+                <!-- Mobile actions: both buttons visible (full width) OR No Action -->
+                <t t-if="v.state == 'check_out'">
+                  <div class="text-muted small">No Action</div>
                 </t>
-                <t t-if="v.state == 'check_in'">
-                  <a t-att-href="'/guard/visitors/checkout/%d' % v.id" class="btn btn-warning btn-sm w-100 mb-1 btn-checkout">Check-out</a>
+                <t t-else="">
+                  <div class="d-flex gap-2">
+                    <a t-att-href="'/guard/visitors/checkin/%d' % v.id if v.state != 'check_in' else False"
+                       t-att-class="'btn btn-success btn-sm btn-checkin flex-fill' + (' disabled' if v.state == 'check_in' else '')"
+                       t-att-title="'Check in'"
+                       t-att-aria-disabled="'true' if v.state == 'check_in' else False">
+                      <span aria-hidden="true">✓</span>
+                      <span class="visually-hidden">Check-in</span>
+                    </a>
+                    <!-- Mobile checkout: clickable only when check_in, disabled when scheduled -->
+                    <a t-att-href="'/guard/visitors/checkout/%d' % v.id if v.state == 'check_in' else False"
+                       t-att-class="'btn btn-danger btn-sm btn-checkout flex-fill' + (' disabled' if v.state == 'scheduled' else '')"
+                       t-att-title="'Check out'"
+                       t-att-aria-disabled="'true' if v.state == 'scheduled' else False">
+                      <span aria-hidden="true">⤴</span>
+                      <span class="visually-hidden">Check-out</span>
+                    </a>
+                  </div>
                 </t>
+
               </div>
             </div>
           </t>
@@ -103,18 +169,23 @@
       </div>
 
       <!-- ✅ AJAX Logic -->
-      <script>
+      <script type="text/javascript"><![CDATA[
           document.addEventListener('DOMContentLoaded', function() {
 
             async function handleClick(e) {
               e.preventDefault();
-              const btn = e.target;
+              const btn = e.currentTarget;
+              // Ignore clicks on disabled-style anchors or anchors without href
+              if (btn.classList.contains('disabled') || !btn.getAttribute('href')) {
+                return;
+              }
               const url = btn.getAttribute('href');
               const card = btn.closest('.card, tr');
 
-              btn.disabled = true;
-              const originalText = btn.textContent;
-              btn.textContent = 'Processing...';
+              btn.classList.add('disabled');
+              btn.setAttribute('aria-disabled', 'true');
+              const originalHTML = btn.innerHTML;
+              btn.innerHTML = '<span aria-hidden="true">...</span>';
 
               try {
                 const response = await fetch(url, { method: 'GET' });
@@ -122,40 +193,73 @@
 
                 if (!result.success) {
                   alert(result.message || 'Error processing request');
-                  btn.disabled = false;
-                  btn.textContent = originalText;
+                  btn.classList.remove('disabled');
+                  btn.removeAttribute('aria-disabled');
+                  btn.innerHTML = originalHTML;
                   return;
                 }
 
-                // ✅ UI Update
+                // UI Update logic
                 if (btn.classList.contains('btn-checkin')) {
-                  // Switch to checkout state
-                  btn.classList.remove('btn-success', 'btn-checkin');
-                  btn.classList.add('btn-warning', 'btn-checkout');
-                  btn.textContent = 'Check-out';
-                  btn.setAttribute('href', url.replace('checkin', 'checkout'));
+                  // Mark as checked in: update badge and toggle buttons
                   updateStatus(card, 'Checked In', 'bg-success');
 
-                } else if (btn.classList.contains('btn-checkout')) {
-                  // After checkout, remove button
-                  btn.remove();
+                  // disable checkin anchor (remove href and mark disabled), show/enable checkout anchor
+                  const actionCell = card.querySelector('td:last-child') || card.querySelector('.d-flex');
+                  if (actionCell) {
+                    const checkinBtn = actionCell.querySelector('a.btn-checkin');
+                    const checkoutBtn = actionCell.querySelector('a.btn-checkout');
+                    if (checkinBtn) {
+                      checkinBtn.classList.add('disabled', 'opacity-75');
+                      checkinBtn.setAttribute('aria-disabled', 'true');
+                      try { checkinBtn.removeAttribute('href'); } catch (err) {}
+                    }
+                    if (checkoutBtn) {
+                      // If checkout was rendered without href (scheduled state), set it now using the visit id from the checkin URL
+                      try {
+                        if (!checkoutBtn.getAttribute('href')) {
+                          const idMatch = url.match(/\/checkin\/(\d+)/);
+                          if (idMatch && idMatch[1]) {
+                            checkoutBtn.setAttribute('href', '/guard/visitors/checkout/' + idMatch[1]);
+                          }
+                        }
+                      } catch (err) { /* ignore */ }
+                      checkoutBtn.classList.remove('d-none', 'disabled');
+                      checkoutBtn.removeAttribute('aria-disabled');
+                      checkoutBtn.disabled = false;
+                    }
+                  }
 
-                  // Add “No Action” for desktop
+                } else if (btn.classList.contains('btn-checkout')) {
+                  // After checkout, remove/hide both buttons and show "No Action"
                   const actionCell = card.querySelector('td:last-child');
                   if (actionCell) {
+                    actionCell.innerHTML = '';
                     const noAction = document.createElement('span');
                     noAction.className = 'text-muted small';
                     noAction.textContent = 'No Action';
                     actionCell.appendChild(noAction);
+                  } else {
+                    // mobile: hide buttons container
+                    const actions = card.querySelectorAll('a.btn-checkin, a.btn-checkout');
+                    actions.forEach(a => a.remove());
+                    const wrapper = card.querySelector('.card-body');
+                    if (wrapper) {
+                      const noAction = document.createElement('div');
+                      noAction.className = 'text-muted small mt-2';
+                      noAction.textContent = 'No Action';
+                      wrapper.appendChild(noAction);
+                    }
                   }
 
-                  updateStatus(card, 'Checked Out', 'bg-warning text-dark');
+                  updateStatus(card, 'Checked Out', 'bg-danger');
                 }
 
               } catch (err) {
                 alert('Error: ' + err.message);
-                btn.disabled = false;
-                btn.textContent = originalText;
+                btn.classList.remove('disabled');
+                btn.removeAttribute('aria-disabled');
+                btn.innerHTML = originalHTML;
               }
             }
 
@@ -164,7 +268,7 @@
               // 🖥️ Desktop table (td:nth-child(6) = Status column)
               const statusCell = card.querySelector('td:nth-child(6)');
               if (statusCell) {
-                statusCell.innerHTML = `<span class="badge ${newClass}">${newText}</span>`;
+                statusCell.innerHTML = '<span class="badge ' + newClass + '">' + newText + '</span>';
                 return;
               }
 
@@ -172,7 +276,8 @@
               const pTags = card.querySelectorAll('p');
               pTags.forEach(p => {
                 if (p.textContent.includes('Status')) {
-                  let span = p.querySelector('span');
+                  // replace existing badge or append
+                  let span = p.querySelector('span.badge');
                   if (!span) {
                     span = document.createElement('span');
                     p.appendChild(span);
@@ -183,15 +288,12 @@
               });
             }
 
-            // Attach events to all buttons
-            document.querySelectorAll('a.btn-success, a.btn-warning').forEach(btn => {
-              btn.classList.add(
-                btn.textContent.includes('Check-in') ? 'btn-checkin' : 'btn-checkout'
-              );
+            // Attach events to all checkin/checkout buttons
+            document.querySelectorAll('a.btn-checkin, a.btn-checkout').forEach(btn => {
               btn.addEventListener('click', handleClick);
             });
           });
-        </script>
+      ]]></script>
 
 
 
