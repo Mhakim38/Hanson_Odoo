@@ -45,7 +45,8 @@ class SlotBookingROTController(http.Controller):
             vehicles = request.env['res.vehicle'].sudo().search([], order='name asc')
             drivers = request.env['res.driver'].sudo().search([], order='name asc')
             trailers = request.env['res.trailer'].sudo().search([], order='name asc')
-            containers = request.env['res.container'].sudo().search([], order='name asc')
+            # The res.container model uses 'container_number' as the record name; order by that field
+            containers = request.env['res.container'].sudo().search([], order='container_number asc')
             return request.render('slot_booking.rot_registration_template', {
                 'transporters': transporters,
                 'vehicles': vehicles,
@@ -75,7 +76,7 @@ class SlotBookingROTController(http.Controller):
             vehicles = request.env['res.vehicle'].sudo().search([], order='name asc')
             drivers = request.env['res.driver'].sudo().search([], order='name asc')
             trailers = request.env['res.trailer'].sudo().search([], order='name asc')
-            containers = request.env['res.container'].sudo().search([], order='name asc')
+            containers = request.env['res.container'].sudo().search([], order='container_number asc')
             return request.render('slot_booking.rot_registration_template', {
                 'transporters': transporters,
                 'vehicles': vehicles,
@@ -85,4 +86,3 @@ class SlotBookingROTController(http.Controller):
                 'error': str(e),
                 'vals': vals,
             })
-

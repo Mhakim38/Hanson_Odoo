@@ -44,7 +44,7 @@
                                     <td><t t-esc="(r.rot_date or '')"/></td>
                                     <td><t t-esc="r.gate_pass_ref or '—'"/></td>
                                     <td><t t-esc="r.transporter_id.name.display_name if r.transporter_id and r.transporter_id.name else (r.transporter_id.name or '—')"/></td>
-                                    <td><t t-esc="r.container_id.name if r.container_id else '—'"/></td>
+                                    <td><t t-esc="r.container_id.container_number if r.container_id else '—'"/></td>
                                     <td><t t-esc="dict(r._fields['status'].selection).get(r.status) if r.status else '—'"/></td>
                                 </tr>
                             </t>
@@ -84,7 +84,9 @@
                 <t t-if="error">
                     <div class="alert alert-danger"><t t-esc="error"/></div>
                 </t>
+                <!-- Include CSRF token for POST submissions to avoid "Session expired (invalid CSRF token)" -->
                 <form action="/slot_booking/rots/new" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
                     <div class="mb-3">
                         <label class="form-label">Gate Pass Reference</label>
                         <input type="text" name="gate_pass_ref" class="form-control" t-att-value="vals and vals.get('gate_pass_ref') or ''" required="required"/>
@@ -140,7 +142,7 @@
                             <select name="container_id" class="form-select">
                                 <option value="">-- Select container --</option>
                                 <t t-foreach="containers" t-as="c">
-                                    <option t-att-value="c.id" t-att-selected="vals and vals.get('container_id') and int(vals.get('container_id'))==c.id"><t t-esc="c.name or ''"/></option>
+                                    <option t-att-value="c.id" t-att-selected="vals and vals.get('container_id') and int(vals.get('container_id'))==c.id"><t t-esc="c.container_number or ''"/></option>
                                 </t>
                             </select>
                         </div>
