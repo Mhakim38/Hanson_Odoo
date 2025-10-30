@@ -88,6 +88,9 @@ class Container(models.Model):
         "container_id",
         string="Journey Records"
     )
+    depot_id = fields.Many2one("res.depot", string="Depot")
+    yard_id = fields.Many2one("res.yard", string="Yard")
+    block = fields.Many2one("res.yard", string="Block")
 
     # ========== COMPUTE STAGE ==========
     @api.depends('maintenance_ids.status')

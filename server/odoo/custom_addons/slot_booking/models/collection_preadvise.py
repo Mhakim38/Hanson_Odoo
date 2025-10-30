@@ -1,54 +1,66 @@
 from odoo import models, fields, api
 
-class CollectionPreadvise(models.Model):
+class CollectionPreAdvise(models.Model):
     _name = "res.collection.preadvise"
-    _description = "Collection Pre-advise"
+    _description = "Collection Pre-Advise"
     _order = "preadvise_date desc"
-    _rec_name = "preadvise_number"
 
-    # --- Identification ---
-    preadvise_number = fields.Char(
-        string="Pre-advise Number",
-        required=True,
-        copy=False,
-        readonly=True,
-        default=lambda self: self.env['ir.sequence'].next_by_code('res.collection.preadvise')
-    )
-    preadvise_date = fields.Datetime(string="Pre-advise Date", default=fields.Datetime.now)
-
-    # --- Container Information ---
-    container_id = fields.Many2one("res.container", string="Container", required=True)
-    depot_id = fields.Many2one("res.yard", string="Depot / Yard")
+    preadvise_number = fields.Char(string="Pre-Advise Number", readonly=True, copy=False)
+    preadvise_date = fields.Datetime(string="Pre-Advise Date", default=fields.Datetime.now)
+    depot_id = fields.Many2one("res.depot", string="Depot")
+    location = fields.Char(string="Location")
     transporter_id = fields.Many2one("res.transporter", string="Transporter")
     readiness_status = fields.Selection([
-        ("not_ready", "Not Ready"),
-        ("ready", "Ready for Collection"),
-    ], string="Readiness Status", default="not_ready")
+        ("pending", "Pending"),
+        ("ready", "Ready"),
+    ], string="Readiness Status", default="pending")
 
-    location = fields.Char(string="Current Location")
-    remarks = fields.Text(string="Remarks")
-
-    # --- Publishing & Monitoring ---
     publish_status = fields.Selection([
         ("draft", "Draft"),
-        ("published", "Published to Forwarder"),
-        ("monitored", "Under Monitoring"),
+        ("published", "Published"),
+        ("monitored", "Monitored"),
         ("completed", "Completed"),
-    ], string="Status", default="draft", tracking=True)
+    ], string="Publish Status", default="draft")
 
-    published_date = fields.Datetime(string="Published Date", readonly=True)
+    remarks = fields.Text(string="Remarks")
     monitor_notes = fields.Text(string="Monitoring Notes")
 
     line_ids = fields.One2many(
         "res.collection.preadvise.line",
         "preadvise_id",
-        string="Pre-Advise Lines"
+        string="Available Containers"
     )
 
+    # ------------------------------------------------------------
+    # OVERRIDE CREATE to prefill available containers automatically
+    # ------------------------------------------------------------
+    @api.model
+    def create(self, vals):
+        record = super(CollectionPreAdvise, self).create(vals)
+
+        available_containers = self.env["res.container"].search([
+            ("stage_id.name", "=", "Available")
+        ])
+
+        line_vals = []
+        for c in available_containers:
+            line_vals.append((0, 0, {
+                "container_id": c.id,
+                "depot_id": c.depot_id.id if c.depot_id else False,
+                "yard_id": c.yard_id.id if hasattr(c, "yard_id") else False,
+                "block": getattr(c, "block", False),
+                "status": c.stage_id.name,
+            }))
+
+        record.write({"line_ids": line_vals})
+        return record
+
+    # ----------------------------------------------------------------------
+    # Workflow buttons (no change)
+    # ----------------------------------------------------------------------
     def action_publish_to_forwarder(self):
         for rec in self:
             rec.publish_status = "published"
-            rec.published_date = fields.Datetime.now()
 
     def action_start_monitoring(self):
         for rec in self:

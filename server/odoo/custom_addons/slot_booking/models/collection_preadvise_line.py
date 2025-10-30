@@ -24,7 +24,7 @@ class CollectionPreAdviseLine(models.Model):
     # ✅ corrected related field
     status = fields.Char(
         related="container_id.stage_id.name",
-        string="Stage",
+        string="Status",
         store=True,
         readonly=True,
     )

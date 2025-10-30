@@ -1,14 +1,12 @@
-<?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Tree View -->
     <record id="view_res_collection_preadvise_tree" model="ir.ui.view">
         <field name="name">res.collection.preadvise.tree</field>
         <field name="model">res.collection.preadvise</field>
         <field name="arch" type="xml">
-            <tree string="Collection Pre-advise">
+            <tree>
                 <field name="preadvise_number"/>
                 <field name="preadvise_date"/>
-                <field name="container_id"/>
+                <field name="depot_id"/>
                 <field name="transporter_id"/>
                 <field name="readiness_status"/>
                 <field name="publish_status"/>
@@ -16,7 +14,6 @@
         </field>
     </record>
 
-    <!-- Form View -->
     <record id="view_res_collection_preadvise_form" model="ir.ui.view">
         <field name="name">res.collection.preadvise.form</field>
         <field name="model">res.collection.preadvise</field>
@@ -24,11 +21,11 @@
             <form string="Collection Pre-advise">
                 <header>
                     <button name="action_publish_to_forwarder" type="object" string="Publish" class="btn-primary"
-                            modifiers='{"invisible": [["publish_status", "!=", "draft"]]}'/>
+                            invisible="publish_status != 'draft'"/>
                     <button name="action_start_monitoring" type="object" string="Start Monitoring" class="btn-secondary"
-                            modifiers='{"invisible": [["publish_status", "!=", "published"]]}'/>
+                            invisible="publish_status != 'published'"/>
                     <button name="action_mark_completed" type="object" string="Complete" class="btn-success"
-                            modifiers='{"invisible": [["publish_status", "!=", "monitored"]]}'/>
+                            invisible="publish_status != 'monitored'"/>
                     <field name="publish_status" widget="statusbar"/>
                 </header>
 
@@ -41,7 +38,6 @@
                             <field name="location"/>
                         </group>
                         <group string="Container Info">
-                            <field name="container_id"/>
                             <field name="transporter_id"/>
                             <field name="readiness_status"/>
                         </group>
@@ -50,22 +46,20 @@
                     <group string="Remarks">
                         <field name="remarks"/>
                     </group>
-
                     <group string="Monitoring">
                         <field name="monitor_notes"/>
                     </group>
 
-                    <!-- 🟩 New Notebook Section -->
+                    <!-- ✅ Notebook for Available Containers -->
                     <notebook>
-                        <page string="Available Container Lines">
+                        <page string="Available Containers">
                             <field name="line_ids">
-                                <tree editable="bottom" string="Container Line Items">
-                                    <field name="booking_ref"/>
+                                <tree editable="false">
                                     <field name="container_id"/>
                                     <field name="depot_id"/>
                                     <field name="yard_id"/>
                                     <field name="block"/>
-                                    <field name="status" readonly="1"/>
+                                    <field name="status"/>
                                 </tree>
                             </field>
                         </page>
@@ -75,14 +69,12 @@
         </field>
     </record>
 
-    <!-- Action -->
     <record id="action_res_collection_preadvise" model="ir.actions.act_window">
         <field name="name">Collection Pre-advise</field>
         <field name="res_model">res.collection.preadvise</field>
         <field name="view_mode">tree,form</field>
     </record>
 
-    <!-- Menu Item -->
     <menuitem id="menu_res_collection_preadvise"
               name="Collection Pre-advise"
               parent="menu_slot_booking_operations"
