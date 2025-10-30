@@ -18,7 +18,7 @@
         <field name="name">res.collection.preadvise.form</field>
         <field name="model">res.collection.preadvise</field>
         <field name="arch" type="xml">
-            <form string="Collection Pre-advise">
+            <form string="Pre-advise Collection">
                 <header>
                     <button name="action_publish_to_forwarder" type="object" string="Publish" class="btn-primary"
                             invisible="publish_status != 'draft'"/>
@@ -70,7 +70,7 @@
     </record>
 
     <record id="action_res_collection_preadvise" model="ir.actions.act_window">
-        <field name="name">Collection Pre-advise</field>
+        <field name="name">Pre-advise Collection </field>
         <field name="res_model">res.collection.preadvise</field>
         <field name="view_mode">tree,form</field>
     </record>
@@ -85,7 +85,7 @@
     <template id="collection_preadvises_template" name="Collection Pre-advise List">
         <t t-call="website.layout">
             <div class="container">
-                <h1>Collection Pre-advise</h1>
+                <h1>Pre-advise Collection</h1>
 
                 <form action="/slot_booking/preadvises" method="get" class="mb-3">
                     <div class="input-group">
@@ -98,7 +98,7 @@
                         </select>
                         <input type="hidden" name="limit" t-att-value="pager and pager.get('limit') or 12"/>
                         <button class="btn btn-primary" type="submit">Filter</button>
-                        <a class="btn btn-success ms-2" href="/slot_booking/preadvises/new">New Pre-advise</a>
+<!--                        <a class="btn btn-success ms-2" href="/slot_booking/preadvises/new">New Pre-advise</a>-->
                     </div>
                 </form>
 
