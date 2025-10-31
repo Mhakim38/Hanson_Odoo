@@ -69,4 +69,167 @@
               parent="menu_slot_booking_operations"
               sequence="2"
               action="action_res_gatepass"/>
+
+    <!-- Website templates: Gatepass list and registration (site pages) -->
+    <template id="gatepasses_template" name="Gate Passes List">
+        <t t-call="website.layout">
+            <div class="container">
+                <h1>Gate Pass Applications</h1>
+
+                <form action="/slot_booking/gatepasses" method="get" class="mb-3">
+                    <div class="input-group">
+                        <select name="status" class="form-select" style="max-width:200px;">
+                            <option t-att-value="'all'" t-att-selected="status=='all'">All</option>
+                            <option t-att-value="'draft'" t-att-selected="status=='draft'">Draft</option>
+                            <option t-att-value="'submitted'" t-att-selected="status=='submitted'">Submitted</option>
+                            <option t-att-value="'under_validation'" t-att-selected="status=='under_validation'">Under Validation</option>
+                            <option t-att-value="'approved'" t-att-selected="status=='approved'">Approved</option>
+                            <option t-att-value="'rejected'" t-att-selected="status=='rejected'">Rejected</option>
+                        </select>
+                        <input type="hidden" name="limit" t-att-value="pager and pager.get('limit') or 12"/>
+                        <button class="btn btn-primary" type="submit">Filter</button>
+                        <a class="btn btn-success ms-2" href="/slot_booking/gatepasses/new">New Gate Pass</a>
+                    </div>
+                </form>
+
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Gate Pass #</th>
+                                <th>Application Date</th>
+                                <th>Applicant</th>
+                                <th>Container</th>
+                                <th>Haulier</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-if="not gatepasses">
+                                <tr><td colspan="6">No gate pass applications found.</td></tr>
+                            </t>
+                            <t t-foreach="gatepasses" t-as="g">
+                                <tr>
+                                    <td><t t-esc="g.gatepass_number or '—'"/></td>
+                                    <td><t t-esc="(g.application_date or '')"/></td>
+                                    <td><t t-esc="g.applicant_name or '—'"/></td>
+                                    <td><t t-esc="g.container_id.container_number if g.container_id else '—'"/></td>
+                                    <td><t t-esc="g.haulier_id.name.display_name if g.haulier_id and g.haulier_id.name else (g.haulier_id.name or '—')"/></td>
+                                    <td><t t-esc="dict(g._fields['status'].selection).get(g.status) if g.status else '—'"/></td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                </div>
+
+                <t t-if="pager and pager.get('pages') &gt; 1">
+                    <nav aria-label="Gatepasses pagination">
+                        <ul class="pagination">
+                            <li class="page-item" t-att-class="'disabled' if pager.get('page') &lt;= 1 else ''">
+                                <a class="page-link" t-att-href="'/slot_booking/gatepasses?page=%s&amp;limit=%s&amp;status=%s' % (pager.get('page')-1, pager.get('limit'), status or 'all')">Previous</a>
+                            </li>
+                            <t t-foreach="range(1, pager.get('pages') + 1)" t-as="p">
+                                <li class="page-item" t-att-class="'active' if p == pager.get('page') else ''">
+                                    <a class="page-link" t-att-href="'/slot_booking/gatepasses?page=%s&amp;limit=%s&amp;status=%s' % (p, pager.get('limit'), status or 'all')">
+                                        <t t-esc="p"/>
+                                    </a>
+                                </li>
+                            </t>
+                            <li class="page-item" t-att-class="'disabled' if pager.get('page') &gt;= pager.get('pages') else ''">
+                                <a class="page-link" t-att-href="'/slot_booking/gatepasses?page=%s&amp;limit=%s&amp;status=%s' % (pager.get('page')+1, pager.get('limit'), status or 'all')">Next</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </t>
+
+            </div>
+        </t>
+    </template>
+
+    <template id="gatepass_registration_template" name="Gate Pass Registration">
+        <t t-call="website.layout">
+            <div class="container">
+                <h1>Apply for Gate Pass</h1>
+                <t t-if="error">
+                    <div class="alert alert-danger"><t t-esc="error"/></div>
+                </t>
+                <!-- CSRF token required -->
+                <form action="/slot_booking/gatepasses/new" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+
+                    <div class="mb-3">
+                        <label class="form-label">Applicant Name</label>
+                        <input type="text" name="applicant_name" class="form-control" required="required" t-att-value="vals and vals.get('applicant_name') or ''"/>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Related Pre-advise (optional)</label>
+                        <select name="preadvise_id" class="form-select">
+                            <option value="">-- Select pre-advise --</option>
+                            <t t-foreach="preadvises" t-as="p">
+                                <option t-att-value="p.id" t-att-selected="vals and vals.get('preadvise_id') and int(vals.get('preadvise_id'))==p.id"><t t-esc="p.preadvise_number or ''"/></option>
+                            </t>
+                        </select>
+                    </div>
+
+                    <div class="mb-3 row">
+                        <div class="col-md-6">
+                            <label class="form-label">Container</label>
+                            <select name="container_id" class="form-select" required="required">
+                                <option value="">-- Select container --</option>
+                                <t t-foreach="containers" t-as="c">
+                                    <option t-att-value="c.id" t-att-selected="vals and vals.get('container_id') and int(vals.get('container_id'))==c.id"><t t-esc="c.container_number or ''"/></option>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Haulier</label>
+                            <select name="haulier_id" class="form-select" required="required">
+                                <option value="">-- Select haulier --</option>
+                                <t t-foreach="transporters" t-as="t">
+                                    <option t-att-value="t.id" t-att-selected="vals and vals.get('haulier_id') and int(vals.get('haulier_id'))==t.id"><t t-esc="t.name.display_name if t.name else (t.name or '')"/></option>
+                                </t>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 row">
+                        <div class="col-md-6">
+                            <label class="form-label">Vehicle</label>
+                            <select name="vehicle_id" class="form-select">
+                                <option value="">-- Select vehicle --</option>
+                                <t t-foreach="vehicles" t-as="v">
+                                    <option t-att-value="v.id" t-att-selected="vals and vals.get('vehicle_id') and int(vals.get('vehicle_id'))==v.id"><t t-esc="v.name or ''"/></option>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Driver</label>
+                            <select name="driver_id" class="form-select">
+                                <option value="">-- Select driver --</option>
+                                <t t-foreach="drivers" t-as="d">
+                                    <option t-att-value="d.id" t-att-selected="vals and vals.get('driver_id') and int(vals.get('driver_id'))==d.id"><t t-esc="d.name.display_name if d.name else (d.name or '')"/></option>
+                                </t>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Remarks</label>
+                        <textarea name="remarks" class="form-control" rows="4"><t t-esc="vals and vals.get('remarks') or ''"/></textarea>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Attachments</label>
+                        <input type="file" name="attachment" class="form-control"/>
+                        <small class="form-text text-muted">Uploaded attachments are not linked automatically in this simple form.</small>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">Submit Application</button>
+                    <a class="btn btn-secondary ms-2" href="/slot_booking/gatepasses">Cancel</a>
+                </form>
+            </div>
+        </t>
+    </template>
+
 </odoo>

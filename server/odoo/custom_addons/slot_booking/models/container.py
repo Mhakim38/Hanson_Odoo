@@ -102,4 +102,6 @@ class Container(models.Model):
                 stage = self.env['res.container.stage'].search([('name', '=', latest_maintenance.status)], limit=1)
                 container.stage_id = stage.id if stage else False
             else:
-                container.stage_id = False
+                # No maintenance records: default to the 'Available' stage if it exists
+                stage = self.env['res.container.stage'].search([('name', '=', 'Available')], limit=1)
+                container.stage_id = stage.id if stage else False
