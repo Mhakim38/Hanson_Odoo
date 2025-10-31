@@ -1,0 +1,33 @@
+<odoo>
+    <!-- Trailer Rule -->
+    <record id="rule_res_trailer_portal_own" model="ir.rule">
+        <field name="name">Portal Trailer Own Rule</field>
+        <field name="model_id" ref="slot_booking.model_res_trailer"/>
+        <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+        <field name="domain_force">[('transporter_id', '=', user.partner_id.id)]</field>
+    </record>
+
+    <!-- Vehicle Rule -->
+    <record id="rule_res_vehicle_portal_own" model="ir.rule">
+        <field name="name">Portal Vehicle Own Rule</field>
+        <field name="model_id" ref="slot_booking.model_res_vehicle"/>
+        <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+        <field name="domain_force">[('transporter_id', '=', user.partner_id.id)]</field>
+    </record>
+
+    <!-- Driver Rule -->
+    <record id="rule_res_driver_portal_own" model="ir.rule">
+        <field name="name">Portal Driver Own Rule</field>
+        <field name="model_id" ref="slot_booking.model_res_driver"/>
+        <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+        <field name="domain_force">[('transporter_id', '=', user.partner_id.id)]</field>
+    </record>
+
+    <!-- Transporter (Profile) Rule -->
+    <record id="rule_res_transporter_portal_own" model="ir.rule">
+        <field name="name">Portal Transporter Own Rule</field>
+        <field name="model_id" ref="slot_booking.model_res_transporter"/>
+        <field name="groups" eval="[(4, ref('base.group_portal'))]"/>
+        <field name="domain_force">[('name', '=', user.partner_id.id)]</field>
+    </record>
+</odoo>

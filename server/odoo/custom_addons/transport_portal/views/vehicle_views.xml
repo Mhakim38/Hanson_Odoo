@@ -1,0 +1,170 @@
+<odoo>
+    <!-- ================== VEHICLE LIST PAGE ================== -->
+    <template id="portal_my_vehicles" name="Portal Vehicles">
+        <t t-call="portal.frontend_layout">
+            <div id="wrap" class="container py-4 o_portal_wrap">
+
+                <a href="/my/home" class="btn btn-sm btn-light border mb-3">
+                    <i class="fa fa-arrow-left me-1"></i> Back
+                </a>
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4><i class="fa fa-truck me-2"></i>Vehicles</h4>
+                    <a href="/my/vehicle" class="btn btn-primary">
+                        <i class="fa fa-plus"></i> Add Vehicle
+                    </a>
+                </div>
+
+                <!-- Search Form -->
+                <form action="/my/vehicles" method="get" class="mb-3">
+                    <div class="input-group">
+                        <input type="text" name="search" class="form-control"
+                               t-att-value="search or ''"
+                               placeholder="Search vehicle name or plate no..."/>
+                        <button type="submit" class="btn btn-outline-primary">
+                            <i class="fa fa-search"></i>
+                        </button>
+                        <a href="/my/vehicles" class="btn btn-outline-secondary">
+                            <i class="fa fa-undo"></i> Reset
+                        </a>
+                    </div>
+                </form>
+
+                <!-- Vehicle Table -->
+                <div class="table-responsive shadow-sm rounded bg-white">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Vehicle Name</th>
+                                <th>Plate Number</th>
+                                <th>Company Name</th>
+                                <th>Vehicle Type</th>
+                                <th>Capacity</th>
+                                <th>Insurance Expiry</th>
+                                <th>Roadtax</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-if="vehicle_list">
+                                <t t-foreach="vehicle_list" t-as="v">
+                                    <tr>
+                                        <td><t t-esc="v.name or '-'"/></td>
+                                        <td><t t-esc="v.vehicle_plate_no or '-'"/></td>
+                                        <td><t t-esc="v.transporter_id.display_name or '-'"/></td>
+                                        <td><t t-esc="v.vehicle_type or '-'"/></td>
+                                        <td><t t-esc="v.vehicle_capacity or '-'"/></td>
+                                        <td><t t-esc="v.insurance_expiry or '-'"/></td>
+                                        <td><t t-esc="v.vehicle_roadtax or '-'"/></td>
+                                        <td>
+                                            <a t-att-href="'/my/vehicle/%d' % v.id" class="btn btn-sm btn-outline-primary">
+                                                <i class="fa fa-edit"></i> Edit
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </t>
+                            <t t-else="">
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-3">
+                                        No vehicles found.
+                                    </td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- ================== VEHICLE FORM PAGE ================== -->
+    <template id="portal_my_vehicle_form" name="Portal Vehicle Form">
+        <t t-call="portal.frontend_layout">
+            <div id="wrap" class="container py-4 o_portal_wrap">
+
+                <a href="/my/vehicles" class="btn btn-sm btn-light border mb-3">
+                    <i class="fa fa-arrow-left me-1"></i> Back
+                </a>
+
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h4 class="mb-3">
+                            <i class="fa fa-truck me-2"></i>Vehicle Information
+                        </h4>
+
+                        <form action="/my/vehicle/save" method="post">
+                            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                            <input type="hidden" name="vehicle_id" t-att-value="vehicle.id if vehicle else ''"/>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label><strong>Vehicle Name</strong></label>
+                                    <input type="text" name="name" class="form-control"
+                                           t-att-value="vehicle and vehicle.name or ''" required="true"/>
+                                </div>
+                                <div class="col-md-6">
+                                    <label><strong>Plate Number</strong></label>
+                                    <input type="text" name="vehicle_plate_no" class="form-control"
+                                           t-att-value="vehicle and vehicle.vehicle_plate_no or ''" required="true"/>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                               <div class="col-md-6">
+                                    <label><strong>Company Name</strong></label>
+                                    <input type="text" class="form-control bg-light"
+                                           t-att-value="(vehicle and vehicle.transporter_id.display_name) or (transporter and transporter.display_name) or request.env.user.partner_id.name"
+                                           readonly="true"/>
+                                    <!-- Hidden input to ensure transporter_id is passed -->
+                                    <input type="hidden" name="transporter_id"
+                                           t-att-value="(transporter and transporter.id) or (vehicle and vehicle.transporter_id.id) or ''"/>
+                                </div>
+
+
+                                <div class="col-md-6">
+                                    <label><strong>Vehicle Type</strong></label>
+                                    <select name="vehicle_type" class="form-select" required="true">
+                                        <option value="">-- Select Type --</option>
+                                        <option value="truck" t-att-selected="vehicle and vehicle.vehicle_type == 'truck'">Truck</option>
+                                        <option value="prime_mover" t-att-selected="vehicle and vehicle.vehicle_type == 'prime_mover'">Prime Mover</option>
+                                        <option value="lorry" t-att-selected="vehicle and vehicle.vehicle_type == 'lorry'">Lorry</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label><strong>Vehicle Capacity</strong></label>
+                                    <input type="number" step="0.01" name="vehicle_capacity" class="form-control"
+                                           t-att-value="vehicle and vehicle.vehicle_capacity or ''" required="true"/>
+                                </div>
+                                <div class="col-md-6">
+                                    <label><strong>Insurance Expiry</strong></label>
+                                    <input type="date" name="insurance_expiry" class="form-control"
+                                           t-att-value="vehicle and vehicle.insurance_expiry and vehicle.insurance_expiry.strftime('%Y-%m-%d') or ''"
+                                           required="true"/>
+                                </div>
+                            </div>
+
+                            <div class="row mb-4">
+                                <div class="col-md-6">
+                                    <label><strong>Vehicle Roadtax</strong></label>
+                                    <input type="text" name="vehicle_roadtax" class="form-control"
+                                           t-att-value="vehicle and vehicle.vehicle_roadtax or ''" required="true"/>
+                                </div>
+                            </div>
+
+                            <div class="text-end">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fa fa-save"></i> Save
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+            </div>
+        </t>
+    </template>
+</odoo>

@@ -1,0 +1,251 @@
+<odoo>
+    <!-- ================== DRIVER LIST PAGE ================== -->
+    <template id="portal_my_drivers" name="Portal Driver List">
+        <t t-call="portal.frontend_layout">
+            <div id="wrap" class="o_portal_wrap container py-4">
+
+                <!-- Header -->
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h3 class="mb-0">
+                        <i class="fa fa-users me-2 text-primary"></i>Driver List
+                    </h3>
+                    <a href="/my/driver" class="btn btn-primary">
+                        <i class="fa fa-plus me-1"></i>Add New Driver
+                    </a>
+                </div>
+
+                <!-- Search Form -->
+                <form action="/my/drivers" method="get" class="mb-3">
+                    <div class="input-group">
+                        <input type="text" name="search" class="form-control"
+                               t-att-value="search or ''"
+                               placeholder="Search driver name or company..."/>
+                        <button type="submit" class="btn btn-outline-primary">
+                            <i class="fa fa-search"></i>
+                        </button>
+                        <!-- ✅ Reset button -->
+                        <a href="/my/drivers" class="btn btn-outline-secondary">
+                            <i class="fa fa-undo"></i> Reset
+                        </a>
+                    </div>
+                </form>
+
+                <!-- Driver Table -->
+                <div class="table-responsive shadow-sm rounded bg-white">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Driver Photo</th>
+                                <th>Driver Name</th>
+                                <th>Company Name</th>
+                                <th>Driver License Number</th>
+                                <th>Driver License Expiry</th>
+                                <th>Driver IC / Work Permit / Passport</th>
+                                <th>Status</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-if="driver_list">
+                                <t t-foreach="driver_list" t-as="drv">
+                                    <tr>
+                                        <!-- ✅ Driver Photo -->
+                                        <td>
+                                            <t t-if="drv.driver_image">
+                                                <img t-att-src="'data:image/png;base64,%s' % drv.driver_image.decode()"
+                                                     alt="Driver Photo"
+                                                     class="rounded-circle"
+                                                     style="width: 50px; height: 50px; object-fit: cover;"/>
+                                            </t>
+                                            <t t-else="">
+                                                <img src="/web/static/img/avatar.png"
+                                                     alt="No Photo"
+                                                     class="rounded-circle"
+                                                     style="width: 50px; height: 50px; object-fit: cover;"/>
+                                            </t>
+                                        </td>
+                                        <td><t t-esc="drv.name.display_name or drv.name.name or drv.name"/></td>
+                                        <td><t t-esc="drv.transporter_id.name.display_name or drv.transporter_id.name or ''"/></td>
+                                        <td><t t-esc="drv.driver_license_no or '-'"/></td>
+                                        <td>
+                                            <t t-if="drv.driver_license_expiry">
+                                                <t t-esc="drv.driver_license_expiry.strftime('%d/%m/%Y')"/>
+                                            </t>
+                                            <t t-else="">-</t>
+                                        </td>
+                                        <td><t t-esc="drv.driver_ic or '-'"/></td>
+                                        <td>
+                                            <span t-if="drv.active" class="badge bg-success">Active</span>
+                                            <span t-else="" class="badge bg-secondary">Inactive</span>
+                                        </td>
+                                        <td>
+                                            <a t-att-href="'/my/driver/%d' % drv.id" class="btn btn-sm btn-outline-primary">
+                                                <i class="fa fa-edit"></i> Edit
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </t>
+                            <t t-else="">
+                                <tr>
+                                    <td colspan="7" class="text-center text-muted py-3">
+                                        No drivers found.
+                                    </td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+        </t>
+    </template>
+
+
+    <!-- ================== DRIVER FORM PAGE ================== -->
+    <template id="portal_my_driver_form" name="Portal Driver Form">
+        <t t-call="portal.frontend_layout">
+            <div id="wrap" class="o_portal_wrap container py-4">
+
+                <!-- Back Button -->
+                <a href="/my/drivers" class="btn btn-light border mb-3">
+                    <i class="fa fa-arrow-left me-1"></i> Back
+                </a>
+
+                <h3 class="mb-4">
+                    <i class="fa fa-id-card me-2 text-primary"></i>Driver Information
+                </h3>
+
+                <!-- ===== ALERT MESSAGES (Error / Success) ===== -->
+                <t t-if="error">
+                    <div class="alert alert-danger d-flex align-items-center" role="alert">
+                        <i class="fa fa-exclamation-triangle me-2"></i>
+                        <t t-esc="error"/>
+                    </div>
+                </t>
+                <t t-if="success">
+                    <div class="alert alert-success d-flex align-items-center" role="alert">
+                        <i class="fa fa-check-circle me-2"></i>
+                        <t t-esc="success"/>
+                    </div>
+                </t>
+
+                <form action="/my/driver/save"
+                      method="post"
+                      enctype="multipart/form-data"
+                      class="o_portal_form shadow-sm p-4 rounded bg-white">
+
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                    <input type="hidden" name="driver_id" t-att-value="driver.id if driver else ''"/>
+
+                    <!-- =================== BASIC INFO =================== -->
+                    <div class="row">
+
+                        <!-- Company Name (transporter_id) -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Company Name</label>
+                            <select name="transporter_id" class="form-select" required="true">
+                                <t t-foreach="transporter_list" t-as="trans">
+                                    <option t-att-value="trans.id"
+                                            t-att-selected="(driver and driver.transporter_id.id == trans.id) and 'selected' or None">
+                                        <t t-esc="trans.name.display_name or trans.name.name or trans.name"/>
+                                    </option>
+                                </t>
+                            </select>
+                        </div>
+
+                        <!-- Driver Name (name - many2one res.partner) -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Driver Name</label>
+                            <select name="name" class="form-select" required="true">
+                                <t t-foreach="partner_list" t-as="partner">
+                                    <option t-att-value="partner.id"
+                                            t-att-selected="(driver and driver.name.id == partner.id) and 'selected' or None">
+                                        <t t-esc="partner.display_name"/>
+                                    </option>
+                                </t>
+                            </select>
+                        </div>
+
+                        <!-- License Number -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Driver License Number</label>
+                            <input type="text" name="driver_license_no" class="form-control"
+                                   t-att-value="(driver and driver.driver_license_no) or ''" required="required"/>
+                        </div>
+
+                        <!-- License Expiry -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Driver License Expiry Date</label>
+                            <input type="date" name="driver_license_expiry" class="form-control"
+                                   t-att-value="(driver and driver.driver_license_expiry) or ''" required="required"/>
+                        </div>
+
+                        <!-- IC -->
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Driver IC / Work Permit / Passport</label>
+                            <input type="text" name="driver_ic" class="form-control"
+                                   t-att-value="(driver and driver.driver_ic) or ''" required="required"/>
+                        </div>
+
+                        <!-- Active -->
+                        <div class="col-md-6 mb-3 d-flex align-items-center">
+                            <label class="form-check-label me-2 fw-bold">Active</label>
+                            <input type="checkbox" name="active" class="form-check-input"
+                                   t-att-checked="'checked' if (driver and driver.active) else None"/>
+                        </div>
+                    </div>
+
+                    <!-- =================== IMAGES =================== -->
+                    <div class="row mt-4">
+                        <!-- Driver Photo -->
+                        <div class="col-md-4 text-center">
+                            <label class="fw-bold mb-2">Driver Photo</label>
+                            <div class="border rounded p-2 bg-light">
+                                <t t-if="driver and driver.driver_image">
+                                    <img t-att-src="'data:image/png;base64,%s' % driver.driver_image.decode()" class="img-fluid rounded mb-2" style="max-height:150px;"/>
+                                </t>
+                                <t t-else=""/>
+                                <img src="/web/static/img/avatar.png" class="img-fluid rounded mb-2" style="max-height:150px;"/>
+                                <input type="file" name="driver_image" accept="image/*" class="form-control"/>
+                            </div>
+                        </div>
+
+                        <!-- License Image -->
+                        <div class="col-md-4 text-center">
+                            <label class="fw-bold mb-2">License Image</label>
+                            <div class="border rounded p-2 bg-light">
+                                <t t-if="driver and driver.driver_license_image">
+                                    <img t-att-src="'data:image/png;base64,%s' % driver.driver_license_image.decode()" class="img-fluid rounded mb-2" style="max-height:150px;"/>
+                                </t>
+                                <t t-else=""/>
+                                <img src="/web/static/img/placeholder.png" class="img-fluid rounded mb-2" style="max-height:150px;"/>
+                                <input type="file" name="driver_license_image" accept="image/*" class="form-control"/>
+                            </div>
+                        </div>
+
+                        <!-- IC Image -->
+                        <div class="col-md-4 text-center">
+                            <label class="fw-bold mb-2">IC Image</label>
+                            <div class="border rounded p-2 bg-light">
+                                <t t-if="driver and driver.driver_ic_image">
+                                    <img t-att-src="'data:image/png;base64,%s' % driver.driver_ic_image.decode()" class="img-fluid rounded mb-2" style="max-height:150px;"/>
+                                </t>
+                                <t t-else=""/>
+                                <img src="/web/static/img/placeholder.png" class="img-fluid rounded mb-2" style="max-height:150px;"/>
+                                <input type="file" name="driver_ic_image" accept="image/*" class="form-control"/>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- =================== SUBMIT =================== -->
+                    <div class="text-end mt-4">
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="fa fa-save me-2"></i>Save
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </t>
+    </template>
+</odoo>

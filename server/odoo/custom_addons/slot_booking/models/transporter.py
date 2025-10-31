@@ -10,12 +10,34 @@ class Transporter(models.Model):
         "res.partner",
         string="Company Name",
         required=True,
+        domain=[("is_company", "=", True)],
         help="Select the company registered in Contacts that represents this transporter.",
     )
-    transporter_code = fields.Char()
-    contact_number = fields.Char()
-    email = fields.Char()
-    company_address = fields.Char()
+
+    forwarder_ids = fields.Many2many(
+        "res.forwarder",
+        "forwarder_transporter_rel",
+        "transporter_id",
+        "forwarder_id",
+        string="Forwarders",
+    )
+
+    transporter_code = fields.Char(string="Transporter Code")
+    contact_number = fields.Char(
+        string="Contact Number",
+        related="name.phone",
+        readonly=False
+    )
+    email = fields.Char(
+        string="Email",
+        related="name.email",
+        readonly=False
+    )
+    company_address = fields.Char(
+        string="Address",
+        related="name.contact_address",
+        readonly=True
+    )
     active = fields.Boolean(default=True)
     remarks = fields.Text()
 
@@ -35,6 +57,15 @@ class Transporter(models.Model):
             rec.vehicle_count = len(rec.vehicle_ids)
             rec.trailer_count = len(rec.trailer_ids)
 
+    # --- Custom Display Name ---
+    def name_get(self):
+        """Show readable name instead of res.partner(id,)"""
+        result = []
+        for rec in self:
+            name = rec.name.name or "Unnamed Transporter"
+            result.append((rec.id, name))
+        return result
+
     # --- Smart button actions ---
     def action_view_drivers(self):
         return {
@@ -43,11 +74,7 @@ class Transporter(models.Model):
             "res_model": "res.driver",
             "view_mode": "tree,form",
             "domain": [("transporter_id", "=", self.id)] if self.id else [],
-            "context": {
-                "default_transporter_id": self.id or False,
-                "create": True,
-                "no_create_edit": False,
-            },
+            "context": {"default_transporter_id": self.id or False},
             "target": "current",
         }
 
@@ -58,11 +85,7 @@ class Transporter(models.Model):
             "res_model": "res.vehicle",
             "view_mode": "tree,form",
             "domain": [("transporter_id", "=", self.id)] if self.id else [],
-            "context": {
-                "default_transporter_id": self.id or False,
-                "create": True,
-                "no_create_edit": False,
-            },
+            "context": {"default_transporter_id": self.id or False},
             "target": "current",
         }
 
@@ -73,11 +96,7 @@ class Transporter(models.Model):
             "res_model": "res.trailer",
             "view_mode": "tree,form",
             "domain": [("transporter_id", "=", self.id)] if self.id else [],
-            "context": {
-                "default_transporter_id": self.id or False,
-                "create": True,
-                "no_create_edit": False,
-            },
+            "context": {"default_transporter_id": self.id or False},
             "target": "current",
         }
 

@@ -1,0 +1,181 @@
+<odoo>
+    <!-- ================== TRAILER LIST PAGE ================== -->
+    <template id="portal_my_trailers" name="Portal Trailers">
+        <t t-call="portal.frontend_layout">
+            <div id="wrap" class="container py-4 o_portal_wrap">
+
+                <a href="/my/home" class="btn btn-sm btn-light border mb-3">
+                    <i class="fa fa-arrow-left me-1"></i> Back
+                </a>
+
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h4><i class="fa fa-trailer me-2"></i>Trailers</h4>
+                    <a href="/my/trailer" class="btn btn-primary">
+                        <i class="fa fa-plus"></i> Add Trailer
+                    </a>
+                </div>
+
+                <!-- Search Form -->
+                <form action="/my/trailers" method="get" class="mb-3">
+                    <div class="input-group">
+                        <input type="text" name="search" class="form-control"
+                               t-att-value="search or ''"
+                               placeholder="Search trailer name or plate no..."/>
+                        <button type="submit" class="btn btn-outline-primary">
+                            <i class="fa fa-search"></i>
+                        </button>
+                        <a href="/my/trailers" class="btn btn-outline-secondary">
+                            <i class="fa fa-undo"></i> Reset
+                        </a>
+                    </div>
+                </form>
+
+                <!-- Trailer Table -->
+                <div class="table-responsive shadow-sm rounded bg-white">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Trailer Name</th>
+                                <th>Plate Number</th>
+                                <th>Capacity</th>
+                                <th>Container</th>
+                                <th>Transporter</th>
+                                <th>Insurance Expiry</th>
+                                <th>Permit</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-if="trailers">
+                                <t t-foreach="trailers" t-as="t">
+                                    <tr>
+                                        <td><t t-esc="t.name or '-'"/></td>
+                                        <td><t t-esc="t.trailer_plate_no or '-'"/></td>
+                                        <td><t t-esc="t.trailer_capacity or '-'"/></td>
+                                        <td><t t-esc="t.container_id.display_name or '-'"/></td>
+                                        <td><t t-esc="t.transporter_id.display_name or '-'"/></td>
+                                        <td><t t-esc="t.insurance_expiry or '-'"/></td>
+                                        <td><t t-esc="t.trailer_permit or '-'"/></td>
+                                        <td>
+                                            <a t-att-href="'/my/trailer/%d' % t.id" class="btn btn-sm btn-outline-primary">
+                                                <i class="fa fa-edit"></i> Edit
+                                            </a>
+                                        </td>
+                                    </tr>
+                                </t>
+                            </t>
+                            <t t-else="">
+                                <tr>
+                                    <td colspan="8" class="text-center text-muted py-3">
+                                        No trailers found.
+                                    </td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- ================== TRAILER FORM PAGE ================== -->
+    <template id="portal_create_trailer" name="Create Trailer">
+    <t t-call="portal.frontend_layout">
+        <div id="wrap" class="container py-4 o_portal_wrap">
+
+            <!-- Back Button -->
+            <a href="/my/trailers" class="btn btn-sm btn-light border mb-3">
+                <i class="fa fa-arrow-left me-1"></i> Back
+            </a>
+
+            <!-- Card Layout -->
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <h4 class="mb-3">
+                        <i class="fa fa-trailer me-2"></i>Trailer Information
+                    </h4>
+
+                    <form action="/my/trailer/save" method="post">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                        <input type="hidden" name="trailer_id" t-att-value="trailer.id if trailer else ''"/>
+
+                        <!-- Trailer Info -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label><strong>Trailer Name</strong></label>
+                                <input type="text" name="name" class="form-control"
+                                       t-att-value="trailer and trailer.name if trailer else ''" required="true"/>
+                            </div>
+                            <div class="col-md-6">
+                                <label><strong>Plate Number</strong></label>
+                                <input type="text" name="trailer_plate_no" class="form-control"
+                                       t-att-value="trailer and trailer.trailer_plate_no if trailer else ''" required="true"/>
+                            </div>
+                        </div>
+
+                        <!-- Capacity & Container -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label><strong>Trailer Capacity</strong></label>
+                                <select name="trailer_capacity" class="form-select" required="true">
+                                    <option value="">-- Select Capacity --</option>
+                                    <option value="20ft"
+                                        t-att-selected="trailer and trailer.trailer_capacity == '20ft'">20ft</option>
+                                    <option value="40ft"
+                                        t-att-selected="trailer and trailer.trailer_capacity == '40ft'">40ft</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label><strong>Container</strong></label>
+                                <select name="container_id" class="form-select"
+                                        t-att-value="trailer and trailer.container_id if trailer else ''">
+                                    <t t-foreach="request.env['res.container'].sudo().search([])" t-as="c">
+                                        <option t-att-value="c.id">
+                                            <t t-esc="c.display_name"/>
+                                        </option>
+                                    </t>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Insurance & Permit -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label><strong>Insurance Expiry</strong></label>
+                                <input type="date" name="insurance_expiry" class="form-control"
+                                t-att-value="trailer and trailer.insurance_expiry if trailer else ''"/>
+                            </div>
+                            <div class="col-md-6">
+                                <label><strong>Trailer Permit</strong></label>
+                                <input type="text" name="trailer_permit" class="form-control"
+                                t-att-value="trailer and trailer.trailer_permit if trailer else ''"/>
+                            </div>
+                        </div>
+
+                        <!-- Company -->
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <label><strong>Company Name</strong></label>
+                                <input type="text" class="form-control bg-light"
+                                       t-att-value="transporter.display_name or request.env.user.partner_id.name"
+                                       readonly="true"/>
+                                <input type="hidden" name="transporter_id"
+                                       t-att-value="transporter.id or ''"/>
+                            </div>
+                        </div>
+
+                        <!-- Submit -->
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fa fa-save"></i> Save Trailer
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+        </div>
+    </t>
+</template>
+
+</odoo>

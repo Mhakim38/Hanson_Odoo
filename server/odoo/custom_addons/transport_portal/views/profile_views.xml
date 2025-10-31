@@ -1,0 +1,59 @@
+<odoo>
+    <template id="portal_my_profile" name="Portal My Profile">
+        <t t-call="portal.frontend_layout">
+            <div id="wrap" class="container py-4">
+                <div class="card shadow-sm">
+                    <div class="card-body">
+                        <h3 class="mb-4">My Profile</h3>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label><strong>Name</strong></label>
+                                <p t-esc="user.partner_id.name or '-'"/>
+                            </div>
+                            <div class="col-md-6">
+                                <label><strong>Email</strong></label>
+                                <p t-esc="user.partner_id.email or '-'"/>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label><strong>Phone</strong></label>
+                                <p t-esc="user.partner_id.phone or '-'"/>
+                            </div>
+                            <div class="col-md-6">
+                                <label><strong>Mobile</strong></label>
+                                <p t-esc="user.partner_id.mobile or '-'"/>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label><strong>Address</strong></label>
+                                <p>
+                                    <t t-esc="user.partner_id.street or ''"/><br/>
+                                    <t t-esc="user.partner_id.street2 or ''"/><br/>
+                                    <t t-esc="(user.partner_id.city or '') + ', ' + (user.partner_id.state_id.name or '')"/><br/>
+                                    <t t-esc="(user.partner_id.zip or '') + ' ' + (user.partner_id.country_id.name or '')"/>
+                                </p>
+                            </div>
+                            <div class="col-md-3">
+                                <label><strong>State</strong></label>
+                                <p t-esc="user.partner_id.state_id.name or '-'"/>
+                            </div>
+                            <div class="col-md-3">
+                                <label><strong>Country</strong></label>
+                                <p t-esc="user.partner_id.country_id.name or '-'"/>
+                            </div>
+                        </div>
+
+                        <a href="/my/home" class="btn btn-secondary">
+                            <i class="fa fa-arrow-left me-1"></i> Back to Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

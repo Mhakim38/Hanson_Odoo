@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="slot_booking_form_template" name="Slot Booking Form">
+        <t t-call="website.layout">
+            <div class="container py-5">
+                <h2 class="text-center mb-4 fw-bold">Book a Container Slot</h2>
+
+                <form action="/slot_booking/submit" method="post" class="p-4 shadow rounded bg-white">
+                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+
+                    <!-- Slot & Type -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Slot</label>
+                            <select id="slot_id" name="slot_id" class="form-select" required="1">
+                                <option value="">Select Slot</option>
+                                <t t-foreach="slots" t-as="slot">
+                                    <option t-att-value="slot.id">
+                                        <t t-esc="slot.slot_id"/>
+                                    </option>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Booking Type</label>
+                            <select name="booking_type" class="form-select" required="1">
+                                <option value="delivery">Delivery</option>
+                                <option value="pickup">Pick Up</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- 🔹 Auto-filled Slot Details -->
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Slot Time</label>
+                            <input type="text" id="slot_time" name="slot_time" class="form-control" readonly="1" placeholder="Auto-filled"/>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Criteria</label>
+                            <input type="text" id="criteria_content" name="criteria_content" class="form-control" readonly="1" placeholder="Auto-filled"/>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Gate</label>
+                            <input type="text" id="gate" name="gate" class="form-control" readonly="1" placeholder="Auto-filled"/>
+                        </div>
+                    </div>
+
+                    <!-- Depot Selection -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">From (Depot)</label>
+                            <select name="depot_id_from" class="form-select">
+                                <option value="">Select From</option>
+                                <t t-foreach="depots" t-as="depot">
+                                    <option t-att-value="depot.id"><t t-esc="depot.name"/></option>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">To (Depot)</label>
+                            <select name="depot_id_to" class="form-select">
+                                <option value="">Select To</option>
+                                <t t-foreach="depots" t-as="depot">
+                                    <option t-att-value="depot.id"><t t-esc="depot.name"/></option>
+                                </t>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Transporter, Container, Vehicle, Trailer, Driver -->
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Container</label>
+                            <select name="container_id" class="form-select" required="1">
+                                <option value="">Select Container</option>
+                                <t t-foreach="containers" t-as="container">
+                                    <option t-att-value="container.id">
+                                        <t t-esc="container.container_number or container.name"/>
+                                    </option>
+                                </t>
+                            </select>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Transporter</label>
+                            <select name="transporter_id" class="form-select" required="1">
+                                <option value="">Select Transporter</option>
+                                <t t-foreach="transporters" t-as="transporter">
+                                    <option t-att-value="transporter.id"><t t-esc="transporter.name.name or transporter.name"/></option>
+                                </t>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Vehicle</label>
+                            <select name="vehicle_id" class="form-select">
+                                <option value="">Select Vehicle</option>
+                                <t t-foreach="vehicles" t-as="vehicle">
+                                    <option t-att-value="vehicle.id"><t t-esc="vehicle.name"/></option>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Trailer</label>
+                            <select name="trailer_id" class="form-select">
+                                <option value="">Select Trailer</option>
+                                <t t-foreach="trailers" t-as="trailer">
+                                    <option t-att-value="trailer.id"><t t-esc="trailer.name"/></option>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Driver</label>
+                            <select name="driver_id" class="form-select" required="1">
+                                <option value="">Select Driver</option>
+                                <t t-foreach="drivers" t-as="driver">
+                                    <option t-att-value="driver.id">
+                                        <t t-esc="driver.name.name or driver.name.display_name or driver.name"/>
+                                    </option>
+                                </t>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Submit -->
+                    <div class="text-center mt-4">
+                        <button type="submit" class="btn btn-primary px-4 py-2">Submit Booking</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Booking List -->
+            <div class="mt-5">
+                <h3 class="fw-bold mb-3 text-center">Recent Slot Bookings</h3>
+                <t t-if="bookings">
+                    <div class="table-responsive shadow-sm rounded">
+                        <table class="table table-striped align-middle">
+                            <thead class="table-primary">
+                                <tr>
+                                    <th>Booking Number</th>
+                                    <th>Date</th>
+                                    <th>Slot</th>
+                                    <th>Transporter</th>
+                                    <th>Container</th>
+                                    <th>Vehicle</th>
+                                    <th>Trailer</th>
+                                    <th>Driver</th>
+                                    <th>Type</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="bookings" t-as="book">
+                                    <tr>
+                                        <td><t t-esc="book.booking_number"/></td>
+                                        <td><t t-esc="book.booking_date"/></td>
+                                        <td><t t-esc="book.slot_id.slot_id"/> (<t t-esc="book.slot_id.slot_time"/>)</td>
+                                        <td><t t-esc="book.transporter_id.display_name or '-'"/></td>
+                                        <td><t t-esc="book.container_id.display_name or '-'"/></td>
+                                        <td><t t-esc="book.vehicle_id.display_name or '-'"/></td>
+                                        <td><t t-esc="book.trailer_id.display_name or '-'"/></td>
+                                        <td><t t-esc="book.driver_id.display_name or '-'"/></td>
+                                        <td><t t-esc="book.booking_type.title()"/></td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+                </t>
+                <t t-else="">
+                    <p class="text-center text-muted">No bookings found yet.</p>
+                </t>
+            </div>
+        </t>
+
+        <!-- 🔹 JS: Auto-load slot info -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const slotSelect = document.getElementById('slot_id');
+                const slotTime = document.getElementById('slot_time');
+                const criteriaContent = document.getElementById('criteria_content');
+                const gate = document.getElementById('gate');
+
+                slotSelect.addEventListener('change', function () {
+                    const slotId = this.value;
+                    if (!slotId) {
+                        slotTime.value = '';
+                        criteriaContent.value = '';
+                        gate.value = '';
+                        return;
+                    }
+                    fetch(`/slot_booking/get_slot_info?slot_id=${slotId}`)
+                        .then(response => response.json())
+                        .then(data => {
+                            slotTime.value = data.slot_time || '';
+                            criteriaContent.value = data.criteria_content || '';
+                            gate.value = data.gate || '';
+                        })
+                        .catch(() => {
+                            slotTime.value = '';
+                            criteriaContent.value = '';
+                            gate.value = '';
+                        });
+                });
+            });
+        </script>
+    </template>
+
+    <template id="slot_booking_thanks_template" name="Booking Confirmation">
+    <t t-call="website.layout">
+        <div class="container py-5 text-center">
+            <div class="shadow p-5 rounded bg-white">
+                <h2 class="text-success mb-3 fw-bold">
+                    <i class="fa fa-check-circle me-2"></i> Booking Submitted Successfully!
+                </h2>
+                <p class="lead mb-4">Thank you for booking your container slot. Your booking details are as follows:</p>
+
+                <div class="card border-0 shadow-sm mx-auto" style="max-width: 400px;">
+                    <div class="card-body">
+                        <h4 class="text-primary fw-bold">Booking Number</h4>
+                        <h2 class="fw-bold text-dark mb-3">
+                            <t t-esc="booking_number or 'N/A'"/>
+                        </h2>
+
+                        <t t-if="slot">
+                            <p class="mb-1"><strong>Slot:</strong> <t t-esc="slot.slot_id"/></p>
+                            <p class="mb-1"><strong>Time:</strong> <t t-esc="slot.slot_time"/></p>
+                            <p class="mb-1"><strong>Criteria:</strong> <t t-esc="slot.criteria_id.criteria_content or '-'"/></p>
+                            <p class="mb-1"><strong>Gate:</strong> <t t-esc="slot.gate"/></p>
+                        </t>
+                    </div>
+                </div>
+
+                <a href="/slot_booking/book_slot" class="btn btn-outline-primary mt-4">
+                    <i class="fa fa-plus-circle me-1"></i> Book Another Slot
+                </a>
+            </div>
+        </div>
+    </t>
+</template>
+
+</odoo>

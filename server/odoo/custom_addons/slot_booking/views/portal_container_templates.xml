@@ -1,0 +1,264 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ============================================== -->
+    <!-- MY CONTAINERS LIST -->
+    <!-- ============================================== -->
+    <template id="portal_my_containers" name="My Containers">
+        <t t-call="portal.portal_layout">
+            <div class="container mt-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 class="mb-0">My Containers</h2>
+                    <a href="/my/containers/new" class="btn btn-success">
+                        ➕ Create New Container
+                    </a>
+                </div>
+
+                <table class="table table-striped table-hover align-middle">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Container Number</th>
+                            <th>Owner</th>
+                            <th>Type</th>
+                            <th>Size</th>
+                            <th>Stage</th>
+                            <th>Depot</th>
+                            <th>Yard</th>
+                            <th>Block</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <t t-foreach="containers" t-as="c">
+                            <tr>
+                                <td><t t-esc="c.container_number"/></td>
+                                <td><t t-esc="c.container_owner.name or '-'"/></td>
+                                <td><t t-esc="c.container_type or '-'"/></td>
+                                <td><t t-esc="c.size or '-'"/></td>
+                                <td><t t-esc="c.stage_id.name or '-'"/></td>
+                                <td><t t-esc="c.depot_id.name or '-'"/></td>
+                                <td><t t-esc="c.yard_id.name or '-'"/></td>
+                                <td><t t-esc="c.block.name or '-'"/></td>
+                                <td>
+                                    <a t-attf-href="/my/containers/#{c.id}" class="btn btn-sm btn-primary">
+                                        ✏️ Edit
+                                    </a>
+                                </td>
+                            </tr>
+                        </t>
+                    </tbody>
+                </table>
+
+                <t t-if="not containers">
+                    <div class="alert alert-info text-center">
+                        No containers found. Click <strong>“Create New Container”</strong> to add one.
+                    </div>
+                </t>
+            </div>
+        </t>
+    </template>
+
+    <!-- ============================================== -->
+    <!-- CREATE / EDIT CONTAINER FORM -->
+    <!-- ============================================== -->
+    <template id="portal_container_edit" name="Container Edit Form">
+        <t t-call="portal.portal_layout">
+            <div class="container mt-4">
+                <h2>
+                    <t t-if="container.id">Edit Container</t>
+                    <t t-else="">Create New Container</t>
+                    <t t-if="container.container_number">
+                        - <t t-esc="container.container_number"/>
+                    </t>
+                </h2>
+
+                <form t-attf-action="/my/containers/#{container.id or 'new'}" method="post" class="mt-3">
+
+                    <!-- IDENTIFICATION -->
+                    <h5 class="mt-3 mb-2 text-primary">Identification</h5>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Container Number</label>
+                            <input type="text" name="container_number" class="form-control"
+                                   t-att-value="container.container_number or ''" required="true"/>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Owner Code</label>
+                            <input type="text" name="owner_code" class="form-control"
+                                   t-att-value="container.owner_code or ''"/>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Equipment Category</label>
+                            <input type="text" name="equipment_category" class="form-control"
+                                   t-att-value="container.equipment_category or ''"/>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Serial Number</label>
+                            <input type="text" name="serial_number" class="form-control"
+                                   t-att-value="container.serial_number or ''"/>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">Check Digit</label>
+                            <input type="text" name="check_digit" class="form-control"
+                                   t-att-value="container.check_digit or ''"/>
+                        </div>
+                    </div>
+
+                    <!-- CLASSIFICATION -->
+                    <h5 class="mt-3 mb-2 text-primary">Classification</h5>
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label fw-bold">ISO Size &amp; Type Code</label>
+                            <input type="text" name="iso_size_type_code" class="form-control"
+                                   t-att-value="container.iso_size_type_code or ''"/>
+                        </div>
+
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label fw-bold">Container Type</label>
+                            <select name="container_type" class="form-select">
+                                <option value="">-- Select Type --</option>
+                                <option value="dry" t-att-selected="container.container_type == 'dry'">Dry Van</option>
+                                <option value="reefer" t-att-selected="container.container_type == 'reefer'">Reefer (Refrigerated)</option>
+                                <option value="open_top" t-att-selected="container.container_type == 'open_top'">Open Top</option>
+                                <option value="flat_rack" t-att-selected="container.container_type == 'flat_rack'">Flat Rack</option>
+                                <option value="tank" t-att-selected="container.container_type == 'tank'">Tank</option>
+                                <option value="other" t-att-selected="container.container_type == 'other'">Other</option>
+                            </select>
+                        </div>
+
+                        <div class="col-md-3 mb-3">
+                            <label class="form-label fw-bold">Size</label>
+                            <select name="size" class="form-select">
+                                <option value="">-- Select Size --</option>
+                                <option value="20ft" t-att-selected="container.size == '20ft'">20FT</option>
+                                <option value="40ft" t-att-selected="container.size == '40ft'">40FT</option>
+                                <option value="45ft" t-att-selected="container.size == '45ft'">45FT</option>
+                                <option value="40hc" t-att-selected="container.size == '40hc'">40HC (High Cube)</option>
+                                <option value="20hc" t-att-selected="container.size == '20hc'">20HC (High Cube)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- WEIGHT & CAPACITY -->
+                    <h5 class="mt-3 mb-2 text-primary">Weight and Capacity</h5>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Max Gross Weight (kg)</label>
+                            <input type="number" name="max_gross_weight" class="form-control"
+                                   t-att-value="container.max_gross_weight or ''"/>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Tare Weight (kg)</label>
+                            <input type="number" name="tare_weight" class="form-control"
+                                   t-att-value="container.tare_weight or ''"/>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Payload Capacity (kg)</label>
+                            <input type="number" readonly="true" class="form-control"
+                                   t-att-value="container.payload_capacity or ''"/>
+                        </div>
+                    </div>
+
+                    <!-- OWNERSHIP & LOCATION -->
+                    <h5 class="mt-3 mb-2 text-primary">Ownership and Location</h5>
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Owner</label>
+                            <select name="container_owner" class="form-select">
+                                <option value="">-- Select Owner --</option>
+                                <t t-foreach="partners" t-as="p">
+                                    <option t-att-value="p.id"
+                                            t-att-selected="container.container_owner.id == p.id">
+                                        <t t-esc="p.name"/>
+                                    </option>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Depot</label>
+                            <select name="depot_id" class="form-select">
+                                <option value="">-- Select Depot --</option>
+                                <t t-foreach="depots" t-as="d">
+                                    <option t-att-value="d.id"
+                                            t-att-selected="container.depot_id.id == d.id">
+                                        <t t-esc="d.name"/>
+                                    </option>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Yard</label>
+                            <select name="yard_id" class="form-select">
+                                <option value="">-- Select Yard --</option>
+                                <t t-foreach="yards" t-as="y">
+                                    <option t-att-value="y.id"
+                                            t-att-selected="container.yard_id.id == y.id">
+                                        <t t-esc="y.name"/>
+                                    </option>
+                                </t>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Block</label>
+                            <select name="block" class="form-select">
+                                <option value="">-- Select Block --</option>
+                                <t t-foreach="blocks" t-as="b">
+                                    <option t-att-value="b.id"
+                                            t-att-selected="container.block.id == b.id">
+                                        <t t-esc="b.name"/>
+                                    </option>
+                                </t>
+                            </select>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Last Inspection Date</label>
+                            <input type="date" name="last_inspection_date" class="form-control"
+                                   t-att-value="container.last_inspection_date or ''"/>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label fw-bold">Stage</label>
+                            <input type="text" readonly="true" class="form-control"
+                                   t-att-value="container.stage_id.name or ''"/>
+                        </div>
+                    </div>
+
+                    <!-- REMARKS -->
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Remarks</label>
+                        <textarea name="remarks" class="form-control" rows="3">
+                            <t t-esc="container.remarks or ''"/>
+                        </textarea>
+                    </div>
+                    <div class="mb-3">
+                        <button type="submit" class="btn btn-primary">💾 Save</button>
+                        <a href="/my/containers" class="btn btn-secondary ms-2">← Back</a>
+                    </div>
+                </form>
+                <script><![CDATA[
+                document.addEventListener("DOMContentLoaded", function () {
+                    const grossInput = document.querySelector('input[name="max_gross_weight"]');
+                    const tareInput = document.querySelector('input[name="tare_weight"]');
+                    const payloadInput = document.querySelector('input[name="payload_capacity"]');
+
+                    function updatePayload() {
+                        const gross = parseFloat(grossInput.value) || 0;
+                        const tare = parseFloat(tareInput.value) || 0;
+                        const payload = gross - tare;
+                        payloadInput.value = payload >= 0 ? payload.toFixed(2) : 0;
+                    }
+
+                    if (grossInput && tareInput && payloadInput) {
+                        grossInput.addEventListener("input", updatePayload);
+                        tareInput.addEventListener("input", updatePayload);
+                    }
+                });
+                ]]></script>
+            </div>
+        </t>
+    </template>
+</odoo>

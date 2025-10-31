@@ -31,6 +31,8 @@
         # QWeb templates for website frontend
         "views/transporter_templates.xml",
         "views/rot_templates.xml",
+        "views/portal_container_templates.xml",
+        "views/slot_booking_form_template.xml",
 
         # Now load menus so menu items can reference the actions above and other views can reference menus
         "views/menu.xml",

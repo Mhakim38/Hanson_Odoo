@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_res_vehicle_portal,res.vehicle.portal,slot_booking.model_res_vehicle,base.group_portal,1,0,0,0
+access_res_trailer_portal,res.trailer.portal,slot_booking.model_res_trailer,base.group_portal,1,0,0,0
+access_res_driver_portal,res.driver.portal,slot_booking.model_res_driver,base.group_portal,1,0,0,0
+access_res_transporter_portal,res.transporter.portal,slot_booking.model_res_transporter,base.group_portal,1,0,0,0
