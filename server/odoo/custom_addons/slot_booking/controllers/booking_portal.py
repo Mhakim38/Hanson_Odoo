@@ -2,6 +2,7 @@ from odoo import http
 from odoo.http import request
 from datetime import date
 import json
+import base64
 
 class BookingPortalController(http.Controller):
 
@@ -30,10 +31,10 @@ class BookingPortalController(http.Controller):
     @http.route(['/slot_booking/submit'], type='http', auth='public', website=True, csrf=True)
     def submit_slot_booking(self, **post):
         booking_number = f"BK-{date.today().strftime('%Y%m%d')}-{request.env['ir.sequence'].next_by_code('res.booking.list') or '001'}"
-        request.env['res.booking.list'].sudo().create({
+        vals = {
             'booking_number': booking_number,
             'booking_date': date.today(),
-            'slot_id': int(post.get('slot_id')),
+            'slot_id': int(post.get('slot_id')) if post.get('slot_id') else False,
             'booking_type': post.get('booking_type'),
             'depot_id_from': int(post.get('depot_id_from')) if post.get('depot_id_from') else False,
             'depot_id_to': int(post.get('depot_id_to')) if post.get('depot_id_to') else False,
@@ -42,11 +43,39 @@ class BookingPortalController(http.Controller):
             'vehicle_id': int(post.get('vehicle_id')) if post.get('vehicle_id') else False,
             'trailer_id': int(post.get('trailer_id')) if post.get('trailer_id') else False,
             'driver_id': int(post.get('driver_id')) if post.get('driver_id') else False,
-        })
+        }
+        new_booking = request.env['res.booking.list'].sudo().create(vals)
         return request.render('slot_booking.slot_booking_thanks_template', {
-            'booking_number': booking_number
+            'booking_number': booking_number,
+            'booking': new_booking.sudo(),
         })
 
+    @http.route(['/slot_booking/download_qr/<int:booking_id>'], type='http', auth='public', website=True, csrf=False)
+    def download_qr(self, booking_id, **kwargs):
+        """Serve the QR code as an attachment (PNG) if available, otherwise redirect to the qr_url.
+        """
+        booking = request.env['res.booking.list'].sudo().browse(booking_id)
+        if not booking.exists():
+            return request.not_found()
+
+        # If binary QR stored, send as attachment
+        if booking.qr_code:
+            try:
+                data = base64.b64decode(booking.qr_code)
+            except Exception:
+                return request.not_found()
+            filename = booking.qr_code_name or f'booking_{booking.id}.png'
+            headers = [
+                ('Content-Type', 'image/png'),
+                ('Content-Disposition', f'attachment; filename="{filename}"')
+            ]
+            return request.make_response(data, headers=headers)
+
+        # If fallback URL exists, redirect to it
+        if booking.qr_url:
+            return request.redirect(booking.qr_url)
+
+        return request.not_found()
 
 
 class SlotBookingController(http.Controller):

@@ -36,6 +36,9 @@
         <field name="model">res.booking.list</field>
         <field name="arch" type="xml">
             <form string="Booking List">
+                <header>
+                    <button name="action_download_qr" type="object" string="Download QR" class="btn-primary" modifiers="{'invisible': [['qr_code', '=', False], ['qr_url', '=', False]]}"/>
+                </header>
                 <sheet>
                     <group>
                         <group>
@@ -66,6 +69,17 @@
                                     <field name="vehicle_id"/>
                                     <field name="trailer_id"/>
                                     <field name="driver_id"/>
+                                </group>
+                            </group>
+                        </page>
+
+                        <!-- New QR page to display generated QR immediately after create -->
+                        <page string="QR">
+                            <group>
+                                <field name="qr_code" widget="image" options="{'size': 300}"/>
+                                <group>
+                                    <field name="qr_code_name" readonly="1"/>
+                                    <field name="qr_url" readonly="1"/>
                                 </group>
                             </group>
                         </page>

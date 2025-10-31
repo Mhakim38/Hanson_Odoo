@@ -221,14 +221,34 @@
                     <div class="card-body">
                         <h4 class="text-primary fw-bold">Booking Number</h4>
                         <h2 class="fw-bold text-dark mb-3">
-                            <t t-esc="booking_number or 'N/A'"/>
+                            <t t-esc="booking.booking_number if booking else (booking_number or 'N/A')"/>
                         </h2>
 
-                        <t t-if="slot">
-                            <p class="mb-1"><strong>Slot:</strong> <t t-esc="slot.slot_id"/></p>
-                            <p class="mb-1"><strong>Time:</strong> <t t-esc="slot.slot_time"/></p>
-                            <p class="mb-1"><strong>Criteria:</strong> <t t-esc="slot.criteria_id.criteria_content or '-'"/></p>
-                            <p class="mb-1"><strong>Gate:</strong> <t t-esc="slot.gate"/></p>
+                        <t t-if="booking">
+                            <p class="mb-1"><strong>Slot:</strong> <t t-esc="booking.slot_id.slot_id or '-'"/></p>
+                            <p class="mb-1"><strong>Time:</strong> <t t-esc="booking.slot_id.slot_time or '-'"/></p>
+                            <p class="mb-1"><strong>Criteria:</strong> <t t-esc="booking.slot_id.criteria_id.criteria_content or '-'"/></p>
+                            <p class="mb-1"><strong>Gate:</strong> <t t-esc="booking.slot_id.gate or '-'"/></p>
+
+                            <!-- QR display: binary or fallback URL -->
+                            <t t-if="booking.qr_code">
+                                <div class="mt-3">
+<!--                                    <img t-att-src="'data:image/png;base64,%s' % booking.qr_code" style="max-width:300px;"/>-->
+                                    <p class="small text-muted mt-2 mb-0">Please download the QR</p>
+                                    <a t-att-href="'/slot_booking/download_qr/%d' % booking.id" class="btn btn-outline-primary btn-sm mt-2">Download QR</a>
+                                </div>
+                            </t>
+                            <t t-elif="booking.qr_url">
+                                <div class="mt-3">
+<!--                                    <img t-att-src="booking.qr_url" style="max-width:300px;"/>-->
+                                    <p class="small text-muted mt-2 mb-0">Please download the QR</p>
+                                    <a t-att-href="booking.qr_url" class="btn btn-outline-primary btn-sm mt-2" target="_blank">Open/Download QR</a>
+                                </div>
+                            </t>
+                        </t>
+
+                        <t t-if="not booking">
+                            <p class="mb-1 text-muted">Booking created. You may view it in your account or contact support for the QR.</p>
                         </t>
                     </div>
                 </div>
