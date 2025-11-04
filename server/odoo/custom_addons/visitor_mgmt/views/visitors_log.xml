@@ -18,9 +18,9 @@
                     <table class="table table-striped table-bordered">
                       <thead class="table-light">
                         <tr>
+                          <th>Visitor Type</th>
                           <th>Visitor</th>
                           <th>Unit</th>
-                          <th>Purpose</th>
                           <th>Window</th>
                           <th>Status</th>
                           <th>Badge No</th>
@@ -29,9 +29,9 @@
                       <tbody>
                         <t t-foreach="visits" t-as="v">
                           <tr>
+                            <td><t t-esc="v.purpose or '-'"/></td>
                             <td><t t-esc="v.visitor_id.name"/></td>
                             <td><t t-esc="v.unit_id.display_name"/></td>
-                            <td><t t-esc="v.purpose or '-'"/></td>
                             <td><t t-esc="v.schedule_from"/> → <t t-esc="v.schedule_to"/></td>
                             <td>
                               <t t-set="state_label" t-value="v._fields['state'].convert_to_export(v.state, v)"/>

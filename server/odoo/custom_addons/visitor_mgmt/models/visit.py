@@ -1,4 +1,6 @@
 from datetime import timedelta
+from email.policy import default
+
 from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError, UserError
 import base64
@@ -63,7 +65,13 @@ class EstateVisit(models.Model):
         required=True,
         domain=lambda self: [('id', 'in', self.env['res.partner'].search([]).mapped('estate_unit_ids').ids)]
     )
-    purpose = fields.Char()
+    purpose = fields.Selection([
+        ('', 'Please select visitor type'),
+        ('visitor', 'Visitor'),
+        ('pickup', 'Pickup'),
+        ('contractor/service provider', 'Contractor/Service Provider'),
+    ], string="Visitor Type", required=True)
+
     schedule_from = fields.Datetime(required=True, default=fields.Datetime.now)
     schedule_to = fields.Datetime(required=True)
     state = fields.Selection([

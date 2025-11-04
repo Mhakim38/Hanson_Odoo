@@ -5,10 +5,10 @@
     <field name="model">estate.visit</field>
     <field name="arch" type="xml">
       <tree>
+        <field name="purpose"/> <!-- This is visitor type -->
         <field name="visitor_id"/>
         <field name="host_id"/>
         <field name="unit_id"/>
-        <field name="purpose"/>
         <field name="schedule_from"/>
         <field name="schedule_to"/>
         <field name="state"/>
@@ -27,12 +27,10 @@
         <sheet>
           <group>
             <group string="Visitor Details" colspan="2">
+              <field name="purpose"/>
               <field name="host_id"/>
-              <!-- Filter visitor picker by the selected host -->
-              <field name="visitor_id" domain="[('host_id','=', host_id)]"/>
               <field name="visitor_vehicle_ids"/>
               <field name="unit_id"/>
-              <field name="purpose"/>
             </group>
 
             <group string="Visit Window">
