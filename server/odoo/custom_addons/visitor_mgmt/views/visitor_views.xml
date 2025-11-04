@@ -31,11 +31,11 @@
             <field name="notes"/>
           </group>
 
-          <group string="QR">
-            <field name="qr_image" widget="image" class="oe_avatar" options="{'preview_image': 'qr_image'}"/>
-            <field name="qr_token" readonly="1"/>
-            <button name="action_regenerate_qr" type="object" string="Regenerate QR" class="oe_highlight"/>
-          </group>
+<!--          <group string="QR">-->
+<!--            <field name="qr_image" widget="image" class="oe_avatar" options="{'preview_image': 'qr_image'}"/>-->
+<!--            <field name="qr_token" readonly="1"/>-->
+<!--            <button name="action_regenerate_qr" type="object" string="Regenerate QR" class="oe_highlight"/>-->
+<!--          </group>-->
 
         </sheet>
       </form>
