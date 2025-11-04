@@ -82,3 +82,12 @@ class EstateVisitorQR(models.Model):
         for r in self:
             r._generate_qr_code()
         return True
+
+class EstateVisitorHost(models.Model):
+    _inherit = 'estate.visitor'
+
+    host_id = fields.Many2one(
+        'res.partner',
+        string="Host / Resident",
+        required=False
+    )
