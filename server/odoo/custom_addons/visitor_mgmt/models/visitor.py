@@ -20,6 +20,13 @@ class EstateVisitor(models.Model):
     phone = fields.Char()
     blacklisted = fields.Boolean(default=False)
     notes = fields.Text()
+    # The host/resident this visitor is assigned to. Required per your request.
+    host_id = fields.Many2one(
+        'res.partner',
+        string='Host / Resident',
+        required=True,
+        ondelete='restrict'
+    )
 
 
 class EstateVisitorVehicle(models.Model):
@@ -82,12 +89,3 @@ class EstateVisitorQR(models.Model):
         for r in self:
             r._generate_qr_code()
         return True
-
-class EstateVisitorHost(models.Model):
-    _inherit = 'estate.visitor'
-
-    host_id = fields.Many2one(
-        'res.partner',
-        string="Host / Resident",
-        required=False
-    )

@@ -12,21 +12,50 @@ class EstateVisit(models.Model):
     _description = "Visit"
     _inherit = ['mail.thread']
 
-    host_id = fields.Many2one(
-        'res.partner',
-        string="Host / Resident",
-        required=True
-    )
-    name = fields.Char(related="visitor_id.name")
-    visitor_id = fields.Many2one('estate.visitor', required=True)
-    visitor_vehicle_ids = fields.Many2one('estate.visitor.vehicle', string="Vehicles")
-
+    # The host who invited the visitor. (Keep a single definition.)
     host_id = fields.Many2one(
         'res.partner',
         string="Host",
         required=True,
         help="The person (resident or owner) who invited the visitor."
     )
+
+    # Visitor is a many2one to estate.visitor. We'll restrict selectable visitors
+    # to those that have their host_id set to the chosen host using an onchange.
+    name = fields.Char(related="visitor_id.name")
+    visitor_id = fields.Many2one('estate.visitor', required=True)
+    visitor_vehicle_ids = fields.Many2one('estate.visitor.vehicle', string="Vehicles")
+
+    @api.onchange('host_id')
+    def _onchange_host_id(self):
+        """Restrict visitor selection to visitors assigned to the selected host.
+
+        If no host is selected, allow all visitors (empty domain).
+        If a visitor is already chosen but doesn't belong to the new host, clear it
+        to avoid invalid pairings.
+        """
+        if self.host_id:
+            # Clear visitor if it doesn't belong to the selected host
+            if self.visitor_id and self.visitor_id.host_id and self.visitor_id.host_id.id != self.host_id.id:
+                self.visitor_id = False
+            return {'domain': {'visitor_id': [('host_id', '=', self.host_id.id)]}}
+        # No host selected: no domain restriction
+        return {'domain': {'visitor_id': []}}
+
+    @api.onchange('visitor_id')
+    def _onchange_visitor_id(self):
+        """When visitor is chosen, auto-fill host_id to the visitor's assigned host.
+
+        This covers the case where the user picks visitor first.
+        """
+        if self.visitor_id:
+            if self.visitor_id.host_id:
+                # set the host to the visitor's host
+                self.host_id = self.visitor_id.host_id
+            else:
+                # visitor should have a host (visitor host is required), but handle gracefully
+                self.host_id = False
+        return {}
 
     unit_id = fields.Many2one(
         'estate.unit',
@@ -80,6 +109,12 @@ class EstateVisit(models.Model):
         for r in self:
             if r.valid_minutes and r.valid_minutes <= 0:
                 raise ValidationError(_("Validity minutes must be positive."))
+
+    @api.constrains('host_id', 'visitor_id')
+    def _check_visitor_host_match(self):
+        for r in self:
+            if r.visitor_id and r.host_id and r.visitor_id.host_id and r.visitor_id.host_id.id != r.host_id.id:
+                raise ValidationError(_("Selected visitor is not assigned to the chosen host."))
 
     # ----------------------------
     # Helpers

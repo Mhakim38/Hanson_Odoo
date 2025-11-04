@@ -27,9 +27,10 @@
         <sheet>
           <group>
             <group string="Visitor Details" colspan="2">
-              <field name="visitor_id"/>
-              <field name="visitor_vehicle_ids"/>
               <field name="host_id"/>
+              <!-- Filter visitor picker by the selected host -->
+              <field name="visitor_id" domain="[('host_id','=', host_id)]"/>
+              <field name="visitor_vehicle_ids"/>
               <field name="unit_id"/>
               <field name="purpose"/>
             </group>

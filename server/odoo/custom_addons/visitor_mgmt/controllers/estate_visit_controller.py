@@ -37,10 +37,12 @@ class EstateVisitController(http.Controller):
             schedule_from_dt = datetime.strptime(schedule_from, "%Y-%m-%dT%H:%M")
             schedule_to_dt = datetime.strptime(schedule_to, "%Y-%m-%dT%H:%M")
 
-            # Create visitor record
-            visitor = request.env['estate.visitor'].sudo().create({
+            # Create visitor record and assign host_id so it appears when filtering by host
+            visitor_vals = {
                 'name': visitor_name,
-            })
+                'host_id': partner.id,
+            }
+            visitor = request.env['estate.visitor'].sudo().create(visitor_vals)
 
             # Optionally create vehicle
             if vehicle_no:
@@ -56,11 +58,8 @@ class EstateVisitController(http.Controller):
                 'schedule_from': schedule_from_dt,
                 'schedule_to': schedule_to_dt,
                 'state': 'scheduled',
+                'host_id': partner.id,
             }
-
-            # Only add host_id if the field exists
-            if 'host_id' in request.env['estate.visit']._fields:
-                visit_vals['host_id'] = partner.id
 
             request.env['estate.visit'].sudo().create(visit_vals)
 
