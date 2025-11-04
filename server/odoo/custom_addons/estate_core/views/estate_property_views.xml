@@ -31,8 +31,6 @@
                 <tree editable="bottom">
                   <field name="name"/>
                   <field name="street"/>
-                  <field name="bedrooms"/>
-                  <field name="unit_type"/>
                   <field name="status"/>
                 </tree>
               </field>

@@ -55,4 +55,4 @@ class EstateUnit(models.Model):
         ('type_b', 'Type B (3,810 sq ft)'),
         ('type_c1_e1', 'Type C1/E1 (4,370 sq ft)'),
         ('type_c2_e2', 'Type C2/E2 (4,434 sq ft)'),
-    ], string='Unit Type', required=True)
+    ], string='Unit Type')

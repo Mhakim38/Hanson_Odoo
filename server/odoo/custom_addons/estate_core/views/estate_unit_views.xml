@@ -9,7 +9,6 @@
         <field name="owner_id"/>
         <field name="status"/>
         <field name="street"/>
-        <field name="unit_type"/>
       </tree>
     </field>
   </record>
@@ -25,8 +24,6 @@
             <field name="property_id"/>
             <field name="name"/>
             <field name="street"/>
-            <field name="bedrooms"/>
-            <field name="unit_type"/>
             <field name="status"/>
             <field name="owner_id"/>
           </group>
