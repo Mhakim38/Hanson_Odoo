@@ -6,9 +6,6 @@ import base64
 import qrcode
 from io import BytesIO
 import uuid
-import logging
-
-_logger = logging.getLogger(__name__)
 
 
 class EstateVisit(models.Model):
@@ -32,58 +29,29 @@ class EstateVisit(models.Model):
 
     @api.onchange('visitor_id')
     def _onchange_visitor_id(self):
-        """When a visitor is chosen, auto-fill host_id to the visitor's assigned host.
-
-        Also logs the action for debugging.
-        """
+        """When a visitor is chosen, auto-fill host_id to the visitor's assigned host."""
         if self.visitor_id and getattr(self.visitor_id, 'host_id', False):
             self.host_id = self.visitor_id.host_id
-            _logger.info("visit._onchange_visitor_id: visitor_id=%s set host_id=%s", self.visitor_id.id, self.host_id.id)
             # Ensure the unit domain is updated when visitor sets the host
-            return self._onchange_host_or_property()
+            return self._onchange_host()
         else:
             self.host_id = False
-            _logger.info("visit._onchange_visitor_id: visitor has no host, host_id cleared")
             # When host was cleared, also return domain (no restriction)
-            return self._onchange_host_or_property()
-        return {}
+            return self._onchange_host()
 
-    # Allow selecting a Property to filter Units, and/or filter Units by the selected Host
-    property_id = fields.Many2one('estate.property', string='Property')
+    @api.onchange('host_id')
+    def _onchange_host(self):
+        """Return a domain for `unit_id` based on selected host.
 
-    @api.onchange('host_id', 'property_id')
-    def _onchange_host_or_property(self):
-        """Return a domain for `unit_id` based on selected host or property.
-
-        Priority:
-        - If `host_id` is set, show units owned by that partner (owner_id).
-        - Else if `property_id` is set, show units belonging to that property.
-        - Otherwise no restriction (show all units).
-
-        Also clear the selected unit if it doesn't match the new domain.
+        Shows units where host is either the owner or in resident_partner_ids.
         """
-        # Host takes precedence
         if self.host_id:
             # Clear unit if it doesn't belong to the selected host
             if self.unit_id and getattr(self.unit_id, 'owner_id', False) and self.unit_id.owner_id.id != self.host_id.id:
                 self.unit_id = False
-            # Include units where the host is the owner OR a listed resident
-            domain = {'domain': {'unit_id': ['|', ('owner_id', '=', self.host_id.id), ('resident_partner_ids', 'in', self.host_id.id)]}}
-            _logger.info("visit._onchange_host_or_property triggered: host_id=%s, returning domain=%s", self.host_id.id, domain)
-            return domain
-
-        # If property specified (and no host), filter by property
-        if self.property_id:
-            if self.unit_id and getattr(self.unit_id, 'property_id', False) and self.unit_id.property_id.id != self.property_id.id:
-                self.unit_id = False
-            domain = {'domain': {'unit_id': [('property_id', '=', self.property_id.id)]}}
-            _logger.info("visit._onchange_host_or_property triggered: property_id=%s, returning domain=%s", self.property_id.id, domain)
-            return domain
-
-        # No restriction
-        domain = {'domain': {'unit_id': []}}
-        _logger.info("visit._onchange_host_or_property triggered: no host/property selected, returning domain=%s", domain)
-        return domain
+            # Domain: owner = host OR resident_partner_ids contains host
+            return {'domain': {'unit_id': ['|', ('owner_id', '=', self.host_id.id), ('resident_partner_ids', 'in', self.host_id.id)]}}
+        return {'domain': {'unit_id': []}}
 
     unit_id = fields.Many2one(
         'estate.unit',
