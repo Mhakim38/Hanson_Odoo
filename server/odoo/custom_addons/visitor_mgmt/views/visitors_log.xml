@@ -8,7 +8,7 @@
           <div class="col-lg-10 col-md-12">
             <div class="card shadow-lg border-0">
               <div class="card-header bg-primary text-white text-center">
-                <h2 class="mb-0">Visi Log for <t t-esc="partner.name"/></h2>
+                <h2 class="mb-0">Visit Log for <t t-esc="partner.name"/></h2>
               </div>
               <div class="card-body">
 
