@@ -31,7 +31,8 @@
               <field name="host_id"/>
               <field name="visitor_id"/>
               <field name="visitor_vehicle_ids"/>
-              <field name="unit_id"/>
+              <!-- Unit will be filtered in the view by host (owner or resident) OR by property -->
+              <field name="unit_id" domain="['|', ('owner_id', '=', host_id), ('resident_partner_ids', 'in', host_id)]"/>
             </group>
 
             <group string="Visit Window">
