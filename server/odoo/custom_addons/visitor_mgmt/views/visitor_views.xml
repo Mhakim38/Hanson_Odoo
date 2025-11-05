@@ -9,7 +9,6 @@
         <field name="id_number"/>
         <field name="phone"/>
         <field name="blacklisted"/>
-        <field name="qr_token"/>
       </tree>
     </field>
   </record>
