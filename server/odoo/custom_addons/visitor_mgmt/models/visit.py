@@ -18,6 +18,7 @@ class EstateVisit(models.Model):
         'res.partner',
         string="Host",
         required=True,
+        domain="[('is_company', '=', False)]",
         help="The person (resident or owner) who invited the visitor."
     )
 
