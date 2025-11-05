@@ -24,7 +24,6 @@ class EstateVisitor(models.Model):
     host_id = fields.Many2one(
         'res.partner',
         string='Host / Resident',
-        required=True,
         ondelete='restrict'
     )
 
