@@ -1,5 +1,4 @@
 from datetime import timedelta
-from email.policy import default
 
 from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError, UserError
@@ -27,37 +26,6 @@ class EstateVisit(models.Model):
     name = fields.Char(related="visitor_id.name")
     visitor_id = fields.Many2one('estate.visitor', required=True)
     visitor_vehicle_ids = fields.Many2one('estate.visitor.vehicle', string="Vehicles")
-
-    @api.onchange('host_id')
-    def _onchange_host_id(self):
-        """Restrict visitor selection to visitors assigned to the selected host.
-
-        If no host is selected, allow all visitors (empty domain).
-        If a visitor is already chosen but doesn't belong to the new host, clear it
-        to avoid invalid pairings.
-        """
-        if self.host_id:
-            # Clear visitor if it doesn't belong to the selected host
-            if self.visitor_id and self.visitor_id.host_id and self.visitor_id.host_id.id != self.host_id.id:
-                self.visitor_id = False
-            return {'domain': {'visitor_id': [('host_id', '=', self.host_id.id)]}}
-        # No host selected: no domain restriction
-        return {'domain': {'visitor_id': []}}
-
-    @api.onchange('visitor_id')
-    def _onchange_visitor_id(self):
-        """When visitor is chosen, auto-fill host_id to the visitor's assigned host.
-
-        This covers the case where the user picks visitor first.
-        """
-        if self.visitor_id:
-            if self.visitor_id.host_id:
-                # set the host to the visitor's host
-                self.host_id = self.visitor_id.host_id
-            else:
-                # visitor should have a host (visitor host is required), but handle gracefully
-                self.host_id = False
-        return {}
 
     unit_id = fields.Many2one(
         'estate.unit',
