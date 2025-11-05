@@ -30,10 +30,20 @@
                   <form action="/estate/visit/submit" method="post" class="o_form">
                     <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
 
+                    <!-- Hidden visitor_id to be filled when an existing visitor is found -->
+                    <input type="hidden" name="visitor_id" id="visitor_id" value=""/>
+
+                    <!-- ID Number (added above Visitor Name) -->
+                    <div class="mb-3">
+                      <label for="id_number" class="form-label fw-semibold">ID Number</label>
+                      <input type="text" id="id_number" name="id_number" class="form-control" placeholder="Enter ID number (IC / Passport / License)" autocomplete="off"/>
+                      <div id="id_lookup_feedback" class="form-text text-muted small">Enter ID number to auto-fill visitor name.</div>
+                    </div>
+
                     <!-- Visitor Name -->
                     <div class="mb-3">
                       <label for="visitor_name" class="form-label fw-semibold">Visitor Name</label>
-                      <input type="text" name="visitor_name" class="form-control form-control-lg" placeholder="Enter full name" required="required"/>
+                      <input type="text" id="visitor_name" name="visitor_name" class="form-control form-control-lg" placeholder="Enter full name" required="required"/>
                     </div>
 
                     <!-- Unit -->
@@ -50,7 +60,16 @@
                     </select>
                   </div>
 
-
+                  <!-- Purpose (matches visit.py selection) -->
+                  <div class="mb-3">
+                    <label for="purpose" class="form-label fw-semibold">Visitor Type</label>
+                    <select name="purpose" id="purpose" class="form-select" required="required">
+                      <option disabled="disabled" selected="selected" value="">Please select visitor type</option>
+                      <option value="visitor">Visitor</option>
+                      <option value="pickup">Pickup</option>
+                      <option value="contractor/service provider">Contractor/Service Provider</option>
+                    </select>
+                  </div>
 
                     <!-- Vehicle -->
                     <div class="mb-3">
@@ -82,6 +101,72 @@
           </div>
         </div>
       </div>
+
+      <!-- JS: lookup visitor by ID number and populate name (make readonly when found) -->
+      <script type="text/javascript"><![CDATA[
+        (function () {
+          function debounce(fn, wait) {
+            var t;
+            return function () {
+              var ctx = this, args = arguments;
+              clearTimeout(t);
+              t = setTimeout(function () { fn.apply(ctx, args); }, wait || 300);
+            };
+          }
+
+          function setFeedback(msg, isError) {
+            var el = document.getElementById('id_lookup_feedback');
+            if (!el) return;
+            el.textContent = msg;
+            el.classList.remove('text-danger','text-success');
+            if (isError) el.classList.add('text-danger');
+            else el.classList.add('text-success');
+          }
+
+          var idInput = document.getElementById('id_number');
+          var nameInput = document.getElementById('visitor_name');
+          var hiddenVisitor = document.getElementById('visitor_id');
+
+          if (!idInput || !nameInput) return;
+
+          var lookup = debounce(function () {
+            var val = idInput.value && idInput.value.trim();
+            if (!val) {
+              // clear
+              hiddenVisitor.value = '';
+              nameInput.readOnly = false;
+              setFeedback('Enter ID number to auto-fill visitor name.', false);
+              return;
+            }
+            var url = '/estate/visitor_lookup?id_number=' + encodeURIComponent(val);
+            fetch(url, { credentials: 'same-origin' })
+              .then(function (r) { return r.json(); })
+              .then(function (data) {
+                if (data && data.id) {
+                  hiddenVisitor.value = data.id;
+                  nameInput.value = data.name || '';
+                  nameInput.readOnly = true;
+                  setFeedback('Existing visitor loaded.', false);
+                } else {
+                  hiddenVisitor.value = '';
+                  nameInput.readOnly = false;
+                  setFeedback('No existing visitor found. You can enter a name to create a new visitor.', false);
+                }
+              })
+              .catch(function (err) {
+                console.error('Visitor lookup failed', err);
+                setFeedback('Lookup failed. Please try again.', true);
+                hiddenVisitor.value = '';
+                nameInput.readOnly = false;
+              });
+          }, 350);
+
+          idInput.addEventListener('input', lookup);
+          idInput.addEventListener('change', lookup);
+          idInput.addEventListener('blur', lookup);
+        })();
+      ]]></script>
+
     </t>
   </template>
 

@@ -24,6 +24,7 @@ class EstateVisit(models.Model):
 
     # Visitor is a many2one to estate.visitor. We'll restrict selectable visitors
     # to those that have their host_id set to the chosen host using an onchange.
+    id_number = fields.Char(related="visitor_id.id_number", string="ID Number", index=True, readonly=False, tracking=True)
     name = fields.Char(related="visitor_id.name")
     visitor_id = fields.Many2one('estate.visitor', required=True)
     visitor_vehicle_ids = fields.Many2one('estate.visitor.vehicle', string="Vehicles")
