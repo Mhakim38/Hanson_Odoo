@@ -2,8 +2,7 @@
     "name": "Visitor Management",
     "version": "17.0.1.0.0",
     "summary": "Visitors, visits, gates, and ad-hoc check-in",
-    "depends": ["estate_core",
-                "base", "mail"],
+    "depends": ["estate_core", "base", "mail", "website"],
     "data": [
         "security/groups.xml",
         "security/ir.model.access.csv",
