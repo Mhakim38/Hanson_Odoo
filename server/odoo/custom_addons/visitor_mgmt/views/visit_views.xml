@@ -29,7 +29,6 @@
             <group string="Visitor Details" colspan="2">
               <field name="purpose"/>
               <field name="host_id"/>
-              <!-- Show only visitors assigned to the chosen host -->
               <field name="visitor_id"/>
               <field name="visitor_vehicle_ids"/>
               <field name="unit_id"/>

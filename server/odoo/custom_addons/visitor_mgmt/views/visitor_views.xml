@@ -22,7 +22,6 @@
         <sheet>
           <group>
             <field name="name"/>
-            <field name="host_id"/>
             <field name="id_type"/>
             <field name="id_number"/>
             <field name="phone"/>
