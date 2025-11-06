@@ -2,6 +2,7 @@ from odoo import http
 from odoo.http import request
 from datetime import datetime
 import json
+import re
 
 
 class EstateVisitController(http.Controller):
@@ -99,10 +100,18 @@ class EstateVisitController(http.Controller):
             # ------------------------
             # Create visitor vehicle (optional)
             # ------------------------
-            if vehicle_no:
-                request.env['estate.visitor.vehicle'].sudo().create({
+            # Normalize and validate vehicle number before creating
+            vehicle_rec = None
+            vehicle_raw = (vehicle_no or '')
+            vehicle_no_clean = re.sub(r'[^A-Za-z0-9-]+', '', vehicle_raw).upper()
+            if vehicle_no_clean in ('N/A', 'NA', 'NONE'):
+                vehicle_no_clean = 'NA'
+            if vehicle_no_clean:
+                if not re.match(r'^[A-Z0-9-]{1,15}$', vehicle_no_clean):
+                    raise ValueError("Invalid vehicle number. Use uppercase letters, numbers and hyphens only (max 15 characters).")
+                vehicle_rec = request.env['estate.visitor.vehicle'].sudo().create({
                     'visitor_id': visitor.id,
-                    'plate_no': vehicle_no,
+                    'plate_no': vehicle_no_clean,
                 })
 
             # ------------------------
@@ -135,6 +144,10 @@ class EstateVisitController(http.Controller):
                 # ✅ Fallback host_id (avoid NULL constraint error)
                 'host_id': unit.owner_id.id if unit and unit.owner_id else request.env.user.partner_id.id,
             }
+
+            # If we created a vehicle record, set the visit's Many2one field to it
+            if vehicle_rec:
+                visit_vals['visitor_vehicle_ids'] = vehicle_rec.id
 
             visit = request.env['estate.visit'].with_context(from_guard_portal=True).sudo().create(visit_vals)
 

@@ -1,6 +1,7 @@
 from odoo import http
 from odoo.http import request
 from datetime import datetime
+import re
 
 
 class GuardVisitRegistrationController(http.Controller):
@@ -72,17 +73,24 @@ class GuardVisitRegistrationController(http.Controller):
             visitor = request.env['estate.visitor'].sudo().create(visitor_vals)
 
             # Buat vehicle (jika isi)
-            if vehicle_no:
+            # Normalize and validate vehicle number before creating
+            vehicle = None
+            vehicle_raw = (vehicle_no or '')
+            vehicle_no_clean = re.sub(r'[^A-Za-z0-9-]+', '', vehicle_raw).upper()
+            if vehicle_no_clean in ('N/A', 'NA', 'NONE'):
+                vehicle_no_clean = 'NA'
+            if vehicle_no_clean:
+                if not re.match(r'^[A-Z0-9-]{1,15}$', vehicle_no_clean):
+                    raise ValueError("Invalid vehicle number. Use uppercase letters, numbers and hyphens only (max 15 characters).")
                 vehicle = request.env['estate.visitor.vehicle'].sudo().create({
                     'visitor_id': visitor.id,
-                    'plate_no': vehicle_no.strip(),
+                    'plate_no': vehicle_no_clean,
                 })
-            else:
-                vehicle = False
 
             # Buat rekod visit
             visit_vals = {
                 'visitor_id': visitor.id,
+                # Link created vehicle record to visit (if any)
                 'visitor_vehicle_ids': vehicle.id if vehicle else False,
                 'unit_id': unit.id,
                 'host_id': host.id if host else False,
