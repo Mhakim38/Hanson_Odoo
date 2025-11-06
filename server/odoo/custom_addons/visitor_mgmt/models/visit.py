@@ -29,17 +29,17 @@ class EstateVisit(models.Model):
     visitor_id = fields.Many2one('estate.visitor', required=True)
     visitor_vehicle_ids = fields.Many2one('estate.visitor.vehicle', string="Vehicles")
 
-    @api.onchange('visitor_id')
-    def _onchange_visitor_id(self):
-        """When a visitor is chosen, auto-fill host_id to the visitor's assigned host."""
-        if self.visitor_id and getattr(self.visitor_id, 'host_id', False):
-            self.host_id = self.visitor_id.host_id
-            # Ensure the unit domain is updated when visitor sets the host
-            return self._onchange_host()
-        else:
-            self.host_id = False
-            # When host was cleared, also return domain (no restriction)
-            return self._onchange_host()
+    # @api.onchange('visitor_id')
+    # def _onchange_visitor_id(self):
+    #     """When a visitor is chosen, auto-fill host_id to the visitor's assigned host."""
+    #     if self.visitor_id and getattr(self.visitor_id, 'host_id', False):
+    #         self.host_id = self.visitor_id.host_id
+    #         # Ensure the unit domain is updated when visitor sets the host
+    #         return self._onchange_host()
+    #     else:
+    #         self.host_id = False
+    #         # When host was cleared, also return domain (no restriction)
+    #         return self._onchange_host()
 
     @api.onchange('host_id')
     def _onchange_host(self):
@@ -69,7 +69,7 @@ class EstateVisit(models.Model):
     ], string="Visitor Type", required=True)
 
     schedule_from = fields.Datetime(required=True, default=fields.Datetime.now)
-    schedule_to = fields.Datetime(required=True)
+    schedule_to = fields.Datetime()
     state = fields.Selection([
         ('draft', 'Draft'),
         ('scheduled', 'Scheduled'),

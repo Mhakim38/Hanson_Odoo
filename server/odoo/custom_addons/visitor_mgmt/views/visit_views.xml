@@ -10,7 +10,7 @@
         <field name="host_id"/>
         <field name="unit_id"/>
         <field name="schedule_from"/>
-        <field name="schedule_to"/>
+<!--        <field name="schedule_to"/>-->
         <field name="state"/>
         <field name="badge_no"/>
         <field name="is_adhoc"/>
@@ -37,7 +37,7 @@
 
             <group string="Visit Window">
               <field name="schedule_from"/>
-              <field name="schedule_to"/>
+<!--              <field name="schedule_to"/>-->
               <field name="state" widget="statusbar"/>
             </group>
 
