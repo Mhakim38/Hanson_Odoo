@@ -50,8 +50,12 @@ class EstateVisitController(http.Controller):
             schedule_to = post.get('schedule_to')
             purpose = post.get('purpose')
 
+            # Server-side validation: ensure required fields are present
             if not unit_id or not schedule_from or not schedule_to:
                 raise ValueError("Please fill all required fields.")
+            # Purpose is required at DB level; enforce it here with a clear error
+            if not purpose:
+                raise ValueError("Please select visitor type.")
 
             # Parse datetime strings
             schedule_from_dt = datetime.strptime(schedule_from, "%Y-%m-%dT%H:%M")
@@ -96,11 +100,12 @@ class EstateVisitController(http.Controller):
             # Normalize common variants to NA
             if vehicle_no_clean in ('N/A', 'NA', 'NONE'):
                 vehicle_no_clean = 'NA'
-            # If after cleaning we still have a value, validate and create
+            # If after cleaning we still have a value, validate and create the vehicle record
+            vehicle_rec = None
             if vehicle_no_clean:
                 if not re.match(r'^[A-Z0-9-]{1,15}$', vehicle_no_clean):
                     raise ValueError("Invalid vehicle number. Use uppercase letters, numbers and hyphens only (max 15 characters).")
-                request.env['estate.visitor.vehicle'].sudo().create({
+                vehicle_rec = request.env['estate.visitor.vehicle'].sudo().create({
                     'visitor_id': visitor.id,
                     'plate_no': vehicle_no_clean,
                 })
@@ -113,12 +118,13 @@ class EstateVisitController(http.Controller):
                 'schedule_to': schedule_to_dt,
                 'state': 'scheduled',
                 'host_id': partner.id,
-                'vehicle_no': vehicle_no,
             }
-
-            # Include purpose if provided
+            # Include purpose (visitor type) - required on the model
             if purpose:
                 visit_vals['purpose'] = purpose
+            # If we created a vehicle record, set the visit's Many2one field to it
+            if vehicle_rec:
+                visit_vals['visitor_vehicle_ids'] = vehicle_rec.id
 
             request.env['estate.visit'].sudo().create(visit_vals)
 
@@ -127,6 +133,11 @@ class EstateVisitController(http.Controller):
             })
 
         except Exception as e:
+            # If any DB error occurred, rollback the current cursor to end the failed transaction
+            try:
+                request.env.cr.rollback()
+            except Exception:
+                pass
             partner = request.env.user.partner_id
             host_units = partner.estate_unit_ids
             return request.render('visitor_mgmt.visitor_form_template', {
