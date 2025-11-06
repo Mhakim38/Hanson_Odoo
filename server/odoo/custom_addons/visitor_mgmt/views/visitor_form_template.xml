@@ -36,7 +36,7 @@
                     <!-- ID Number (added above Visitor Name) -->
                     <div class="mb-3">
                       <label for="id_number" class="form-label fw-semibold">ID Number</label>
-                      <input type="text" id="id_number" name="id_number" class="form-control" placeholder="Enter ID number (IC / Passport / License)" autocomplete="off"/>
+                      <input type="text" id="id_number" name="id_number" class="form-control" placeholder="Enter ID number (IC / Passport / License)" autocomplete="off" required="required"/>
                       <div id="id_lookup_feedback" class="form-text text-muted small">Enter ID number to auto-fill visitor name.</div>
                     </div>
 
@@ -74,7 +74,7 @@
                     <!-- Vehicle -->
                     <div class="mb-3">
                       <label for="vehicle_no" class="form-label fw-semibold">Vehicle No</label>
-                      <input type="text" name="vehicle_no" class="form-control" placeholder="Optional"/>
+                      <input type="text" id="vehicle_no" name="vehicle_no" class="form-control" placeholder="Enter vehicle registration number (or NA)" required="required" pattern="^[A-Za-z0-9\s/-]{1,30}$" title="Letters, numbers, spaces, slashes or hyphens allowed; will be normalized to uppercase without spaces" maxlength="30"/>
                     </div>
 
                     <!-- Schedule -->
@@ -164,7 +164,25 @@
           idInput.addEventListener('input', lookup);
           idInput.addEventListener('change', lookup);
           idInput.addEventListener('blur', lookup);
-        })();
+
+          // Vehicle number formatter: remove spaces and force uppercase as user types
+          var vehicleInput = document.getElementById('vehicle_no');
+          if (vehicleInput) {
+            function formatVehicle() {
+              var v = vehicleInput.value || '';
+              // remove any character except letters, digits and hyphen, then uppercase
+              var newv = v.replace(/[^A-Za-z0-9-]+/g, '').toUpperCase();
+              if (newv !== v) {
+                // try to preserve caret position as best-effort
+                var pos = vehicleInput.selectionStart || 0;
+                vehicleInput.value = newv;
+                try { vehicleInput.setSelectionRange(pos, pos); } catch (err) { /* ignore */ }
+              }
+            }
+            vehicleInput.addEventListener('input', formatVehicle);
+            vehicleInput.addEventListener('blur', formatVehicle);
+          }
+         })();
       ]]></script>
 
     </t>

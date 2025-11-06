@@ -2,6 +2,7 @@ from odoo import http
 from odoo.http import request
 from datetime import datetime
 import json
+import re
 
 class EstateVisitController(http.Controller):
 
@@ -88,10 +89,20 @@ class EstateVisitController(http.Controller):
                     visitor.host_id = partner.id
 
             # Optionally create vehicle
-            if vehicle_no:
+            # Normalize from the raw POST value and create only if cleaned value is non-empty.
+            vehicle_raw = (vehicle_no or '')
+            # Remove all characters except letters, digits and hyphen, then uppercase
+            vehicle_no_clean = re.sub(r'[^A-Za-z0-9-]+', '', vehicle_raw).upper()
+            # Normalize common variants to NA
+            if vehicle_no_clean in ('N/A', 'NA', 'NONE'):
+                vehicle_no_clean = 'NA'
+            # If after cleaning we still have a value, validate and create
+            if vehicle_no_clean:
+                if not re.match(r'^[A-Z0-9-]{1,15}$', vehicle_no_clean):
+                    raise ValueError("Invalid vehicle number. Use uppercase letters, numbers and hyphens only (max 15 characters).")
                 request.env['estate.visitor.vehicle'].sudo().create({
                     'visitor_id': visitor.id,
-                    'plate_no': vehicle_no,
+                    'plate_no': vehicle_no_clean,
                 })
 
             # Ensure the visit model has a host_id (linking to res.partner)
@@ -102,6 +113,7 @@ class EstateVisitController(http.Controller):
                 'schedule_to': schedule_to_dt,
                 'state': 'scheduled',
                 'host_id': partner.id,
+                'vehicle_no': vehicle_no,
             }
 
             # Include purpose if provided
