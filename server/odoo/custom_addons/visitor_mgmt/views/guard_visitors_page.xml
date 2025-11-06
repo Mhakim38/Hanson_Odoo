@@ -1,9 +1,20 @@
 <odoo>
   <template id="guard_visitors_page" name="Guard Visitor List">
     <t t-call="portal.portal_layout">
+
+      <!-- Hide breadcrumb / home icon -->
+      <t t-jquery="nav.breadcrumb" t-operation="replace">
+        <t></t>
+      </t>
+      <style>
+        .o_portal_breadcrumb, nav.breadcrumb, .breadcrumb {
+          display: none !important;
+        }
+      </style>
+
       <div class="container my-4">
         <div class="d-flex flex-wrap justify-content-between align-items-center mb-3">
-          <h2 class="mb-0">Guard Visitor List</h2>
+          <h2 class="mb-0">Visitor Log</h2>
           <div class="d-flex gap-2">
             <a href="/my/home" class="btn btn-secondary">Back to Home</a>
             <a href="/visitor/scan" class="btn btn-info">Scanner</a>
@@ -81,7 +92,7 @@
                     </t>
                   </td>
 
-                    <!-- Action td -->
+                  <!-- Action td -->
                   <td>
                     <t t-if="v.state == 'check_out'">
                       <span class="text-muted small">No Action</span>
@@ -294,9 +305,6 @@
             });
           });
       ]]></script>
-
-
-
 
     </t>
   </template>

@@ -1,0 +1,138 @@
+<odoo>
+    <!-- 🛡️ Guard Visit Registration -->
+    <template id="guard_register_visit_form" name="Guard Register Visit Form">
+        <t t-call="website.layout">
+            <div class="container py-5">
+                <div class="card shadow-lg border-0">
+                    <div class="card-header bg-primary text-white text-center">
+                        <h3>🧾 Guard Visitor Registration</h3>
+                    </div>
+                    <div class="card-body p-4">
+
+                        <t t-if="request.params.get('success')">
+                            <div class="alert alert-success">Visit successfully registered ✅</div>
+                        </t>
+                        <t t-if="request.params.get('error')">
+                            <div class="alert alert-danger">An error occurred ❌</div>
+                        </t>
+
+                        <form action="/guard/register_visit/submit" method="POST">
+
+                            <div class="row g-3">
+                                <!-- Visitor Type -->
+                                <div class="col-md-6">
+                                    <label class="form-label">Visitor Type</label>
+                                    <select name="purpose" class="form-select" required="required">
+                                        <option value="" disabled="disabled" selected="selected">Select type</option>
+                                        <option value="visitor">Visitor</option>
+                                        <option value="pickup">Pickup</option>
+                                        <option value="contractor/service provider">Contractor / Service Provider</option>
+                                    </select>
+                                </div>
+
+                                <!-- Host -->
+                                <div class="col-md-6">
+                                    <label class="form-label fw-semibold">Host / Resident</label>
+                                    <select name="host_id" class="form-select" required="required">
+                                        <option value="" disabled="disabled" selected="selected">Select Host</option>
+                                        <t t-foreach="all_hosts" t-as="h">
+                                            <option t-att-value="h.id">
+                                                <t t-esc="h.display_name"/>
+                                            </option>
+                                        </t>
+                                    </select>
+                                </div>
+
+                                <!-- Visitor -->
+                                <div class="col-md-6">
+                                    <label class="form-label">Visitor</label>
+                                    <select name="visitor_id" class="form-select" required="required">
+                                        <option value="" disabled="disabled" selected="selected">Select visitor</option>
+                                        <t t-foreach="visitors" t-as="v">
+                                            <option t-att-value="v.id">
+                                                <t t-esc="v.name"/>
+                                            </option>
+                                        </t>
+                                    </select>
+                                </div>
+
+                                <!-- Vehicle -->
+                                <div class="col-md-6">
+                                    <label class="form-label">Vehicle</label>
+                                    <select name="vehicle_id" class="form-select">
+                                        <option value="">None</option>
+                                        <t t-foreach="vehicles" t-as="v">
+                                            <option t-att-value="v.id"><t t-esc="v.plate_no"/></option>
+                                        </t>
+                                    </select>
+                                </div>
+
+                                <!-- Unit -->
+                                <div class="col-md-6">
+                                    <label class="form-label">Unit</label>
+                                    <select name="unit_id" class="form-select" required="required">
+                                        <option value="" disabled="disabled" selected="selected">Select unit</option>
+                                        <t t-foreach="units" t-as="u">
+                                            <option t-att-value="u.id"><t t-esc="u.name"/></option>
+                                        </t>
+                                    </select>
+                                </div>
+                            </div><br></br>
+
+                            <div class="row g-3">
+                                <!-- Schedule -->
+                                <div class="col-md-6">
+                                    <label class="form-label">Schedule From</label>
+                                    <input name="schedule_from" type="datetime-local" class="form-control" required="required"/>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Schedule To</label>
+                                    <input name="schedule_to" type="datetime-local" class="form-control" required="required"/>
+                                </div>
+                            </div>
+
+                             <div class="row g-3">
+                                <!-- Gates -->
+                                <div class="col-md-6">
+                                    <label class="form-label">Gate In</label>
+                                    <select name="gate_in_id" class="form-select">
+                                        <option value="">Select gate</option>
+                                        <t t-foreach="gates" t-as="g">
+                                            <option t-att-value="g.id"><t t-esc="g.name"/></option>
+                                        </t>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label">Gate Out</label>
+                                    <select name="gate_out_id" class="form-select">
+                                        <option value="">Select gate</option>
+                                        <t t-foreach="gates" t-as="g">
+                                            <option t-att-value="g.id"><t t-esc="g.name"/></option>
+                                        </t>
+                                    </select>
+                                </div>
+
+                                <!-- Check In Mode -->
+                                <div class="col-md-6">
+                                    <label class="form-label">Check In Mode</label>
+                                    <select name="check_in_mode" class="form-select">
+                                        <option value="manual">Manual</option>
+                                        <option value="qr">QR</option>
+                                        <option value="plate">Plate</option>
+                                    </select>
+                                </div>
+
+
+                            </div>
+                            <div class="text-center mt-4">
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    ✅ Register Visit
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

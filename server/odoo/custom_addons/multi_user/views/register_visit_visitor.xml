@@ -1,0 +1,187 @@
+<odoo>
+
+    <!-- Visitor Registration (Guard Side) -->
+    <template id="visitor_form_template" name="Visitor Form (Guard)">
+        <t t-call="website.layout">
+            <div class="container my-5">
+                <div class="row justify-content-center">
+                    <div class="col-lg-7 col-md-9">
+                        <div class="card shadow-lg border-0">
+                            <div class="card-header bg-primary text-white text-center position-relative">
+                                <!-- 🔹 Back Home Button -->
+                                <a href="/my" class="btn btn-light btn-sm position-absolute start-0 top-50 translate-middle-y ms-3">
+                                    ← Back Home
+                                </a>
+
+                                <h2 class="mb-0">Visitor Registration (Guard)</h2>
+                            </div>
+                            <div class="card-body">
+
+                                <!-- Error Display -->
+                                <t t-if="error">
+                                    <div class="alert alert-danger"><t t-esc="error"/></div>
+                                </t>
+
+                                <form action="/guard/visit/submit" method="post" class="o_form">
+                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                                    <input type="hidden" name="visitor_id" id="visitor_id" value=""/>
+
+                                    <!-- ID Number -->
+                                    <div class="mb-3">
+                                        <label for="id_number" class="form-label fw-semibold">ID Number</label>
+                                        <input type="text" id="id_number" name="id_number" class="form-control"
+                                               placeholder="Enter ID number (IC / Passport)" autocomplete="off"/>
+                                        <div id="id_lookup_feedback" class="form-text text-muted small">
+                                            Enter ID number to auto-fill visitor name.
+                                        </div>
+                                    </div>
+
+                                    <!-- Visitor Name -->
+                                    <div class="mb-3">
+                                        <label for="visitor_name" class="form-label fw-semibold">Visitor Name</label>
+                                        <input type="text" id="visitor_name" name="visitor_name"
+                                               class="form-control form-control-lg"
+                                               placeholder="Enter full name" required="required"/>
+                                    </div>
+
+                                    <!-- Unit -->
+                                    <div class="mb-3">
+                                        <label for="unit_id" class="form-label fw-semibold">Select Unit / Property</label>
+                                        <select name="unit_id" class="form-select form-select-lg" required="required">
+                                            <option disabled="disabled" selected="selected" value="">Select unit</option>
+                                            <t t-foreach="units" t-as="u">
+                                                <option t-att-value="u.id">
+                                                    <t t-esc="u.display_name"/>
+                                                    <t t-if="u.street"> (<t t-esc="u.street"/>)</t>
+                                                </option>
+                                            </t>
+                                        </select>
+                                    </div>
+
+                                    <!-- Purpose -->
+                                    <div class="mb-3">
+                                        <label for="purpose" class="form-label fw-semibold">Visitor Type</label>
+                                        <select name="purpose" id="purpose" class="form-select" required="required">
+                                            <option disabled="disabled" selected="selected" value="">Please select visitor type</option>
+                                            <option value="visitor">Visitor</option>
+                                            <option value="pickup">Pickup</option>
+                                            <option value="contractor/service provider">Contractor/Service Provider</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- Vehicle -->
+                                    <div class="mb-3">
+                                        <label for="vehicle_no" class="form-label fw-semibold">Vehicle No (Optional)</label>
+                                        <input type="text" name="vehicle_no" class="form-control" placeholder="e.g. ABC1234"/>
+                                    </div>
+
+                                    <!-- Schedule -->
+                                    <div class="row mb-4">
+                                        <div class="col">
+                                            <label for="schedule_from" class="form-label fw-semibold">Schedule From</label>
+                                            <input type="datetime-local" name="schedule_from" class="form-control" required="required"/>
+                                        </div>
+                                        <div class="col">
+                                            <label for="schedule_to" class="form-label fw-semibold">Schedule To</label>
+                                            <input type="datetime-local" name="schedule_to" class="form-control" required="required"/>
+                                        </div>
+                                    </div>
+
+                                    <!-- Submit -->
+                                    <div class="d-grid">
+                                        <button type="submit" class="btn btn-primary btn-lg">Register Visitor</button>
+                                    </div>
+                                </form>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- JS: Lookup Visitor by ID -->
+            <script type="text/javascript"><![CDATA[
+                (function () {
+                    function debounce(fn, wait) {
+                        var t;
+                        return function () {
+                            var ctx = this, args = arguments;
+                            clearTimeout(t);
+                            t = setTimeout(function () { fn.apply(ctx, args); }, wait || 300);
+                        };
+                    }
+
+                    function setFeedback(msg, isError) {
+                        var el = document.getElementById('id_lookup_feedback');
+                        if (!el) return;
+                        el.textContent = msg;
+                        el.classList.remove('text-danger','text-success');
+                        el.classList.add(isError ? 'text-danger' : 'text-success');
+                    }
+
+                    var idInput = document.getElementById('id_number');
+                    var nameInput = document.getElementById('visitor_name');
+                    var hiddenVisitor = document.getElementById('visitor_id');
+
+                    if (!idInput || !nameInput) return;
+
+                    var lookup = debounce(function () {
+                        var val = idInput.value && idInput.value.trim();
+                        if (!val) {
+                            hiddenVisitor.value = '';
+                            nameInput.readOnly = false;
+                            setFeedback('Enter ID number to auto-fill visitor name.', false);
+                            return;
+                        }
+                        var url = '/guard/visitor_lookup?id_number=' + encodeURIComponent(val);
+                        fetch(url, { credentials: 'same-origin' })
+                            .then(function (r) { return r.json(); })
+                            .then(function (data) {
+                                if (data && data.id) {
+                                    hiddenVisitor.value = data.id;
+                                    nameInput.value = data.name || '';
+                                    nameInput.readOnly = true;
+                                    setFeedback('Existing visitor loaded.', false);
+                                } else {
+                                    hiddenVisitor.value = '';
+                                    nameInput.readOnly = false;
+                                    setFeedback('No existing visitor found. You can enter a name to create new.', false);
+                                }
+                            })
+                            .catch(function (err) {
+                                console.error('Visitor lookup failed', err);
+                                setFeedback('Lookup failed. Please try again.', true);
+                                hiddenVisitor.value = '';
+                                nameInput.readOnly = false;
+                            });
+                    }, 350);
+
+                    idInput.addEventListener('input', lookup);
+                    idInput.addEventListener('change', lookup);
+                    idInput.addEventListener('blur', lookup);
+                })();
+            ]]></script>
+        </t>
+    </template>
+
+    <!-- Thank You Page -->
+    <template id="visitor_form_thanks" name="Thank You">
+        <t t-call="website.layout">
+            <div class="container my-5">
+                <div class="row justify-content-center">
+                    <div class="col-lg-6 col-md-8 text-center">
+                        <div class="card shadow-sm border-0">
+                            <div class="card-body">
+                                <h2 class="text-success mb-3">Thank you!</h2>
+                                <p class="lead mb-4">Visitor has been successfully logged for
+                                    <strong><t t-esc="host_name"/></strong>.
+                                </p>
+                                <a href="/guard/visit" class="btn btn-outline-primary">Register Another Visitor</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+</odoo>

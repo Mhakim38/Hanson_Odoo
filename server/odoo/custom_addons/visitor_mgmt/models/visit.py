@@ -116,9 +116,13 @@ class EstateVisit(models.Model):
 
     @api.constrains('host_id', 'visitor_id')
     def _check_visitor_host_match(self):
+        # ✅ Skip check kalau datang dari guard context
+        if self.env.context.get('from_guard_portal'):
+            return
+
         for r in self:
             if r.visitor_id and r.host_id and r.visitor_id.host_id and r.visitor_id.host_id.id != r.host_id.id:
-                raise ValidationError(_("Selected visitor is not assigned to the chosen host."))
+                raise ValidationError(_("Selected visitor is not assigned to the chosen host."))
 
     # ----------------------------
     # Helpers

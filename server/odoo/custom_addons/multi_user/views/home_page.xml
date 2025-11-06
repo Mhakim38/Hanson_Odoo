@@ -1,0 +1,171 @@
+<odoo>
+    <!-- 🏠 Guard Portal (Standalone) -->
+    <template id="portal_home_guard" name="Guard Portal Home">
+        <t t-call="portal.frontend_layout">
+            <div class="container py-4">
+                <t t-call="multi_user.portal_home_css"/>
+
+                <div class="portal-wrapper-border p-4 mt-3 text-center">
+                    <div class="mb-3">
+                        <i class="fas fa-user-shield text-primary fa-3x"></i>
+                    </div>
+                    <h3 class="fw-bold text-dark mb-0">Welcome, Guard!</h3>
+                    <p class="text-muted small">This is your guard portal homepage.</p>
+
+                    <!-- 🔹 Button Section -->
+                    <div class="guard-btn-group d-flex justify-content-center flex-wrap">
+                        <a href="/guard/visitors" class="guard-btn">
+                            🗂️ <span>Visit Logs</span>
+                        </a>
+                        <a href="/guard/visit" class="guard-btn">
+                            📋 <span>Visit Registration</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- 🏠 Resident Portal (Standalone) -->
+    <template id="portal_home_resident" name="Resident Portal Home">
+        <t t-call="portal.frontend_layout">
+            <div class="container py-4">
+                <t t-call="multi_user.portal_home_css"/>
+
+                <div class="portal-wrapper-border p-4 mt-3 text-center">
+                    <div class="mb-3">
+                        <i class="fa fa-home text-primary fa-3x"></i>
+                    </div>
+                    <h3 class="fw-bold text-dark mb-0">Welcome, Resident!</h3>
+                    <p class="text-muted small">This is your resident portal homepage.</p>
+
+                    <!-- 🔹 Button Section -->
+                    <div class="resident-btn-group d-flex justify-content-center flex-wrap">
+                        <a href="/portal/my-properties" class="resident-btn">
+                            🏢 <span>My Properties</span>
+                        </a>
+
+                        <a href="/estate/vehicle" class="resident-btn">
+                            🚗 <span>My Vehicles</span>
+                        </a>
+
+                        <a href="/portal/visitor-log" class="resident-btn">
+                            📋 <span>My Visit Log</span>
+                        </a>
+
+                        <a href="/estate/visit" class="resident-btn">
+                            🧾 <span>My Visitor Registration</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+
+    <!-- 🟨 STYLE TEMPLATE -->
+    <template id="portal_home_css" name="Portal Home CSS">
+        <xpath expr="//head" position="inside">
+            <!-- Load Font Awesome -->
+            <link rel="stylesheet"
+                  href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css"/>
+
+            <style><![CDATA[
+                /* 🟩 Container Styling */
+                .portal-wrapper-border {
+                    border: 2px solid #dcdcdc;
+                    border-radius: 18px;
+                    padding: 50px 30px;
+                    background: #ffffff;
+                    box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+                    width: 95%;
+                    max-width: 1800px;
+                    min-height: 400px;
+                    margin: 40px auto;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
+                    text-align: center;
+                }
+
+                /* 🔹 Resident Button Container */
+                .resident-btn-group {
+                    gap: 25px;
+                    margin-top: 30px;
+                }
+
+                /* 🔸 Button Style */
+                .resident-btn {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 230px;
+                    height: 65px;
+                    border-radius: 14px;
+                    background-color: #714b67;
+                    color: #fff;
+                    font-size: 16px;
+                    font-weight: 500;
+                    text-decoration: none;
+                    gap: 10px;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+                }
+
+                /* 🟦 Hover Effect */
+                .resident-btn:hover {
+                    background-color: #8d5d80;
+                    transform: translateY(-3px);
+                    box-shadow: 0 8px 16px rgba(13, 110, 253, 0.3);
+                    color: #fff;
+                }
+
+                /* 🟢 Optional Active/Click */
+                .resident-btn:active {
+                    transform: scale(0.98);
+                    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+                }
+
+
+                /* 🔹 Guard Button Container */
+                .guard-btn-group {
+                    gap: 25px;
+                    margin-top: 30px;
+                }
+
+                /* 🔸 Button Style */
+                .guard-btn {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    width: 230px;
+                    height: 65px;
+                    border-radius: 14px;
+                    background-color: #714b67;
+                    color: #fff;
+                    font-size: 16px;
+                    font-weight: 500;
+                    text-decoration: none;
+                    gap: 10px;
+                    transition: all 0.3s ease;
+                    box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+                }
+
+                /* 🟦 Hover Effect */
+                .guard-btn:hover {
+                    background-color: #8d5d80;
+                    transform: translateY(-3px);
+                    box-shadow: 0 8px 16px rgba(13, 110, 253, 0.3);
+                    color: #fff;
+                }
+
+                /* 🟢 Optional Active/Click */
+                .guard-btn:active {
+                    transform: scale(0.98);
+                    box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+                }
+            ]]></style>
+        </xpath>
+    </template>
+</odoo>

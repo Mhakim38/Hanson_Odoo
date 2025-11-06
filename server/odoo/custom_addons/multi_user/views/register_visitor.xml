@@ -1,0 +1,125 @@
+<odoo>
+
+    <!-- 🟩 Guard Visitor Registration Form -->
+    <template id="guard_visitor_form" name="Guard Visitor Form">
+        <t t-call="website.layout">
+            <div class="container my-5">
+                <div class="row justify-content-center">
+                    <div class="col-lg-7 col-md-9">
+                        <div class="card shadow-lg border-0">
+                            <div class="card-header bg-primary text-white text-center">
+                                <h2 class="mb-0">Visitor Registration</h2>
+                            </div>
+                            <div class="card-body">
+
+                                <t t-if="error">
+                                    <div class="alert alert-danger"><t t-esc="error"/></div>
+                                </t>
+
+                                <form action="/guard/visitor/submit" method="post" class="o_form">
+                                    <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+
+                                    <!-- Name -->
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Visitor Name</label>
+                                        <input type="text" name="name" class="form-control" required="required" placeholder="Enter full name"/>
+                                    </div>
+
+                                    <!-- ID Type -->
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">ID Type</label>
+                                        <select name="id_type" class="form-select">
+                                            <option value="ic">IC/MyKad</option>
+                                            <option value="passport">Passport</option>
+                                            <option value="license">License</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+
+                                    <!-- ID Number -->
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">ID Number</label>
+                                        <input type="text" name="id_number" class="form-control" required="required"/>
+                                    </div>
+
+                                    <!-- Phone -->
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Phone Number</label>
+                                        <input type="text" name="phone" class="form-control" placeholder="Optional"/>
+                                    </div>
+
+                                    <!-- Host -->
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Select Host / Resident</label>
+                                        <select name="host_id" class="form-select" required="required">
+                                            <option value="" disabled="disabled" selected="selected">Select Host</option>
+                                            <t t-foreach="all_hosts" t-as="h">
+                                                <option t-att-value="h.id"><t t-esc="h.display_name"/></option>
+                                            </t>
+                                        </select>
+                                    </div>
+
+                                    <!-- Notes -->
+                                    <div class="mb-3">
+                                        <label class="form-label fw-semibold">Notes</label>
+                                        <textarea name="notes" class="form-control" rows="3"></textarea>
+                                    </div>
+
+                                    <div class="d-grid mt-4">
+                                        <button type="submit" class="btn btn-primary btn-lg">Submit</button>
+                                    </div>
+                                </form>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- 🟦 Thank You Page -->
+    <template id="guard_visitor_thanks" name="Visitor Thanks">
+        <t t-call="website.layout">
+            <div class="container my-5 text-center">
+                <div class="card shadow-sm border-0 p-4 mx-auto" style="max-width:600px;">
+                    <h2 class="text-success mb-3">Visitor Registered!</h2>
+                    <p class="lead mb-4">QR code for <strong><t t-esc="visitor.name"/></strong>:</p>
+                    <img t-att-src="'data:image/png;base64,%s' % visitor.qr_image" class="img-fluid mb-3" style="max-width:250px;"/>
+                    <p><strong>Host:</strong> <t t-esc="visitor.host_id.display_name"/></p>
+                    <a href="/guard/visitor" class="btn btn-outline-primary mt-3">Register Another</a>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- 🟨 Public Info via QR -->
+    <template id="visitor_info_public" name="Visitor Info Public">
+        <t t-call="website.layout">
+            <div class="container my-5 text-center">
+                <div class="card shadow border-0 p-4 mx-auto" style="max-width:600px;">
+                    <h3 class="mb-3">Visitor Details</h3>
+                    <p><strong>Name:</strong> <t t-esc="visitor.name"/></p>
+                    <p><strong>ID Number:</strong> <t t-esc="visitor.id_number"/></p>
+                    <p><strong>Phone:</strong> <t t-esc="visitor.phone or '-'"/></p>
+                    <p><strong>Host:</strong> <t t-esc="visitor.host_id.display_name"/></p>
+                    <p><strong>Blacklisted:</strong> <t t-esc="'Yes' if visitor.blacklisted else 'No'"/></p>
+                    <p><strong>Notes:</strong> <t t-esc="visitor.notes or '-'"/></p>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- ❌ Not Found -->
+    <template id="visitor_not_found" name="Visitor Not Found">
+        <t t-call="website.layout">
+            <div class="container my-5 text-center">
+                <div class="alert alert-danger p-5 rounded">
+                    <h3>QR Code Invalid or Expired</h3>
+                    <p>The visitor record could not be found.</p>
+                </div>
+            </div>
+        </t>
+    </template>
+
+</odoo>
