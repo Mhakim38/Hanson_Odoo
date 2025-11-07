@@ -195,6 +195,7 @@
                 <h2 class="text-success mb-3">Thank you!</h2>
                 <p class="lead mb-4">Your visit has been successfully logged for <strong><t t-esc="host_name"/></strong>.</p>
                 <a href="/estate/visit" class="btn btn-outline-primary">Register Another Visitor</a>
+                <a href="/portal/visitor-log" class="btn btn-outline-primary">Visit Log</a>
               </div>
             </div>
           </div>

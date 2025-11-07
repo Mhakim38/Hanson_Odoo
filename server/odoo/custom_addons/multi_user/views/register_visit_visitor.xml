@@ -4,15 +4,16 @@
     <template id="visitor_form_template" name="Visitor Form (Guard)">
         <t t-call="website.layout">
             <div class="container my-5">
+
+                <!-- Back button placed above the card so it fits on mobile & desktop -->
+                <div class="mb-3">
+                    <a href="/my" class="btn btn-primary btn-md d-block d-md-inline-block" aria-label="Back to My Home">← Back</a>
+                </div>
+
                 <div class="row justify-content-center">
                     <div class="col-lg-7 col-md-9">
                         <div class="card shadow-lg border-0">
                             <div class="card-header bg-primary text-white text-center position-relative">
-                                <!-- 🔹 Back Home Button -->
-                                <a href="/my" class="btn btn-light btn-sm position-absolute start-0 top-50 translate-middle-y ms-3">
-                                    ← Back Home
-                                </a>
-
                                 <h2 class="mb-0">Visitor Registration (Guard)</h2>
                             </div>
                             <div class="card-body">
