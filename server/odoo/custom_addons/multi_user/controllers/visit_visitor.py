@@ -62,20 +62,18 @@ class EstateVisitController(http.Controller):
             vehicle_no = post.get('vehicle_no')
             unit_id = post.get('unit_id')
             schedule_from = post.get('schedule_from')
-            schedule_to = post.get('schedule_to')
             purpose = post.get('purpose')
 
             # ------------------------
             # Validation
             # ------------------------
-            if not unit_id or not schedule_from or not schedule_to:
+            if not unit_id or not schedule_from:
                 raise ValueError("Please fill all required fields.")
 
             try:
                 schedule_from_dt = datetime.strptime(schedule_from, "%Y-%m-%dT%H:%M")
-                schedule_to_dt = datetime.strptime(schedule_to, "%Y-%m-%dT%H:%M")
             except Exception:
-                raise ValueError("Invalid date format for schedule fields.")
+                raise ValueError("Invalid date format for schedule_from.")
 
             Visitor = request.env['estate.visitor'].sudo()
             visitor = None
@@ -134,7 +132,6 @@ class EstateVisitController(http.Controller):
                 'visitor_id': visitor.id,
                 'unit_id': int(unit_id),
                 'schedule_from': schedule_from_dt,
-                'schedule_to': schedule_to_dt,
                 'state': 'scheduled',
                 'purpose': purpose or 'visitor',
                 'origin': 'adhoc',

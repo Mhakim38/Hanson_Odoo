@@ -81,10 +81,6 @@
                                             <label for="schedule_from" class="form-label fw-semibold">Schedule From</label>
                                             <input type="datetime-local" name="schedule_from" class="form-control" required="required"/>
                                         </div>
-                                        <div class="col">
-                                            <label for="schedule_to" class="form-label fw-semibold">Schedule To</label>
-                                            <input type="datetime-local" name="schedule_to" class="form-control" required="required"/>
-                                        </div>
                                     </div>
 
                                     <!-- Submit -->
