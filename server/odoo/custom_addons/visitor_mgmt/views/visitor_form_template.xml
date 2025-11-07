@@ -207,7 +207,8 @@
                       <img t-att-src="_qr_url" alt="QR Code" class="img-fluid rounded shadow-sm" style="max-width:220px;"/>
                     </a>
                     <div class="mt-2">
-                      <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#qrModal">View</button>
+                           <!-- Download Pass button: prints the visitor pass (Thank you -> Unit Number) -->
+                  <button id="download-pass-btn" type="button" class="btn btn-success" onclick="printPass()">Download Pass</button>
                     </div>
                   </div>
 
@@ -247,6 +248,107 @@
                   <a href="/estate/visit" class="btn btn-outline-primary">Register Another Visitor</a>
                   <a href="/portal/visitor-log" class="btn btn-outline-secondary">Visit Log</a>
                 </div>
+
+                <!-- Hidden pass content used for printing/downloading -->
+                <div id="visitor-pass-content" class="d-none">
+                  <div style="font-family: Arial, Helvetica, sans-serif; padding:20px; max-width:600px; border:1px solid #ddd;">
+                    <h2 style="text-align:center;">Thank you!</h2>
+                    <p style="text-align:center; font-size:1.05rem; margin-bottom:0.5rem;">Your visit has been successfully logged for <strong><t t-esc="host_name"/></strong>.</p>
+                    <div style="text-align:center; margin:12px 0;">
+                      <t t-if="_qr_url">
+                        <img t-att-src="_qr_url" alt="QR Code" style="max-width:220px; display:block; margin:0 auto;"/>
+                      </t>
+                    </div>
+                    <hr/>
+                    <p><strong>Date:</strong> <t t-if="visit and visit.id"><span t-field="visit.schedule_from"/></t><t t-if="not visit or not visit.id"> <t t-esc="schedule_from"/></t></p>
+                    <p><strong>Visitor Name:</strong> <t t-if="visit and visit.id"><t t-esc="visit.visitor_id.name"/></t><t t-if="not visit or not visit.id"> <t t-esc="visitor_name"/></t></p>
+                    <p><strong>Unit Number:</strong> <t t-if="visit and visit.id"><t t-esc="visit.unit_id.display_name"/></t><t t-if="not visit or not visit.id"> <t t-esc="unit_name"/></t></p>
+                  </div>
+                </div>
+
+                <!-- Print/download helper script -->
+                <script type="text/javascript"><![CDATA[
+                  function printPass() {
+                    var contentEl = document.getElementById('visitor-pass-content');
+                    if (!contentEl) {
+                      alert('Pass content not available');
+                      return;
+                    }
+
+                    // Try html2canvas first for direct PNG download
+                    function tryHtml2Canvas() {
+                      return new Promise(function (resolve, reject) {
+                        if (window.html2canvas) {
+                          resolve(window.html2canvas);
+                          return;
+                        }
+                        // Load html2canvas from CDN
+                        var s = document.createElement('script');
+                        s.src = 'https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js';
+                        s.onload = function () { resolve(window.html2canvas); };
+                        s.onerror = function (e) { reject(e); };
+                        document.head.appendChild(s);
+                      });
+                    }
+
+                    // Attempt PNG download using html2canvas; fallback to print window
+                    tryHtml2Canvas().then(function (html2canvas) {
+                      // html2canvas is loaded
+                      try {
+                        // Render only the inner pass content (first child of the container)
+                        var target = contentEl.firstElementChild || contentEl;
+                        html2canvas(target, { scale: 2 }).then(function (canvas) {
+                          canvas.toBlob(function (blob) {
+                            if (!blob) {
+                              // fallback to print
+                              fallbackPrint();
+                              return;
+                            }
+                            var url = URL.createObjectURL(blob);
+                            var a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'visitor_pass.png';
+                            document.body.appendChild(a);
+                            a.click();
+                            a.remove();
+                            setTimeout(function () { URL.revokeObjectURL(url); }, 5000);
+                          }, 'image/png');
+                        }).catch(function () { fallbackPrint(); });
+                      } catch (err) {
+                        console.error('html2canvas render error', err);
+                        fallbackPrint();
+                      }
+                    }).catch(function () {
+                      // Couldn't load html2canvas; fallback
+                      fallbackPrint();
+                    });
+
+                    function fallbackPrint() {
+                      try {
+                        var html = '<!doctype html><html><head><meta charset="utf-8"><title>Visitor Pass</title>'
+                          + '<meta name="viewport" content="width=device-width,initial-scale=1">'
+                          + '<style>body{font-family: Arial, Helvetica, sans-serif; padding:20px;} .pass{max-width:680px;margin:0 auto;} .qr{display:block;margin:0 auto;}</style>'
+                          + '</head><body>'
+                          + contentEl.innerHTML
+                          + '</body></html>';
+
+                        var win = window.open('', '_blank');
+                        if (!win) {
+                          alert('Please allow popups to download the pass.');
+                          return;
+                        }
+                        win.document.open();
+                        win.document.write(html);
+                        win.document.close();
+                        win.focus();
+                        setTimeout(function() { win.print(); }, 400);
+                      } catch (err) {
+                        console.error('fallbackPrint error', err);
+                        alert('Unable to generate pass for download.');
+                      }
+                    }
+                  }
+                 ]]></script>
 
               </div>
             </div>
