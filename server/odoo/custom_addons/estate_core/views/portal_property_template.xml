@@ -20,11 +20,6 @@
                   <div class="card-body">
                     <h5 class="card-title" t-esc="u.display_name"/>
                     <p><strong>Property:</strong> <t t-esc="u.property_id.name or 'N/A'"/></p>
-                    <p>
-                      <strong>Unit Type:</strong>
-                      <t t-set="unit_type_label" t-value="u._fields['unit_type'].convert_to_export(u.unit_type, u)"/>
-                      <t t-esc="unit_type_label or 'N/A'"/>
-                    </p>
 
                     <p>
                       <strong>Status:</strong>
