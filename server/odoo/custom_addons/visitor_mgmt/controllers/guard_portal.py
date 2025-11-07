@@ -35,7 +35,6 @@ class GuardPortal(http.Controller):
 
         domain = [
             ('schedule_from', '<=', f'{selected_date} 23:59:59'),
-            ('schedule_to', '>=', f'{selected_date} 00:00:00')
         ]
 
         # Filters
