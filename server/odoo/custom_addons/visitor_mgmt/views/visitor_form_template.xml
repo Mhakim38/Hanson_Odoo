@@ -193,9 +193,61 @@
             <div class="card shadow-sm border-0">
               <div class="card-body">
                 <h2 class="text-success mb-3">Thank you!</h2>
+
+                <!-- Load the visit record (safe): ensure integer id and fallback to False -->
+                <t t-set="visit" t-value="request.env['estate.visit'].sudo().browse(int(visit_id)) if visit_id else False"/>
+
                 <p class="lead mb-4">Your visit has been successfully logged for <strong><t t-esc="host_name"/></strong>.</p>
-                <a href="/estate/visit" class="btn btn-outline-primary">Register Another Visitor</a>
-                <a href="/portal/visitor-log" class="btn btn-outline-primary">Visit Log</a>
+
+                <!-- QR Widget: thumbnail, modal preview, and download button -->
+                <t t-set="_qr_url" t-value="qr_data_url or (visit and visit.qr_image and 'data:image/png;base64,%s' % visit.qr_image) or False"/>
+                <t t-if="_qr_url">
+                  <div class="mb-3 text-center">
+                    <a href="#" role="button" data-bs-toggle="modal" data-bs-target="#qrModal" aria-label="View QR Code">
+                      <img t-att-src="_qr_url" alt="QR Code" class="img-fluid rounded shadow-sm" style="max-width:220px;"/>
+                    </a>
+                    <div class="mt-2">
+                      <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#qrModal">View</button>
+                    </div>
+                  </div>
+
+                  <!-- Modal: QR preview -->
+                  <div class="modal fade" id="qrModal" tabindex="-1" aria-labelledby="qrModalLabel" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                      <div class="modal-content">
+                        <div class="modal-header">
+                          <h5 class="modal-title" id="qrModalLabel">QR Code</h5>
+                          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"><span class="visually-hidden">Close</span></button>
+                        </div>
+                        <div class="modal-body text-center">
+                          <img t-att-src="_qr_url" alt="QR Code" class="img-fluid" style="max-width:320px;"/>
+                        </div>
+                        <div class="modal-footer">
+                          <a t-att-href="_qr_url" class="btn btn-primary" download="visit_qr.png">Download</a>
+                          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </t>
+
+                <!-- Visit details using fields from the estate.visit model -->
+                <t t-if="visit and visit.id">
+                  <p><strong>Date:</strong> <span t-field="visit.schedule_from"/></p>
+                  <p><strong>Visitor Name:</strong> <t t-esc="visit.visitor_id.name"/></p>
+                  <p><strong>Unit Number:</strong> <t t-esc="visit.unit_id.display_name"/></p>
+                </t>
+                <t t-if="not visit or not visit.id">
+                  <p><strong>Date:</strong> <t t-esc="schedule_from"/></p>
+                  <p><strong>Visitor Name:</strong> <t t-esc="visitor_name"/></p>
+                  <p><strong>Unit Number:</strong> <t t-esc="unit_name"/></p>
+                </t>
+
+                <div class="d-flex justify-content-center gap-2 mt-3">
+                  <a href="/estate/visit" class="btn btn-outline-primary">Register Another Visitor</a>
+                  <a href="/portal/visitor-log" class="btn btn-outline-secondary">Visit Log</a>
+                </div>
+
               </div>
             </div>
           </div>

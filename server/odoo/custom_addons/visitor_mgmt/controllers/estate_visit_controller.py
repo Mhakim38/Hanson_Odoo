@@ -122,10 +122,46 @@ class EstateVisitController(http.Controller):
             if vehicle_rec:
                 visit_vals['visitor_vehicle_ids'] = vehicle_rec.id
 
-            request.env['estate.visit'].sudo().create(visit_vals)
+            # Create and capture the visit record so we can display details on the thank-you page
+            visit = request.env['estate.visit'].sudo().create(visit_vals)
+
+            # Derive display data for the thank-you page
+            schedule_display = schedule_from_dt.strftime('%Y-%m-%d %H:%M')
+            unit_name = ''
+            try:
+                unit = request.env['estate.unit'].sudo().browse(int(unit_id))
+                unit_name = unit.display_name
+            except Exception:
+                unit_name = ''
+
+            # Sanitize QR image value (visit.qr_image) to ensure it's a plain base64 string
+            qr_image_val = visit.qr_image if visit and getattr(visit, 'qr_image', False) else ''
+            if isinstance(qr_image_val, bytes):
+                try:
+                    qr_image_val = qr_image_val.decode('utf-8')
+                except Exception:
+                    qr_image_val = ''
+            if isinstance(qr_image_val, str):
+                # Remove Python bytes literal prefix if present: "b'...'/b\"...\""
+                if qr_image_val.startswith("b'") or qr_image_val.startswith('b"'):
+                    qr_image_val = qr_image_val[2:]
+                    if qr_image_val.endswith("'") or qr_image_val.endswith('"'):
+                        qr_image_val = qr_image_val[:-1]
+                # Trim surrounding quotes/spaces
+                qr_image_val = qr_image_val.strip('\"\' ')
+
+            qr_data_url = ''
+            if qr_image_val:
+                qr_data_url = 'data:image/png;base64,%s' % qr_image_val
 
             return request.render('visitor_mgmt.visitor_form_thanks', {
                 'host_name': partner.name,
+                'schedule_from': schedule_display,
+                'visitor_name': visitor.name,
+                'unit_name': unit_name,
+                'visit_id': visit.id,
+                'qr_image': qr_image_val,
+                'qr_data_url': qr_data_url,
             })
 
         except Exception as e:

@@ -147,7 +147,7 @@ class EstateVisit(models.Model):
             # Convert to base64
             buffer = BytesIO()
             img.save(buffer, format="PNG")
-            qr_image_base64 = base64.b64encode(buffer.getvalue())
+            qr_image_base64 = base64.b64encode(buffer.getvalue()).decode('utf-8')
 
             # Save to record
             r.qr_image = qr_image_base64
