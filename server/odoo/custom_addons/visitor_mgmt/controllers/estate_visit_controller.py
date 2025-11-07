@@ -47,19 +47,20 @@ class EstateVisitController(http.Controller):
             vehicle_no = post.get('vehicle_no')
             unit_id = post.get('unit_id')
             schedule_from = post.get('schedule_from')
-            schedule_to = post.get('schedule_to')
             purpose = post.get('purpose')
 
             # Server-side validation: ensure required fields are present
-            if not unit_id or not schedule_from or not schedule_to:
-                raise ValueError("Please fill all required fields.")
+            if not unit_id or not schedule_from:
+                raise ValueError("Please fill all required fields (unit and schedule start).")
             # Purpose is required at DB level; enforce it here with a clear error
             if not purpose:
                 raise ValueError("Please select visitor type.")
 
-            # Parse datetime strings
-            schedule_from_dt = datetime.strptime(schedule_from, "%Y-%m-%dT%H:%M")
-            schedule_to_dt = datetime.strptime(schedule_to, "%Y-%m-%dT%H:%M")
+            # Parse schedule_from datetime
+            try:
+                schedule_from_dt = datetime.strptime(schedule_from, "%Y-%m-%dT%H:%M")
+            except Exception:
+                raise ValueError("Invalid schedule_from format. Use the date/time picker.")
 
             Visitor = request.env['estate.visitor'].sudo()
             visitor = None
@@ -93,14 +94,10 @@ class EstateVisitController(http.Controller):
                     visitor.host_id = partner.id
 
             # Optionally create vehicle
-            # Normalize from the raw POST value and create only if cleaned value is non-empty.
             vehicle_raw = (vehicle_no or '')
-            # Remove all characters except letters, digits and hyphen, then uppercase
             vehicle_no_clean = re.sub(r'[^A-Za-z0-9-]+', '', vehicle_raw).upper()
-            # Normalize common variants to NA
             if vehicle_no_clean in ('N/A', 'NA', 'NONE'):
                 vehicle_no_clean = 'NA'
-            # If after cleaning we still have a value, validate and create the vehicle record
             vehicle_rec = None
             if vehicle_no_clean:
                 if not re.match(r'^[A-Z0-9-]{1,15}$', vehicle_no_clean):
@@ -110,12 +107,11 @@ class EstateVisitController(http.Controller):
                     'plate_no': vehicle_no_clean,
                 })
 
-            # Ensure the visit model has a host_id (linking to res.partner)
+            # Build visit values without schedule_to
             visit_vals = {
                 'visitor_id': visitor.id,
                 'unit_id': int(unit_id),
                 'schedule_from': schedule_from_dt,
-                'schedule_to': schedule_to_dt,
                 'state': 'scheduled',
                 'host_id': partner.id,
             }

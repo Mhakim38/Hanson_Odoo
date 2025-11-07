@@ -74,7 +74,7 @@
                     <!-- Vehicle -->
                     <div class="mb-3">
                       <label for="vehicle_no" class="form-label fw-semibold">Vehicle No</label>
-                      <input type="text" id="vehicle_no" name="vehicle_no" class="form-control" placeholder="Enter vehicle registration number (or NA)" required="required" pattern="^[A-Za-z0-9\s/-]{1,30}$" title="Letters, numbers, spaces, slashes or hyphens allowed; will be normalized to uppercase without spaces" maxlength="30"/>
+                      <input type="text" id="vehicle_no" name="vehicle_no" class="form-control" placeholder="Enter vehicle registration number (or NA)" pattern="^[A-Za-z0-9\s/-]{1,30}$" title="Letters, numbers, spaces, slashes or hyphens allowed; will be normalized to uppercase without spaces" maxlength="30"/>
                     </div>
 
                     <!-- Schedule -->
@@ -82,10 +82,6 @@
                       <div class="col">
                         <label for="schedule_from" class="form-label fw-semibold">Schedule From</label>
                         <input type="datetime-local" name="schedule_from" class="form-control" required="required"/>
-                      </div>
-                      <div class="col">
-                        <label for="schedule_to" class="form-label fw-semibold">Schedule To</label>
-                        <input type="datetime-local" name="schedule_to" class="form-control" required="required"/>
                       </div>
                     </div>
 
