@@ -274,6 +274,7 @@
                     <!-- Main content: left details, right QR -->
                     <div style="display:flex; gap:12px; align-items:flex-start;">
                       <div style="flex:1; min-width:260px;">
+                        <p style="margin:6px 0; font-size:14px;"><strong>You have successfully registered a visit. The following is the visitor’s information</strong></p><br></br>
                         <p style="margin:6px 0; font-size:14px;"><strong>Visitor:</strong> <t t-if="visit and visit.id"><t t-esc="visit.visitor_id.name"/></t><t t-if="not visit or not visit.id"> <t t-esc="visitor_name"/></t></p>
                         <p style="margin:6px 0; font-size:14px;"><strong>Date:</strong> <t t-if="visit and visit.id"><span t-field="visit.schedule_from"/></t><t t-if="not visit or not visit.id"> <t t-esc="schedule_from"/></t></p>
                         <p style="margin:6px 0; font-size:14px;"><strong>Unit:</strong> <t t-if="visit and visit.id"><t t-esc="visit.unit_id.display_name"/></t><t t-if="not visit or not visit.id"> <t t-esc="unit_name"/></t></p>
