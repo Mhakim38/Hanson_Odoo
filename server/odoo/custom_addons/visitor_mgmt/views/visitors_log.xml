@@ -20,6 +20,7 @@
                         <tr>
                           <th>Visitor Type</th>
                           <th>Visitor</th>
+                          <th>QR</th>
                           <th>Unit</th>
                           <th>Window</th>
                           <th>Status</th>
@@ -31,8 +32,14 @@
                           <tr>
                             <td><t t-esc="v.purpose or '-'"/></td>
                             <td><t t-esc="v.visitor_id.name"/></td>
+                            <td class="d-flex justify-content-center align-items-center p-2">
+                              <t t-if="qr_map.get(v.id)">
+                                <img t-att-src="qr_map.get(v.id)" alt="QR" style="max-width:72px; max-height:72px; display:block;"/>
+                              </t>
+                              <t t-if="not v.qr_image">-</t>
+                            </td>
                             <td><t t-esc="v.unit_id.display_name"/></td>
-                            <td><t t-esc="v.schedule_from"/> → <t t-esc="v.schedule_to"/></td>
+                            <td><t t-esc="v.schedule_from"/></td>
                             <td>
                               <t t-set="state_label" t-value="v._fields['state'].convert_to_export(v.state, v)"/>
                               <span t-attf-class="badge
