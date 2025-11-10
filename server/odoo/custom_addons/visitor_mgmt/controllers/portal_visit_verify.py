@@ -9,6 +9,32 @@ class VisitorVerifyController(http.Controller):
         visit = request.env['estate.visit'].sudo().search([('qr_token', '=', token)], limit=1)
         if not visit:
             return request.render('visitor_mgmt.qr_invalid_template')
+        # Check expiry: QR valid only until the end of the scheduled day (visit.qr_expiry)
+        try:
+            now = fields.Datetime.now()
+            exp = visit.qr_expiry
+            if exp:
+                # Normalize to datetime objects if necessary
+                try:
+                    if isinstance(exp, str):
+                        exp_dt = fields.Datetime.from_string(exp)
+                    else:
+                        exp_dt = exp
+                except Exception:
+                    exp_dt = exp
+                try:
+                    if isinstance(now, str):
+                        now_dt = fields.Datetime.from_string(now)
+                    else:
+                        now_dt = now
+                except Exception:
+                    now_dt = now
+                # If current time is after expiry, show invalid page
+                if now_dt and exp_dt and now_dt > exp_dt:
+                    return request.render('visitor_mgmt.qr_invalid_template')
+        except Exception:
+            # On any unexpected error, fall back to invalid to be safe
+            return request.render('visitor_mgmt.qr_invalid_template')
 
         return request.render('visitor_mgmt.qr_verify_template', {
             'visit': visit,
@@ -20,6 +46,24 @@ class VisitorVerifyController(http.Controller):
         visitor = request.env['estate.visitor'].sudo().search([('qr_token', '=', token)], limit=1)
         if not visitor:
             return request.render('visitor_mgmt.qr_invalid_template')
+        # If visitor has qr_expiry, ensure it's still valid
+        try:
+            now = fields.Datetime.now()
+            exp = visitor.qr_expiry
+            if exp:
+                try:
+                    exp_dt = fields.Datetime.from_string(exp) if isinstance(exp, str) else exp
+                except Exception:
+                    exp_dt = exp
+                try:
+                    now_dt = fields.Datetime.from_string(now) if isinstance(now, str) else now
+                except Exception:
+                    now_dt = now
+                if now_dt and exp_dt and now_dt > exp_dt:
+                    return request.render('visitor_mgmt.qr_invalid_template')
+        except Exception:
+            return request.render('visitor_mgmt.qr_invalid_template')
+
         return request.render('visitor_mgmt.visitor_info_template', {
             'visitor': visitor,
         })

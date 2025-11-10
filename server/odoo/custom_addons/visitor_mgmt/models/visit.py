@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import timedelta, datetime, time
 
 from odoo import api, fields, models, _
 from odoo.exceptions import ValidationError, UserError
@@ -24,7 +24,7 @@ class EstateVisit(models.Model):
 
     # Visitor is a many2one to estate.visitor. We'll restrict selectable visitors
     # to those that have their host_id set to the chosen host using an onchange.
-    id_number = fields.Char(related="visitor_id.id_number", string="ID Number", index=True, readonly=False, tracking=True)
+    id_number = fields.Char(related="visitor_id.id_number", string="I   D Number", index=True, readonly=False, tracking=True)
     name = fields.Char(related="visitor_id.name")
     visitor_id = fields.Many2one('estate.visitor', required=True)
     visitor_vehicle_ids = fields.Many2one('estate.visitor.vehicle', string="Vehicles")
@@ -133,7 +133,30 @@ class EstateVisit(models.Model):
         for r in self:
             # Create a unique token and expiry
             r.qr_token = str(uuid.uuid4())
-            r.qr_expiry = fields.Datetime.now() + timedelta(minutes=r.valid_minutes or 120)
+            # Set qr_expiry to the end of the scheduled day (visitor's schedule_from date)
+            try:
+                if getattr(r, 'schedule_from', False):
+                    # Convert schedule_from (which may be str or datetime) to a date and set expiry to 23:59:59 of that date
+                    sched = r.schedule_from
+                    try:
+                        if isinstance(sched, str):
+                            sched_dt = fields.Datetime.from_string(sched)
+                        else:
+                            sched_dt = sched
+                        sched_date = sched_dt.date()
+                        expiry_dt = datetime.combine(sched_date, time.max)
+                        # store expiry as a datetime string for consistent storage and comparison
+                        try:
+                            r.qr_expiry = fields.Datetime.to_string(expiry_dt)
+                        except Exception:
+                            r.qr_expiry = expiry_dt
+                    except Exception:
+                        # Fallback to default valid_minutes if any
+                        r.qr_expiry = fields.Datetime.now() + timedelta(minutes=r.valid_minutes or 120)
+                else:
+                    r.qr_expiry = fields.Datetime.now() + timedelta(minutes=r.valid_minutes or 120)
+            except Exception:
+                r.qr_expiry = fields.Datetime.now() + timedelta(minutes=r.valid_minutes or 120)
 
             # Example: You can use a portal URL or internal validation route
             qr_url = f"{r.env['ir.config_parameter'].sudo().get_param('web.base.url')}/visitor/verify/{r.qr_token}"

@@ -73,7 +73,7 @@
                   <td t-esc="v.host_id.name or '-'"/>
                   <td t-esc="v.unit_id.display_name or '-'"/>
                   <td t-esc="v.purpose or '-'"/>
-                  <td><t t-esc="v.schedule_from"/> → <t t-esc="v.schedule_to"/></td>
+                  <td><t t-esc="v.schedule_from"/></td>
 
                   <!-- Status td -->
                   <td>
@@ -130,7 +130,7 @@
                 <p class="mb-1"><strong>Host:</strong> <t t-esc="v.host_id.name or '-'"/></p>
                 <p class="mb-1"><strong>Unit:</strong> <t t-esc="v.unit_id.display_name or '-'"/></p>
                 <p class="mb-1"><strong>Purpose:</strong> <t t-esc="v.purpose or '-'"/></p>
-                <p class="mb-1"><strong>Schedule:</strong> <t t-esc="v.schedule_from"/> → <t t-esc="v.schedule_to"/></p>
+                <p class="mb-1"><strong>Schedule:</strong> <t t-esc="v.schedule_from"/></p>
 
                 <!-- Mobile status: badges -->
                 <p><strong>Status:</strong>
