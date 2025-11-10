@@ -197,7 +197,7 @@
                 <!-- Load the visit record (safe): ensure integer id and fallback to False -->
                 <t t-set="visit" t-value="request.env['estate.visit'].sudo().browse(int(visit_id)) if visit_id else False"/>
 
-                <p class="lead mb-4">Your visit has been successfully logged for <strong><t t-esc="host_name"/></strong>.</p>
+                <p class="lead mb-4">You have successfully registered a visit. The following is the visitor’s information</p>
 
                 <!-- QR Widget: thumbnail, modal preview, and download button -->
                 <t t-set="_qr_url" t-value="qr_data_url or (visit and visit.qr_image and 'data:image/png;base64,%s' % visit.qr_image) or False"/>
@@ -237,11 +237,17 @@
                   <p><strong>Date:</strong> <span t-field="visit.schedule_from"/></p>
                   <p><strong>Visitor Name:</strong> <t t-esc="visit.visitor_id.name"/></p>
                   <p><strong>Unit Number:</strong> <t t-esc="visit.unit_id.display_name"/></p>
+                  <t t-if="visit.visitor_vehicle_ids and visit.visitor_vehicle_ids.plate_no">
+                    <p><strong>Vehicle No:</strong> <t t-esc="visit.visitor_vehicle_ids.plate_no"/></p>
+                  </t>
                 </t>
                 <t t-if="not visit or not visit.id">
                   <p><strong>Date:</strong> <t t-esc="schedule_from"/></p>
                   <p><strong>Visitor Name:</strong> <t t-esc="visitor_name"/></p>
                   <p><strong>Unit Number:</strong> <t t-esc="unit_name"/></p>
+                  <t t-if="vehicle_no">
+                    <p><strong>Vehicle No:</strong> <t t-esc="vehicle_no"/></p>
+                  </t>
                 </t>
 
                 <div class="d-flex justify-content-center gap-2 mt-3">
@@ -253,7 +259,7 @@
                 <div id="visitor-pass-content" class="d-none">
                   <div style="font-family: Arial, Helvetica, sans-serif; padding:20px; max-width:600px; border:1px solid #ddd;">
                     <h2 style="text-align:center;">Thank you!</h2>
-                    <p style="text-align:center; font-size:1.05rem; margin-bottom:0.5rem;">Your visit has been successfully logged for <strong><t t-esc="host_name"/></strong>.</p>
+                    <p style="text-align:center; font-size:1.05rem; margin-bottom:0.5rem;">You have successfully registered a visit. The following is the visitor’s information</p>
                     <div style="text-align:center; margin:12px 0;">
                       <t t-if="_qr_url">
                         <img t-att-src="_qr_url" alt="QR Code" style="max-width:220px; display:block; margin:0 auto;"/>
@@ -263,6 +269,10 @@
                     <p><strong>Date:</strong> <t t-if="visit and visit.id"><span t-field="visit.schedule_from"/></t><t t-if="not visit or not visit.id"> <t t-esc="schedule_from"/></t></p>
                     <p><strong>Visitor Name:</strong> <t t-if="visit and visit.id"><t t-esc="visit.visitor_id.name"/></t><t t-if="not visit or not visit.id"> <t t-esc="visitor_name"/></t></p>
                     <p><strong>Unit Number:</strong> <t t-if="visit and visit.id"><t t-esc="visit.unit_id.display_name"/></t><t t-if="not visit or not visit.id"> <t t-esc="unit_name"/></t></p>
+                    <p><strong>Vehicle No:</strong>
+                      <t t-if="visit and visit.id and visit.visitor_vehicle_ids and visit.visitor_vehicle_ids.plate_no"><t t-esc="visit.visitor_vehicle_ids.plate_no"/></t>
+                      <t t-if="(not visit or not visit.id) and vehicle_no"><t t-esc="vehicle_no"/></t>
+                    </p>
                   </div>
                 </div>
 

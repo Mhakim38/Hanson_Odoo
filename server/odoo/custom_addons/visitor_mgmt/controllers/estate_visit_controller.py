@@ -154,6 +154,18 @@ class EstateVisitController(http.Controller):
             if qr_image_val:
                 qr_data_url = 'data:image/png;base64,%s' % qr_image_val
 
+            # Prepare vehicle display value (sanitized). Prefer the created vehicle record's plate_no,
+            # otherwise fall back to the cleaned string (vehicle_no_clean) or empty string.
+            vehicle_display = ''
+            try:
+                if locals().get('vehicle_rec') and getattr(vehicle_rec, 'plate_no', False):
+                    vehicle_display = vehicle_rec.plate_no
+                else:
+                    # vehicle_no_clean may be defined earlier when sanitizing input
+                    vehicle_display = locals().get('vehicle_no_clean', '') or ''
+            except Exception:
+                vehicle_display = ''
+
             return request.render('visitor_mgmt.visitor_form_thanks', {
                 'host_name': partner.name,
                 'schedule_from': schedule_display,
@@ -162,6 +174,7 @@ class EstateVisitController(http.Controller):
                 'visit_id': visit.id,
                 'qr_image': qr_image_val,
                 'qr_data_url': qr_data_url,
+                'vehicle_no': vehicle_display,
             })
 
         except Exception as e:
