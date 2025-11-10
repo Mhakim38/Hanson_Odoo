@@ -3,6 +3,7 @@ from odoo.http import request
 from datetime import datetime
 import json
 import re
+import base64
 
 class EstateVisitController(http.Controller):
 
@@ -136,23 +137,127 @@ class EstateVisitController(http.Controller):
 
             # Sanitize QR image value (visit.qr_image) to ensure it's a plain base64 string
             qr_image_val = visit.qr_image if visit and getattr(visit, 'qr_image', False) else ''
+            # qr_image_val may be: base64 str, bytes containing a base64 str, or raw image bytes
             if isinstance(qr_image_val, bytes):
+                # Try decoding as text first (common case: bytes of base64 string)
                 try:
-                    qr_image_val = qr_image_val.decode('utf-8')
+                    decoded = qr_image_val.decode('utf-8')
+                    qr_image_val = decoded
                 except Exception:
-                    qr_image_val = ''
+                    # Otherwise assume it's raw binary image data and base64-encode it
+                    try:
+                        qr_image_val = base64.b64encode(qr_image_val).decode('ascii')
+                    except Exception:
+                        qr_image_val = ''
             if isinstance(qr_image_val, str):
-                # Remove Python bytes literal prefix if present: "b'...'/b\"...\""
+                # If it's a data URL, extract the payload
+                if qr_image_val.startswith('data:'):
+                    try:
+                        _, payload = qr_image_val.split(',', 1)
+                        qr_image_val = payload
+                    except Exception:
+                        qr_image_val = ''
+                # Remove Python bytes literal marker and whitespace
                 if qr_image_val.startswith("b'") or qr_image_val.startswith('b"'):
                     qr_image_val = qr_image_val[2:]
                     if qr_image_val.endswith("'") or qr_image_val.endswith('"'):
                         qr_image_val = qr_image_val[:-1]
-                # Trim surrounding quotes/spaces
-                qr_image_val = qr_image_val.strip('\"\' ')
+                qr_image_val = re.sub(r'\s+', '', qr_image_val)
 
             qr_data_url = ''
             if qr_image_val:
                 qr_data_url = 'data:image/png;base64,%s' % qr_image_val
+
+            # Prepare company logo (res.partner.image_1920) for the template.
+            # image_1920 is stored as base64 binary (str) in Odoo; prefer to pass it through unchanged
+            # and send a small mime-type hint for the template to build a correct data URL.
+            company_logo = ''
+            company_logo_mime = 'image/png'
+            try:
+                # Read images using sudo() to avoid access rights preventing image retrieval
+                company_logo_val = ''
+                try:
+                    partner_rec = None
+                    if partner and getattr(partner, 'id', False):
+                        partner_rec = request.env['res.partner'].sudo().browse(partner.id)
+                    if partner_rec and getattr(partner_rec, 'image_1920', False):
+                        company_logo_val = partner_rec.image_1920
+                    else:
+                        # Try the company partner or company record using sudo
+                        comp = request.env.company.sudo()
+                        cp = comp.partner_id.sudo() if comp and comp.partner_id else None
+                        if cp and getattr(cp, 'image_1920', False):
+                            company_logo_val = cp.image_1920
+                        elif getattr(comp, 'image_1920', False):
+                            company_logo_val = comp.image_1920
+                        else:
+                            company_logo_val = ''
+                except Exception:
+                    company_logo_val = ''
+                # company_logo_val may be: base64 str, bytes containing base64 str, raw binary bytes, or a data URL
+                if isinstance(company_logo_val, bytes):
+                    # try decode to text first
+                    try:
+                        company_logo_val_str = company_logo_val.decode('utf-8')
+                        company_logo_val = company_logo_val_str
+                    except Exception:
+                        # assume raw binary bytes -> base64 encode
+                        try:
+                            company_logo = base64.b64encode(company_logo_val).decode('ascii')
+                        except Exception:
+                            company_logo = ''
+                            company_logo_mime = 'image/png'
+                            company_logo_val = ''
+                if isinstance(company_logo_val, str) and company_logo_val:
+                    # If value is already a data URL, split it
+                    if company_logo_val.startswith('data:'):
+                        try:
+                            hdr, b64 = company_logo_val.split(',', 1)
+                            if ';base64' in hdr:
+                                company_logo_mime = hdr.split(':', 1)[1].split(';', 1)[0]
+                                company_logo = b64
+                            else:
+                                company_logo = b64
+                                company_logo_mime = 'image/png'
+                        except Exception:
+                            company_logo = ''
+                            company_logo_mime = 'image/png'
+                    else:
+                        # Might already be base64 string; sanitize whitespace and Python byte markers
+                        s = company_logo_val.strip()
+                        if s.startswith("b'") or s.startswith('b"'):
+                            s = s[2:]
+                            if s.endswith("'") or s.endswith('"'):
+                                s = s[:-1]
+                        s = re.sub(r'\s+', '', s)
+                        # quick heuristic: if it looks like base64, use it; else we might have raw binary text -> base64 encode
+                        if len(s) > 0 and re.match(r'^[A-Za-z0-9+/=\n\r]+$', s):
+                            company_logo = s
+                            p = company_logo[:4]
+                            if p.startswith('/9j/'):
+                                company_logo_mime = 'image/jpeg'
+                            elif p.startswith('iVB'):
+                                company_logo_mime = 'image/png'
+                            else:
+                                company_logo_mime = 'image/png'
+                        else:
+                            # not base64-like; try to base64-encode the utf-8 bytes
+                            try:
+                                company_logo = base64.b64encode(s.encode('utf-8')).decode('ascii')
+                                company_logo_mime = 'image/png'
+                            except Exception:
+                                company_logo = ''
+                                company_logo_mime = 'image/png'
+                # final safety: ensure company_logo is compacted
+                try:
+                    if isinstance(company_logo, str) and company_logo:
+                        company_logo = re.sub(r'\s+', '', company_logo.strip())
+                except Exception:
+                    pass
+                # (debug logging removed)
+            except Exception:
+                company_logo = ''
+                company_logo_mime = 'image/png'
 
             # Prepare vehicle display value (sanitized). Prefer the created vehicle record's plate_no,
             # otherwise fall back to the cleaned string (vehicle_no_clean) or empty string.
@@ -175,6 +280,8 @@ class EstateVisitController(http.Controller):
                 'qr_image': qr_image_val,
                 'qr_data_url': qr_data_url,
                 'vehicle_no': vehicle_display,
+                'company_logo': company_logo,
+                'company_logo_mime': company_logo_mime,
             })
 
         except Exception as e:
