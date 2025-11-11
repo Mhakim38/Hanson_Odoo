@@ -19,7 +19,8 @@
       <form>
         <sheet>
           <group>
-            <field name="property_id"/>
+            <!-- When creating a new partner from this many2one, default is_company to True -->
+            <field name="property_id" context="{'default_is_company': True}"/>
             <field name="name" invisible="1"/>
             <field name="code"/>
             <field name="address"/>
