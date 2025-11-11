@@ -170,7 +170,7 @@
                         <div class="card shadow-sm border-0">
                             <div class="card-body">
                                 <h2 class="text-success mb-3">Thank you!</h2>
-                                <p class="lead mb-4">You have successfully registered a visit. The following is the visitor’s information
+                                <p class="lead mb-4">You have successfully registered a visit.
                                     <strong><t t-esc="host_name"/></strong>.
                                 </p>
                                 <a href="/guard/visit" class="btn btn-outline-primary">Register Another Visitor</a>
