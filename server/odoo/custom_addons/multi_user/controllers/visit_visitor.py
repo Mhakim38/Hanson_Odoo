@@ -149,6 +149,15 @@ class EstateVisitController(http.Controller):
             visit = request.env['estate.visit'].with_context(from_guard_portal=True).sudo().create(visit_vals)
 
             # ------------------------
+            # Auto check-in the visit (guard action)
+            # ------------------------
+            # Reuse the visit model's guard check-in action. Keep the same
+            # from_guard_portal context so model-level constraints are skipped
+            # for the guard flow. Let any exceptions bubble up to the outer
+            # handler so the existing error rendering works.
+            visit.with_context(from_guard_portal=True).sudo().action_guard_checkin()
+
+            # ------------------------
             # Return Success Page
             # ------------------------
             return request.render('multi_user.visitor_form_thanks', {
