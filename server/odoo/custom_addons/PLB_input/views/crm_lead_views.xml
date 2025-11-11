@@ -1,0 +1,49 @@
+<odoo>
+    <record id="view_crm_lead_form_custom" model="ir.ui.view">
+        <field name="name">crm.lead.form.custom</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="inside">
+
+                <group string="Contract Details" colspan="2">
+                    <field name="contract_type" widget="radio"/>
+                    <field name="contract_months"/>
+                    <field name="expected_start_date"/>
+                    <field name="date_go_live"/>
+                </group>
+
+                <group string="Service Information" colspan="2">
+                    <field name="scope_of_service"/>
+                    <field name="freight_type" invisible="scope_of_service != 'freight_forwarding'"/>
+                    <field name="origin_country_id"/>
+                    <field name="destination_country_id"/>
+                    <field name="port_of_loading"/>
+                    <field name="port_of_destination"/>
+                    <field name="product"/>
+                </group>
+
+                <group string="Additional Info" colspan="2">
+                    <field name="dept_region"/>
+                    <field name="realized_revenue_fy2025"/>
+                    <field name="category_type"/>
+                </group>
+
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_crm_lead_tree_custom" model="ir.ui.view">
+        <field name="name">crm.lead.tree.custom</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_case_tree_view_leads"/>
+        <field name="arch" type="xml">
+            <xpath expr="//tree" position="inside">
+                <field name="contract_type"/>
+                <field name="scope_of_service"/>
+                <field name="dept_region"/>
+                <field name="realized_revenue_fy2025"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

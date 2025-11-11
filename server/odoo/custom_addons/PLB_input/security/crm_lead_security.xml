@@ -1,0 +1,8 @@
+<!-- security/crm_lead_security.xml -->
+<odoo>
+    <data noupdate="1">
+        <record id="group_crm_lead_extension_user" model="res.groups">
+            <field name="name">CRM Lead Extension User</field>
+        </record>
+    </data>
+</odoo>
