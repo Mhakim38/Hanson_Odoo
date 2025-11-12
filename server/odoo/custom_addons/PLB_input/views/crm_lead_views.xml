@@ -4,16 +4,16 @@
         <field name="model">crm.lead</field>
         <field name="inherit_id" ref="crm.crm_lead_view_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//sheet" position="inside">
-
-                <group string="Contract Details" colspan="2">
+            <xpath expr="//notebook" position="before">
+            <group colspan="2">
+                <group string="Contract Details">
                     <field name="contract_type" widget="radio"/>
                     <field name="contract_months"/>
                     <field name="expected_start_date"/>
                     <field name="date_go_live"/>
                 </group>
 
-                <group string="Service Information" colspan="2">
+                <group string="Service Information">
                     <field name="scope_of_service"/>
                     <field name="freight_type" invisible="scope_of_service != 'freight_forwarding'"/>
                     <field name="origin_country_id"/>
@@ -22,11 +22,14 @@
                     <field name="port_of_destination"/>
                     <field name="product"/>
                 </group>
-
-                <group string="Additional Info" colspan="2">
-                    <field name="dept_region"/>
-                    <field name="realized_revenue_fy2025"/>
-                    <field name="category_type"/>
+            </group>
+                <!-- Grouping Service Information and Additional Info side by side -->
+                <group colspan="2">
+                    <group string="Additional Info">
+                        <field name="dept_region"/>
+                        <field name="realized_revenue_fy2025"/>
+                        <field name="category_type"/>
+                    </group>
                 </group>
 
             </xpath>
