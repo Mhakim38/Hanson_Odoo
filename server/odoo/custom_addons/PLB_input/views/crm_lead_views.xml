@@ -1,29 +1,31 @@
 <odoo>
+    <!-- Custom Form View -->
     <record id="view_crm_lead_form_custom" model="ir.ui.view">
         <field name="name">crm.lead.form.custom</field>
         <field name="model">crm.lead</field>
         <field name="inherit_id" ref="crm.crm_lead_view_form"/>
         <field name="arch" type="xml">
             <xpath expr="//notebook" position="before">
-            <group colspan="2">
-                <group string="Contract Details">
-                    <field name="contract_type" widget="radio"/>
-                    <field name="contract_months"/>
-                    <field name="expected_start_date"/>
-                    <field name="date_go_live"/>
+                <group colspan="2">
+                    <group string="Contract Details">
+                        <field name="contract_type" widget="radio"/>
+                        <field name="contract_months"/>
+                        <field name="expected_start_date"/>
+                        <field name="date_go_live"/>
+                        <field name="date_conversion"/>
+                    </group>
+
+                    <group string="Service Information">
+                        <field name="scope_of_service"/>
+                        <field name="freight_type" invisible="scope_of_service != 'freight_forwarding'"/>
+                        <field name="origin_country_id"/>
+                        <field name="destination_country_id"/>
+                        <field name="port_of_loading"/>
+                        <field name="port_of_destination"/>
+                        <field name="product"/>
+                    </group>
                 </group>
 
-                <group string="Service Information">
-                    <field name="scope_of_service"/>
-                    <field name="freight_type" invisible="scope_of_service != 'freight_forwarding'"/>
-                    <field name="origin_country_id"/>
-                    <field name="destination_country_id"/>
-                    <field name="port_of_loading"/>
-                    <field name="port_of_destination"/>
-                    <field name="product"/>
-                </group>
-            </group>
-                <!-- Grouping Service Information and Additional Info side by side -->
                 <group colspan="2">
                     <group string="Additional Info">
                         <field name="dept_region"/>
@@ -31,22 +33,42 @@
                         <field name="category_type"/>
                     </group>
                 </group>
-
             </xpath>
         </field>
     </record>
 
+    Replace the default tree view with a custom one
     <record id="view_crm_lead_tree_custom" model="ir.ui.view">
         <field name="name">crm.lead.tree.custom</field>
         <field name="model">crm.lead</field>
-        <field name="inherit_id" ref="crm.crm_case_tree_view_leads"/>
+        <field name="inherit_id" ref="crm.crm_case_tree_view_oppor"/>
         <field name="arch" type="xml">
-            <xpath expr="//tree" position="inside">
-                <field name="contract_type"/>
-                <field name="scope_of_service"/>
-                <field name="dept_region"/>
-                <field name="realized_revenue_fy2025"/>
+            <xpath expr="//tree" position="replace">
+                <tree string="CRM Leads - Custom">
+                    <field name="partner_id" string="Customer Names"/>
+                    <field name="name" string="Project"/>
+                    <field name="expected_revenue" string="Value Per Annum (RM)"/>
+                    <field name="probability" string="Chance"/>
+                    <field name="stage_id" string="Status"/>
+                    <field name="description" string="Remarks"/>
+                    <field name="user_id" string="PIC"/>
+                    <field name="create_date" string="Date Funnel"/>
+                    <field name="expected_start_date" string="Expected Start Date"/>
+                    <field name="date_conversion" string="Date Secured"/>
+                    <field name="date_go_live" string="Date Go Live"/>
+                    <field name="scope_of_service" string="Scope of service"/>
+                    <field name="product" string="Product"/>
+                    <field name="dept_region" string="Dept/region"/>
+                    <field name="realized_revenue_fy2025" string=""/>
+                    <field name="category_type" string=""/>
+                </tree>
             </xpath>
         </field>
+    </record>
+
+    <!-- Override pipeline action to use your inherited tree view -->
+    <record id="crm.crm_lead_action_pipeline" model="ir.actions.act_window">
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="view_crm_lead_tree_custom"/>
     </record>
 </odoo>
