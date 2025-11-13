@@ -5,7 +5,9 @@
         <field name="model">crm.lead</field>
         <field name="inherit_id" ref="crm.crm_lead_view_form"/>
         <field name="arch" type="xml">
-            <xpath expr="//notebook" position="before">
+
+            <!-- Existing info before the notebook -->
+            <xpath expr="//sheet/notebook" position="before">
                 <group colspan="2">
                     <group string="Contract Details">
                         <field name="contract_type" widget="radio"/>
@@ -34,10 +36,17 @@
                     </group>
                 </group>
             </xpath>
+
+            <!-- ✅ Fixed "Activities" tab -->
+            <xpath expr="//sheet/notebook" position="inside">
+                <page string="Activities">
+                    <field name="activity_ids" widget="mail_activity" nolabel="1"/>
+                </page>
+            </xpath>
         </field>
     </record>
 
-<!--    Replace the default tree view with a custom one-->
+    <!-- Keep your custom tree view as-is -->
     <record id="view_crm_lead_tree_custom" model="ir.ui.view">
         <field name="name">crm.lead.tree.custom</field>
         <field name="model">crm.lead</field>
@@ -45,7 +54,7 @@
         <field name="arch" type="xml">
             <xpath expr="//tree" position="replace">
                 <tree string="CRM Leads - Custom">
-                    <field name="team_id" invisible="true"/>
+                    <field name="team_id" invisible="1"/>
                     <field name="partner_id" string="Customer Names"/>
                     <field name="name" string="Project"/>
                     <field name="expected_revenue" string="Value Per Annum (RM)"/>
@@ -66,10 +75,4 @@
             </xpath>
         </field>
     </record>
-
-    <!-- Override pipeline action to use your inherited tree view -->
-<!--    <record id="crm.crm_lead_action_pipeline" model="ir.actions.act_window">-->
-<!--        <field name="view_mode">tree,form</field>-->
-<!--        <field name="view_id" ref="view_crm_lead_tree_custom"/>-->
-<!--    </record>-->
 </odoo>

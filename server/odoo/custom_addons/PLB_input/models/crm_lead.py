@@ -4,6 +4,8 @@ from odoo import api, fields, models
 class CrmLead(models.Model):
     _inherit = 'crm.lead'
 
+    activity_ids = fields.One2many('mail.activity', 'res_id')
+
     # 1. Contract details
     contract_type = fields.Selection(
         [('long_term', 'Long Term'), ('adhoc', 'Adhoc')],
