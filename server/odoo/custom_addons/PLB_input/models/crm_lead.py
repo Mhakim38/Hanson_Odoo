@@ -39,7 +39,6 @@ class CrmLead(models.Model):
 
     @api.depends('scope_of_service')
     def _compute_show_freight_type(self):
-        """Used for UI visibility in OWL / future widget logic"""
         for rec in self:
             rec.show_freight_type = rec.scope_of_service == 'freight_forwarding'
 
@@ -49,17 +48,17 @@ class CrmLead(models.Model):
     origin_country_id = fields.Many2one('res.country', string='Origin Country')
     destination_country_id = fields.Many2one('res.country', string='Destination Country')
 
-    port_of_loading = fields.Selection([
-        ('port', 'Port'),
-        ('airport', 'Airport'),
-        ('place', 'Place'),
-    ], string='Port of Loading')
-
-    port_of_destination = fields.Selection([
-        ('port', 'Port'),
-        ('airport', 'Airport'),
-        ('place', 'Place'),
-    ], string='Port of Destination')
+    # ✅ Replace selection with relations to crm.port
+    port_of_loading_id = fields.Many2one(
+        'crm.port',
+        string='Port of Loading',
+        help='Select the port from your CRM Ports list',
+    )
+    port_of_destination_id = fields.Many2one(
+        'crm.port',
+        string='Port of Destination',
+        help='Select the port from your CRM Ports list',
+    )
 
     product = fields.Selection(
         [
@@ -88,7 +87,6 @@ class CrmLead(models.Model):
         ('4', 'Al Bukhary New Business'),
     ], string='Category')
 
-    # Helper to get company currency for the monetary field
     company_currency_id = fields.Many2one(
         'res.currency',
         related='company_id.currency_id',
@@ -106,7 +104,6 @@ class CrmLead(models.Model):
                 rec.contract_months = 1
 
     def _inverse_contract_months(self):
-        """Ensure 12 months default if Long Term."""
         for rec in self:
             if rec.contract_type == 'long_term':
                 rec.contract_months = 12

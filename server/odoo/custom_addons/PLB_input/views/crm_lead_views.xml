@@ -20,8 +20,8 @@
                         <field name="freight_type" invisible="scope_of_service != 'freight_forwarding'"/>
                         <field name="origin_country_id"/>
                         <field name="destination_country_id"/>
-                        <field name="port_of_loading"/>
-                        <field name="port_of_destination"/>
+                        <field name="port_of_loading_id"/>
+                        <field name="port_of_destination_id"/>
                         <field name="product"/>
                     </group>
                 </group>
