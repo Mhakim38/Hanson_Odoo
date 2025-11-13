@@ -1,0 +1,45 @@
+<odoo>
+    <!-- Action definition must come first -->
+    <record id="action_crm_port" model="ir.actions.act_window">
+        <field name="name">Ports</field>
+        <field name="res_model">crm.port</field>
+        <field name="view_mode">tree,form</field>
+    </record>
+
+    <!-- Views -->
+    <record id="view_crm_port_tree" model="ir.ui.view">
+        <field name="name">crm.port.tree</field>
+        <field name="model">crm.port</field>
+        <field name="arch" type="xml">
+            <tree string="Ports">
+                <field name="code"/>
+                <field name="name"/>
+                <field name="city"/>
+                <field name="state"/>
+                <field name="country"/>
+                <field name="type"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="view_crm_port_form" model="ir.ui.view">
+        <field name="name">crm.port.form</field>
+        <field name="model">crm.port</field>
+        <field name="arch" type="xml">
+            <form string="Port">
+                <group>
+                    <field name="code"/>
+                    <field name="name"/>
+                    <field name="city"/>
+                    <field name="state"/>
+                    <field name="country"/>
+                    <field name="type"/>
+                </group>
+            </form>
+        </field>
+    </record>
+
+    <!-- Menus -->
+    <menuitem id="menu_crm_port_root" name="Ports" sequence="10"/>
+    <menuitem id="menu_crm_port" name="Manage Ports" parent="menu_crm_port_root" action="action_crm_port"/>
+</odoo>
