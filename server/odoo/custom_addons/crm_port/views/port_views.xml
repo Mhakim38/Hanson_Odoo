@@ -40,6 +40,8 @@
     </record>
 
     <!-- Menus -->
-    <menuitem id="menu_crm_port_root" name="Ports" sequence="10"/>
-    <menuitem id="menu_crm_port" name="Manage Ports" parent="menu_crm_port_root" action="action_crm_port"/>
+    <!-- Place Ports under CRM > Configuration -->
+    <!-- parent should reference the CRM module's "crm_menu_config" record -->
+    <menuitem id="menu_crm_port_root" name="Ports" parent="crm.crm_menu_config" sequence="10"/>
+    <menuitem id="menu_crm_port" name="Manage Ports" parent="menu_crm_port_root" action="action_crm_port" sequence="1"/>
 </odoo>
