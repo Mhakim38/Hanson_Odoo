@@ -82,7 +82,7 @@
     </record>
 
     <menuitem id="menu_my_activities_plb"
-              name="My Activitied (PLB)"
+              name="My Activities (PLB)"
               parent="crm.crm_menu_sales"
               action="PLB_input.action_mail_activity_my_plb"/>
 
