@@ -41,6 +41,7 @@
             <xpath expr="//sheet/notebook" position="inside">
                 <page string="Activities">
                     <field name="activity_ids" widget="mail_activity" nolabel="1"/>
+                        <field name="partner_id" widget="mail_activity" nolabel="1"/>
                 </page>
             </xpath>
 
@@ -70,4 +71,19 @@
             </xpath>
         </field>
     </record>
+
+    <!-- Action + Menu: open mail.activity tree under Sales -->
+    <record id="action_mail_activity_my_plb" model="ir.actions.act_window">
+        <field name="name">My Activitied (PLB)</field>
+        <field name="res_model">mail.activity</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="mail.mail_activity_view_tree"/>
+        <field name="search_view_id" ref="mail.mail_activity_view_search"/>
+    </record>
+
+    <menuitem id="menu_my_activities_plb"
+              name="My Activitied (PLB)"
+              parent="crm.crm_menu_sales"
+              action="PLB_input.action_mail_activity_my_plb"/>
+
 </odoo>
