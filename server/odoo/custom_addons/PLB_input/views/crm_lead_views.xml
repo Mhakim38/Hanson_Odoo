@@ -104,6 +104,9 @@
             <xpath expr="//tree/field[@name='contact_id']" position="after">
                 <field name="contact_position"/>
             </xpath>
+            <xpath expr="//tree/field[@name='contact_position']" position="after">
+                <field name="plb_why"/>
+            </xpath>
         </field>
     </record>
 
@@ -115,6 +118,7 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='user_id']" position="after">
                 <field name="contact_id"/>
+                <field name="plb_why"/>
             </xpath>
         </field>
     </record>
@@ -127,6 +131,7 @@
         <field name="arch" type="xml">
             <xpath expr="//field[@name='user_id']" position="after">
                 <field name="contact_id"/>
+                <field name="plb_why"/>
             </xpath>
         </field>
     </record>
@@ -139,6 +144,7 @@
         <field name="arch" type="xml">
             <xpath expr="//group" position="inside">
                 <field name="contact_id"/>
+                <field name="plb_why"/>
             </xpath>
         </field>
     </record>

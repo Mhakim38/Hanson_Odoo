@@ -31,6 +31,15 @@ class MailActivity(models.Model):
         store=False
     )
 
+    # PLB reason/category for the activity
+    plb_why = fields.Selection([
+        ('sales', 'SALES'),
+        ('rfq', 'RFQ'),
+        ('ops', 'OPS'),
+        ('debts', 'DEBTS'),
+        ('oth', 'OTH'),
+    ], string='Why', index=True, help='Category for PLB activities')
+
     @api.onchange('res_model', 'res_id')
     def _onchange_set_contact_from_target(self):
         for rec in self:
