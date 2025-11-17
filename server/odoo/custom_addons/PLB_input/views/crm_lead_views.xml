@@ -41,7 +41,6 @@
             <xpath expr="//sheet/notebook" position="inside">
                 <page string="Activities">
                     <field name="activity_ids" widget="mail_activity" nolabel="1"/>
-                        <field name="partner_id" widget="mail_activity" nolabel="1"/>
                 </page>
             </xpath>
 
@@ -79,11 +78,27 @@
         <field name="view_mode">tree,form</field>
         <field name="view_id" ref="mail.mail_activity_view_tree"/>
         <field name="search_view_id" ref="mail.mail_activity_view_search"/>
+        <field name="domain">[('res_model', '=', 'crm.lead')]</field>
     </record>
 
     <menuitem id="menu_my_activities_plb"
               name="My Activities (PLB)"
               parent="crm.crm_menu_sales"
               action="PLB_input.action_mail_activity_my_plb"/>
+
+    <!-- Inherit mail.activity tree to add partner column before res_name and user_id after date_deadline -->
+    <record id="view_mail_activity_tree_inherit_plb" model="ir.ui.view">
+        <field name="name">mail.activity.view.tree.plb.inherit</field>
+        <field name="model">mail.activity</field>
+        <field name="inherit_id" ref="mail.mail_activity_view_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//tree/field[@name='date_deadline']" position="after">
+                <field name="user_id"/>
+            </xpath>
+            <xpath expr="//tree/field[@name='res_name']" position="before">
+                <field name="partner_id"/>
+            </xpath>
+        </field>
+    </record>
 
 </odoo>

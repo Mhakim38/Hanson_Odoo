@@ -4,7 +4,10 @@ from odoo import api, fields, models
 class CrmLead(models.Model):
     _inherit = 'crm.lead'
 
-    activity_ids = fields.One2many('mail.activity', 'res_id')
+    # Do not override the standard activity_ids relation here. The mail.activity
+    # model uses a generic res_model/res_id link; overriding activity_ids with
+    # an incorrect inverse would break behavior. We rely on the built-in
+    # activities mechanism provided by mail.activity and mail.thread.
 
     # 1. Contract details
     contract_type = fields.Selection(
