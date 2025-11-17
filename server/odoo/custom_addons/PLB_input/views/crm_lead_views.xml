@@ -74,7 +74,7 @@
 
     <!-- Action + Menu: open mail.activity tree under Sales -->
     <record id="action_mail_activity_my_plb" model="ir.actions.act_window">
-        <field name="name">My Activitied (PLB)</field>
+        <field name="name">My Activities (PLB)</field>
         <field name="res_model">mail.activity</field>
         <field name="view_mode">tree,form</field>
         <field name="view_id" ref="mail.mail_activity_view_tree"/>
