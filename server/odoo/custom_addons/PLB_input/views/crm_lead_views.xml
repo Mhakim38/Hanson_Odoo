@@ -92,13 +92,23 @@
         <field name="model">mail.activity</field>
         <field name="inherit_id" ref="mail.mail_activity_view_tree"/>
         <field name="arch" type="xml">
+            <!-- Change field labels -->
+            <xpath expr="//tree/field[@name='activity_type_id']" position="attributes">
+                <attribute name="string">How</attribute>
+            </xpath>
+            <xpath expr="//tree/field[@name='summary']" position="attributes">
+                <attribute name="string">What</attribute>
+            </xpath>
+            <xpath expr="//tree/field[@name='date_deadline']" position="attributes">
+                <attribute name="string">When</attribute>
+            </xpath>
             <xpath expr="//tree/field[@name='date_deadline']" position="after">
                 <field name="plb_week"/>
-                <field name="user_id"/>
-            </xpath>
-            <xpath expr="//tree/field[@name='res_name']" position="before">
+                <field name="user_id" string="Sales"/>
                 <field name="partner_id"/>
             </xpath>
+            <xpath expr="//tree/field[@name='res_name']" position="replace"/>
+
             <xpath expr="//tree/field[@name='partner_id']" position="after">
                 <field name="contact_id"/>
             </xpath>
@@ -117,6 +127,10 @@
         <field name="model">mail.activity</field>
         <field name="inherit_id" ref="mail.mail_activity_view_form"/>
         <field name="arch" type="xml">
+            <!-- Change label for the due date field in the activity form -->
+            <xpath expr="//field[@name='date_deadline']" position="attributes">
+                <attribute name="string">When ?</attribute>
+            </xpath>
             <xpath expr="//field[@name='user_id']" position="after">
                 <field name="contact_id"/>
                 <field name="plb_why"/>
@@ -130,6 +144,10 @@
         <field name="model">mail.activity</field>
         <field name="inherit_id" ref="mail.mail_activity_view_form_popup"/>
         <field name="arch" type="xml">
+            <!-- Change label for due date in popup form -->
+            <xpath expr="//field[@name='date_deadline']" position="attributes">
+                <attribute name="string">When ?</attribute>
+            </xpath>
             <xpath expr="//field[@name='user_id']" position="after">
                 <field name="contact_id"/>
                 <field name="plb_why"/>
@@ -143,6 +161,10 @@
         <field name="model">mail.activity</field>
         <field name="inherit_id" ref="mail.mail_activity_view_form_without_record_access"/>
         <field name="arch" type="xml">
+            <!-- Change label for due date in the no-access form -->
+            <xpath expr="//field[@name='date_deadline']" position="attributes">
+                <attribute name="string">When ?</attribute>
+            </xpath>
             <xpath expr="//group" position="inside">
                 <field name="contact_id"/>
                 <field name="plb_why"/>

@@ -7,7 +7,7 @@ class MailActivity(models.Model):
 
     partner_id = fields.Many2one(
         'res.partner',
-        string='Partner',
+        string='Who (Company)',
         compute='_compute_partner_id',
         compute_sudo=True,
         readonly=True,
@@ -19,7 +19,7 @@ class MailActivity(models.Model):
     # Assigned contact (a specific person/contact) linked to this activity.
     contact_id = fields.Many2one(
         'res.partner',
-        string='Contact',
+        string='Who (Contact)',
         index=True,
         help='Specific contact person assigned for this activity. Editable in the activity form.'
     )

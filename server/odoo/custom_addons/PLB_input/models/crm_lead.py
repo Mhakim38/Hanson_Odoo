@@ -53,7 +53,6 @@ class CrmLead(models.Model):
     origin_country_id = fields.Many2one('res.country', string='Origin Country')
     destination_country_id = fields.Many2one('res.country', string='Destination Country')
 
-    # ✅ Replace selection with relations to crm.port
     port_of_loading_id = fields.Many2one(
         'crm.port',
         string='Port of Loading',
