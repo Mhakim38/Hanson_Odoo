@@ -1,4 +1,5 @@
 from odoo import api, fields, models  # type: ignore
+from datetime import datetime, date
 
 
 class MailActivity(models.Model):
@@ -39,6 +40,14 @@ class MailActivity(models.Model):
         ('debts', 'DEBTS'),
         ('oth', 'OTH'),
     ], string='Why', index=True, help='Category for PLB activities')
+
+    # Computed week number from date_deadline (not stored, not searchable/groupable)
+    plb_week = fields.Char(
+        string='Week',
+        compute='_compute_plb_week',
+        store=False,
+        readonly=True,
+    )
 
     @api.onchange('res_model', 'res_id')
     def _onchange_set_contact_from_target(self):
@@ -89,3 +98,33 @@ class MailActivity(models.Model):
             else:
                 # No known partner field on the target model
                 rec.partner_id = False
+
+    @api.depends('date_deadline')
+    def _compute_plb_week(self):
+        """Compute the week number (ISO week within year) from date_deadline.
+
+        - If date_deadline is a datetime, convert to user's timezone before extracting week.
+        - Result is string of the week number (e.g. '5' or '52'). Empty when no deadline.
+        """
+        for rec in self:
+            rec.plb_week = False
+            dd = rec.date_deadline
+            if not dd:
+                continue
+            try:
+                # If it's a datetime-like value, convert to user tz
+                if isinstance(dd, datetime):
+                    user_dt = fields.Datetime.context_timestamp(rec, dd)
+                    rec.plb_week = str(user_dt.isocalendar()[1])
+                elif isinstance(dd, date):
+                    rec.plb_week = str(dd.isocalendar()[1])
+                else:
+                    # Fallback: try to parse when it's a string (shouldn't normally happen)
+                    from dateutil import parser
+
+                    parsed = parser.parse(str(dd))
+                    # parser gives datetime; convert to date
+                    rec.plb_week = str(parsed.isocalendar()[1])
+            except Exception:
+                rec.plb_week = False
+

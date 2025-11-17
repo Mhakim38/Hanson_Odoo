@@ -93,6 +93,7 @@
         <field name="inherit_id" ref="mail.mail_activity_view_tree"/>
         <field name="arch" type="xml">
             <xpath expr="//tree/field[@name='date_deadline']" position="after">
+                <field name="plb_week"/>
                 <field name="user_id"/>
             </xpath>
             <xpath expr="//tree/field[@name='res_name']" position="before">
