@@ -15,6 +15,37 @@ class MailActivity(models.Model):
         help='Related partner when the activity targets a record that has a partner.'
     )
 
+    # Assigned contact (a specific person/contact) linked to this activity.
+    contact_id = fields.Many2one(
+        'res.partner',
+        string='Contact',
+        index=True,
+        help='Specific contact person assigned for this activity. Editable in the activity form.'
+    )
+
+    # Position / job title of the contact (related field for display in tree)
+    contact_position = fields.Char(
+        related='contact_id.function',
+        string='Position',
+        readonly=True,
+        store=False
+    )
+
+    @api.onchange('res_model', 'res_id')
+    def _onchange_set_contact_from_target(self):
+        for rec in self:
+            # only set default if not already set
+            if rec.contact_id:
+                continue
+            if rec.res_model == 'crm.lead' and rec.res_id:
+                lead = self.env['crm.lead'].sudo().browse(rec.res_id)
+                if lead and lead.partner_id:
+                    # Prefer an actual contact (child partner) of the company if present
+                    contacts = lead.partner_id.child_ids
+                    rec.contact_id = contacts and contacts[0] or lead.partner_id
+                else:
+                    rec.contact_id = False
+
     @api.depends('res_model', 'res_id')
     def _compute_partner_id(self):
         for rec in self:

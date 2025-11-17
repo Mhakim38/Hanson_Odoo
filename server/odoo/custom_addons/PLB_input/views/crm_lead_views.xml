@@ -98,6 +98,48 @@
             <xpath expr="//tree/field[@name='res_name']" position="before">
                 <field name="partner_id"/>
             </xpath>
+            <xpath expr="//tree/field[@name='partner_id']" position="after">
+                <field name="contact_id"/>
+            </xpath>
+            <xpath expr="//tree/field[@name='contact_id']" position="after">
+                <field name="contact_position"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Inherit the mail.activity form to allow assigning a Contact on the activity popup -->
+    <record id="view_mail_activity_form_inherit_plb" model="ir.ui.view">
+        <field name="name">mail.activity.view.form.plb.inherit</field>
+        <field name="model">mail.activity</field>
+        <field name="inherit_id" ref="mail.mail_activity_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='user_id']" position="after">
+                <field name="contact_id"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Also add contact_id to the popup form used by the activity widget -->
+    <record id="view_mail_activity_form_popup_inherit_plb" model="ir.ui.view">
+        <field name="name">mail.activity.view.form.popup.plb.inherit</field>
+        <field name="model">mail.activity</field>
+        <field name="inherit_id" ref="mail.mail_activity_view_form_popup"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='user_id']" position="after">
+                <field name="contact_id"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Add contact_id to the "without record access" activity form as well -->
+    <record id="view_mail_activity_form_without_access_inherit_plb" model="ir.ui.view">
+        <field name="name">mail.activity.view.form.without.record.access.plb.inherit</field>
+        <field name="model">mail.activity</field>
+        <field name="inherit_id" ref="mail.mail_activity_view_form_without_record_access"/>
+        <field name="arch" type="xml">
+            <xpath expr="//group" position="inside">
+                <field name="contact_id"/>
+            </xpath>
         </field>
     </record>
 
