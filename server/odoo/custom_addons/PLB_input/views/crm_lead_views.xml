@@ -1,4 +1,13 @@
 <odoo>
+    <!-- New action to open the scheduling wizard as a modal (moved early so views can reference it) -->
+    <record id="action_schedule_activity_plb" model="ir.actions.act_window">
+        <field name="name">Schedule Activity</field>
+        <field name="res_model">mail.activity.schedule</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="context">{'default_res_model': 'crm.lead', 'default_res_id': active_id}</field>
+    </record>
+
     <!-- Custom Form View -->
     <record id="view_crm_lead_form_custom" model="ir.ui.view">
         <field name="name">crm.lead.form.custom</field>
@@ -42,6 +51,14 @@
                 <page string="Activities">
                     <field name="activity_ids" widget="mail_activity" nolabel="1"/>
                 </page>
+            </xpath>
+
+            <!-- Insert Schedule Activity button into the form header -->
+            <xpath expr="//form/header" position="inside">
+                <button name="%(PLB_input.action_schedule_activity_plb)d"
+                        type="action"
+                        string="Schedule Activity"
+                        class="oe_highlight"/>
             </xpath>
 
         </field>
@@ -99,8 +116,9 @@
             <xpath expr="//tree/field[@name='summary']" position="attributes">
                 <attribute name="string">What</attribute>
             </xpath>
+            <!-- date_deadline label updated to include question mark -->
             <xpath expr="//tree/field[@name='date_deadline']" position="attributes">
-                <attribute name="string">When</attribute>
+                <attribute name="string">When ?</attribute>
             </xpath>
             <xpath expr="//tree/field[@name='date_deadline']" position="after">
                 <field name="plb_week"/>
@@ -131,7 +149,7 @@
             <xpath expr="//field[@name='date_deadline']" position="attributes">
                 <attribute name="string">When ?</attribute>
             </xpath>
-            <xpath expr="//field[@name='user_id']" position="after">
+            <xpath expr="//field[@name='summary']" position="after">
                 <field name="contact_id"/>
                 <field name="plb_why"/>
             </xpath>
@@ -148,7 +166,7 @@
             <xpath expr="//field[@name='date_deadline']" position="attributes">
                 <attribute name="string">When ?</attribute>
             </xpath>
-            <xpath expr="//field[@name='user_id']" position="after">
+            <xpath expr="//field[@name='summary']" position="after">
                 <field name="contact_id"/>
                 <field name="plb_why"/>
             </xpath>
