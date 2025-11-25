@@ -1,0 +1,4 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_senarai_titah,senarai.titah,model_senarai_titah,,1,1,1,1
+access_titah_respon,titah.respon,model_titah_respon,,1,1,1,1
+access_laporan_tidaklaksana,laporan.tidaklaksana,model_laporan_tidaklaksana,,1,1,1,1

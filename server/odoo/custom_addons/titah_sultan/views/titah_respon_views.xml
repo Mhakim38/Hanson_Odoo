@@ -1,0 +1,63 @@
+<odoo>
+    <!-- Tree View -->
+    <record id="view_titah_respon_tree" model="ir.ui.view">
+        <field name="name">titah.respon.tree</field>
+        <field name="model">titah.respon</field>
+        <field name="arch" type="xml">
+            <tree string="Senarai Maklum Balas" js_class="titah_respon_list">
+                <field name="titah_id"/>
+                <field name="maklum_balas"/>
+                <field name="status_tindakan"
+                   decoration-danger="status_tindakan == 'belum'"
+                   decoration-success="status_tindakan == 'selesai'"
+                   decoration-warning="status_tindakan == 'sedang'"/>
+                <field name="updated_by"/>
+                <field name="updated_at"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_titah_respon_form" model="ir.ui.view">
+        <field name="name">titah.respon.form</field>
+        <field name="model">titah.respon</field>
+        <field name="arch" type="xml">
+            <form string="Maklum Balas Titah">
+                <sheet>
+                    <group>
+                        <field name="titah_id"/>
+                        <field name="maklum_balas"/>
+                        <field name="status_tindakan"
+                               widget="badge"
+                               options="{'color_field': 'status_tindakan_color'}"/>
+                    </group>
+                    <group>
+                        <field name="updated_by" readonly="1"/>
+                        <field name="updated_at" readonly="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action Window -->
+    <record id="action_titah_respon" model="ir.actions.act_window">
+        <field name="name">Maklum Balas Titah</field>
+        <field name="res_model">titah.respon</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Tiada maklum balas direkodkan.<br/>
+                Klik untuk menambah maklum balas baru.
+            </p>
+        </field>
+    </record>
+
+    <!-- Menu Item -->
+    <menuitem id="menu_respon"
+              name="Maklum Balas"
+              parent="menu_titah_root"
+              action="action_titah_respon"
+              sequence="20"/>
+</odoo>

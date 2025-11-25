@@ -1,0 +1,44 @@
+<odoo>
+    <record id="view_plb_partner_report_tree" model="ir.ui.view">
+        <field name="name">plb.partner.report.tree</field>
+        <field name="model">plb.partner.report</field>
+        <field name="arch" type="xml">
+            <tree string="PLB Partner Report" create="false" edit="false">
+                <field name="partner_id"/>
+                <field name="salesperson_id"/>
+                <field name="scope_of_service"/>
+
+                <field name="ar"/>
+                <field name="mar"/>
+
+                <field name="rr_jan"/>
+                <field name="rr_feb"/>
+                <field name="rr_mar"/>
+                <field name="rr_apr"/>
+                <field name="rr_may"/>
+                <field name="rr_jun"/>
+                <field name="rr_jul"/>
+                <field name="rr_aug"/>
+                <field name="rr_sep"/>
+                <field name="rr_oct"/>
+                <field name="rr_nov"/>
+                <field name="rr_dec"/>
+
+                <field name="rr_total"/>
+                <field name="cf_total"/>
+                <field name="stage_id"/>
+            </tree>
+        </field>
+    </record>
+
+    <record id="action_plb_partner_report" model="ir.actions.act_window">
+        <field name="name">PLB Partner Report</field>
+        <field name="res_model">plb.partner.report</field>
+        <field name="view_mode">tree</field>
+        <field name="view_id" ref="view_plb_partner_report_tree"/>
+        <field name="context">{'search_default_unarchived': 1}</field>
+    </record>
+
+    <menuitem id="menu_crm_plb_partner_report" name="Partner Revenue Table" parent="menu_crm_plb_report_root" action="action_plb_partner_report" sequence="20"/>
+</odoo>
+

@@ -1,0 +1,47 @@
+<odoo>
+    <record id="view_crm_lead_plb_pivot" model="ir.ui.view">
+        <field name="name">crm.lead.plb.pivot</field>
+        <field name="model">crm.lead</field>
+        <field name="arch" type="xml">
+            <pivot string="PLB Revenue Pivot" display_quantity="true" sample="1">
+                <!-- Rows: Customer details as grouped rows -->
+                <field name="user_id" type="row" string="Salesperson"/>
+                <field name="stage_id" type="row" string="Stage"/>
+                <field name="scope_of_service" type="row" string="Services"/>
+                <field name="name" type="row" string="Customer"/>
+
+                <!-- No column grouping - let measures create columns -->
+
+                <!-- Measures: All data shown as separate columns in cells -->
+                <field name="expected_revenue" type="measure" string="Annualized Revenue"/>
+                <field name="plb_rr_jan" type="measure" string="Jan"/>
+                <field name="plb_rr_feb" type="measure" string="Feb"/>
+                <field name="plb_rr_mar" type="measure" string="Mar"/>
+                <field name="plb_rr_apr" type="measure" string="Apr"/>
+                <field name="plb_rr_may" type="measure" string="May"/>
+                <field name="plb_rr_jun" type="measure" string="Jun"/>
+                <field name="plb_rr_jul" type="measure" string="Jul"/>
+                <field name="plb_rr_aug" type="measure" string="Aug"/>
+                <field name="plb_rr_sep" type="measure" string="Sep"/>
+                <field name="plb_rr_oct" type="measure" string="Oct"/>
+                <field name="plb_rr_nov" type="measure" string="Nov"/>
+                <field name="plb_rr_dec" type="measure" string="Dec"/>
+                <field name="plb_realized_revenue_2025" type="measure" string="Realized Revenue 2025"/>
+                <field name="plb_cf" type="measure" string="Carry Forward 2026"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- Action to open Pivot view on CRM Lead with debug URL-like behavior -->
+    <record id="action_crm_lead_plb_pivot" model="ir.actions.act_window">
+        <field name="name">PLB Revenue Pivot</field>
+        <field name="res_model">crm.lead</field>
+        <field name="view_mode">pivot,tree,form</field>
+        <field name="context">{'search_default_unarchived': 1}</field>
+        <field name="views">[(ref('view_crm_lead_plb_pivot'),'pivot'), (False, 'tree'), (False, 'form')]</field>
+    </record>
+
+    <!-- Menu under CRM Reporting -->
+    <menuitem id="menu_crm_plb_report_root" name="PLB Reports" parent="crm.crm_menu_report" sequence="100"/>
+    <menuitem id="menu_crm_plb_pivot" name="Revenue Pivot" parent="menu_crm_plb_report_root" action="action_crm_lead_plb_pivot" sequence="10"/>
+</odoo>

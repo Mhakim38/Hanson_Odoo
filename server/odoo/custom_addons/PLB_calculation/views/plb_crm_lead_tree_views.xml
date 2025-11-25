@@ -1,0 +1,54 @@
+<odoo>
+    <!-- Tree/List view that matches the traditional revenue table format -->
+    <record id="view_crm_lead_plb_revenue_tree" model="ir.ui.view">
+        <field name="name">crm.lead.plb.revenue.tree</field>
+        <field name="model">crm.lead</field>
+        <field name="arch" type="xml">
+            <tree string="PLB Revenue Table 2025" create="false" decoration-info="plb_cf > 0">
+                <!-- Customer details columns -->
+                <field name="user_id" string="Salesperson"/>
+                <field name="stage_id" string="Stage"/>
+                <field name="scope_of_service" string="Services"/>
+                <field name="name" string="Customer"/>
+
+                <!-- Financial columns -->
+                <field name="expected_revenue" string="Annualized Revenue" sum="Total AR"/>
+
+                <!-- Monthly RR columns (Jan-Dec) -->
+                <field name="plb_rr_jan" string="Jan" sum="Total Jan"/>
+                <field name="plb_rr_feb" string="Feb" sum="Total Feb"/>
+                <field name="plb_rr_mar" string="Mar" sum="Total Mar"/>
+                <field name="plb_rr_apr" string="Apr" sum="Total Apr"/>
+                <field name="plb_rr_may" string="May" sum="Total May"/>
+                <field name="plb_rr_jun" string="Jun" sum="Total Jun"/>
+                <field name="plb_rr_jul" string="Jul" sum="Total Jul"/>
+                <field name="plb_rr_aug" string="Aug" sum="Total Aug"/>
+                <field name="plb_rr_sep" string="Sep" sum="Total Sep"/>
+                <field name="plb_rr_oct" string="Oct" sum="Total Oct"/>
+                <field name="plb_rr_nov" string="Nov" sum="Total Nov"/>
+                <field name="plb_rr_dec" string="Dec" sum="Total Dec"/>
+
+                <!-- Summary columns -->
+                <field name="plb_realized_revenue_2025" string="Realized Revenue 2025" sum="Total Realized 2025"/>
+                <field name="plb_cf" string="Carry Forward 2026" sum="Total CF 2026"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Action to open the tree/list view -->
+    <record id="action_crm_lead_plb_revenue_table" model="ir.actions.act_window">
+        <field name="name">PLB Revenue Table 2025</field>
+        <field name="res_model">crm.lead</field>
+        <field name="view_mode">tree,form</field>
+        <field name="context">{'search_default_unarchived': 1}</field>
+        <field name="view_id" ref="view_crm_lead_plb_revenue_tree"/>
+    </record>
+
+    <!-- Menu item for the table view -->
+    <menuitem id="menu_crm_plb_revenue_table"
+              name="Revenue Table 2025"
+              parent="menu_crm_plb_report_root"
+              action="action_crm_lead_plb_revenue_table"
+              sequence="5"/>
+</odoo>
+

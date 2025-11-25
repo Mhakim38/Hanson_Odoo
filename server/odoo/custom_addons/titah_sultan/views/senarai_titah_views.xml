@@ -1,0 +1,94 @@
+ <!-- views/senarai_titah_views.xml -->
+<odoo>
+    <!-- Kanban View -->
+    <record id="view_senarai_titah_kanban" model="ir.ui.view">
+        <field name="name">senarai.titah.kanban</field>
+        <field name="model">senarai.titah</field>
+        <field name="priority" eval="20"/>
+        <field name="arch" type="xml">
+            <kanban class="o_kanban_color_badge">
+                <field name="kanban_color"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div t-attf-class="oe_kanban_color_{{ kanban_color }}">
+                            <div class="o_kanban_record_title">
+                                <strong><field name="name"/></strong>
+                            </div>
+                            <div><strong>Tahun:</strong> <field name="tahun"/></div>
+                            <div><strong>Agensi:</strong> <field name="mais_agensi"/></div>
+                            <div><strong>Status:</strong> <field name="status"/></div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- Tree View -->
+    <record id="view_senarai_titah_tree" model="ir.ui.view">
+        <field name="name">senarai.titah.tree</field>
+        <field name="model">senarai.titah</field>
+        <field name="arch" type="xml">
+            <tree js_class="senarai_titah_list">
+                <field name="name"/>
+                <field name="mais_agensi"/>
+                <field name="tahun"/>
+                <field name="status"
+                   decoration-danger="status == 'merah'"
+                   decoration-success="status == 'hijau'"
+                   decoration-warning="status == 'kuning'"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_senarai_titah_form" model="ir.ui.view">
+        <field name="name">senarai.titah.form</field>
+        <field name="model">senarai.titah</field>
+        <field name="priority" eval="20"/>
+        <field name="arch" type="xml">
+            <form>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="tahun"/>
+                            <field name="mais_agensi"/>
+                        </group>
+                        <group>
+                            <field name="status"/>
+                            <field name="attachment_ids" widget="many2many_binary"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Maklum Balas">
+                            <field name="respon_ids">
+                                <tree editable="bottom">
+                                    <field name="maklum_balas"/>
+                                    <field name="status_tindakan"/>
+                                    <field name="updated_by"/>
+                                    <field name="updated_at"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_senarai_titah" model="ir.actions.act_window">
+        <field name="name">Senarai Titah</field>
+        <field name="res_model">senarai.titah</field>
+        <field name="view_mode">tree,form</field>
+        <field name="view_id" ref="view_senarai_titah_tree"/>
+        <field name="context">{'view_type':'form'}</field>
+    </record>
+
+    <!-- Menu -->
+    <menuitem id="menu_titah_root" name="Pengurusan Titah" sequence="2"/>
+    <menuitem id="menu_senarai_titah" name="Senarai Titah" parent="menu_titah_root" action="action_senarai_titah"/>
+
+</odoo>

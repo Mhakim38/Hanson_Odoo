@@ -1,0 +1,116 @@
+<odoo>
+    <!-- Tree View -->
+    <record id="view_laporan_tidaklaksana_tree" model="ir.ui.view">
+        <field name="name">laporan.tidaklaksana.tree</field>
+        <field name="model">laporan.tidaklaksana</field>
+        <field name="arch" type="xml">
+            <tree string="Laporan Tidak Laksana">
+                <field name="titah_id"/>
+                <field name="reported_by"/>
+                <field name="reported_at"/>
+                <field name="updated_at"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View -->
+    <record id="view_laporan_tidaklaksana_form" model="ir.ui.view">
+        <field name="name">laporan.tidaklaksana.form</field>
+        <field name="model">laporan.tidaklaksana</field>
+        <field name="arch" type="xml">
+            <form string="Laporan Tidak Laksana">
+                <sheet>
+                    <group>
+                        <field name="titah_id"/>
+                        <field name="penerangan"/>
+                        <field name="lampiran_bukti" filename="lampiran_bukti_name"/>
+                        <field name="attachment_ids" widget="many2many_binary"/>
+                    </group>
+                    <group>
+                        <field name="reported_by" readonly="1"/>
+                        <field name="reported_at" readonly="1"/>
+                        <field name="updated_by" readonly="1"/>
+                        <field name="updated_at" readonly="1"/>
+                    </group>
+                </sheet>
+                <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="activity_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- Kanban View -->
+    <record id="view_laporan_tidaklaksana_kanban" model="ir.ui.view">
+        <field name="name">laporan.tidaklaksana.kanban</field>
+        <field name="model">laporan.tidaklaksana</field>
+        <field name="arch" type="xml">
+            <kanban>
+                <field name="titah_id"/>
+                <field name="reported_by"/>
+                <field name="reported_at"/>
+                <templates>
+                    <t t-name="kanban-box">
+                        <div class="o_kanban_record">
+                            <div class="o_kanban_details">
+                                <strong><field name="titah_id"/></strong><br/>
+                                <span><field name="reported_by"/> | <field name="reported_at"/></span>
+                                <p><field name="penerangan"/></p>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_laporan_tidaklaksana_search" model="ir.ui.view">
+        <field name="name">laporan.tidaklaksana.search</field>
+        <field name="model">laporan.tidaklaksana</field>
+        <field name="arch" type="xml">
+            <search string="Cari Laporan Tidak Laksana">
+                <field name="titah_id"/>
+                <field name="reported_by"/>
+                <field name="reported_at"/>
+                <field name="penerangan"/>
+
+                <filter string="Dilaporkan Hari Ini"
+                        name="today"
+                        domain="[('reported_at', '>=', (context_today()).strftime('%%Y-%%m-%%d 00:00:00'))]"/>
+
+                <separator/>
+
+                <group expand="0" string="Group By">
+                    <filter name="group_titah" string="Titah" context="{'group_by': 'titah_id'}"/>
+                    <filter name="group_reporter" string="Pelapor" context="{'group_by': 'reported_by'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- Action -->
+    <record id="action_laporan_tidaklaksana" model="ir.actions.act_window">
+        <field name="name">Laporan Tidak Laksana</field>
+        <field name="res_model">laporan.tidaklaksana</field>
+        <field name="view_mode">tree,form,kanban</field>
+        <field name="search_view_id" ref="view_laporan_tidaklaksana_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Tiada laporan direkodkan.
+            </p>
+        </field>
+    </record>
+
+
+    <!-- Menu -->
+    <menuitem id="menu_titah_root" name="Titah Sultan" sequence="10"/>
+
+    <menuitem id="menu_laporan_tidaklaksana"
+              name="Laporan Tidak Laksana"
+              parent="menu_titah_root"
+              action="action_laporan_tidaklaksana"
+              sequence="90"/>
+</odoo>

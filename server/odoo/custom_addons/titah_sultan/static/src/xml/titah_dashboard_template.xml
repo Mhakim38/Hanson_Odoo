@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<templates xml:space="preserve" id="template" name="TitahDashboardTemplate">
+    <t t-name="titah_sultan.TitahDashboardTemplate">
+        <div class="custom-titah-wrapper" style="margin-bottom: 30px; padding-top: 10px;">
+            <div style="text-align: center; margin-bottom: 24px;">
+                <img t-att-src="'/titah_sultan/static/src/img/logo.png'"
+                     alt="Logo"
+                     style="height: 60px; margin-bottom: 8px;" />
+                <h2 style="font-size: 20px; font-weight: 700; margin: 0; color: #343a40;">Paparan Pemantauan</h2>
+            </div>
+
+            <div style="display: flex; justify-content: center; gap: 48px; flex-wrap: wrap;">
+                <!-- Left Column: Pelaksanaan -->
+                <div style="flex: 1; min-width: 300px;">
+                    <h3 style="text-align: center; margin-bottom: 16px;">Status Pelaksanaan Titah</h3>
+                    <t t-set="statuses" t-value="[{
+                        'key': 'hijau', 'label': 'Selesai', 'color': '#28a745'
+                    }, {
+                        'key': 'kuning', 'label': 'Dalam Tindakan', 'color': '#ffc107'
+                    }, {
+                        'key': 'merah', 'label': 'Tidak Dilaksanakan', 'color': '#dc3545'
+                    }]" />
+                    <div style="display: flex; justify-content: center; gap: 32px; flex-wrap: wrap;">
+                        <t t-foreach="statuses" t-as="status" t-key="status.key">
+                            <div style="text-align: center; min-width: 100px; max-width: 150px;">
+                                <div style="margin-bottom: 10px; font-weight: 600; color: #333;">
+                                    <t t-esc="status.label"/>
+                                </div>
+                                <div t-attf-style="
+                                        width: 90px;
+                                        height: 90px;
+                                        border-radius: 50%;
+                                        border: 4px solid {{ status.color }};
+                                        color: {{ status.color }};
+                                        font-size: 26px;
+                                        font-weight: 700;
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: center;
+                                        background-color: white;
+                                        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+                                        margin: 0 auto;
+                                    ">
+                                    <t t-esc="statusCounts[status.key] || 0"/>
+                                </div>
+                            </div>
+                        </t>
+                    </div>
+
+                    <div style="margin-top: 24px; text-align: center;">
+                        <a href="/web#action=183&amp;model=senarai.titah&amp;view_type=list&amp;menu_id=142"
+                           style="
+                                padding: 10px 28px;
+                                background: #007bff;
+                                color: white;
+                                border-radius: 999px;
+                                font-size: 15px;
+                                font-weight: 600;
+                                text-decoration: none;
+                                box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+                            ">
+                            Lihat Senarai Titah
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Right Column: Maklum Balas -->
+                <div style="flex: 1; min-width: 300px;">
+                    <h3 style="text-align: center; margin-bottom: 16px;">Status Maklum Balas</h3>
+                    <t t-set="respon_statuses" t-value="[{
+                            'key': 'selesai', 'label': 'Selesai', 'color': '#28a745'
+                        }, {
+                            'key': 'sedang', 'label': 'Sedang Diproses', 'color': '#ffc107'
+                        }, {
+                            'key': 'belum', 'label': 'Tiada Tindakan', 'color': '#dc3545'
+                        }]" />
+
+                    <div style="display: flex; justify-content: center; gap: 32px; flex-wrap: wrap;">
+                        <t t-foreach="respon_statuses" t-as="status" t-key="status.key">
+                            <div style="text-align: center; min-width: 100px; max-width: 150px;">
+                                <div style="margin-bottom: 10px; font-weight: 600; color: #333;">
+                                    <t t-esc="status.label"/>
+                                </div>
+                                <div t-attf-style="
+                                        width: 90px;
+                                        height: 90px;
+                                        border-radius: 50%;
+                                        border: 4px solid {{ status.color }};
+                                        color: {{ status.color }};
+                                        font-size: 26px;
+                                        font-weight: 700;
+                                        display: flex;
+                                        align-items: center;
+                                        justify-content: center;
+                                        background-color: white;
+                                        box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+                                        margin: 0 auto;
+                                    ">
+                                    <t t-esc="responCounts and responCounts[status.key] or 0"/>
+
+                                </div>
+                            </div>
+                        </t>
+                    </div>
+
+                    <div style="margin-top: 24px; text-align: center;">
+                         <a href="/web#action=185&amp;model=titah.respon&amp;view_type=list&amp;cids=1&amp;menu_id=143"
+                           style="
+                                padding: 10px 28px;
+                                background: #17a2b8;
+                                color: white;
+                                border-radius: 999px;
+                                font-size: 15px;
+                                font-weight: 600;
+                                text-decoration: none;
+                                box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+                            ">
+                            Lihat Maklum Balas
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <div style="margin-top: 40px; text-align: center;">
+                <h3 style="margin-bottom: 20px; font-weight: 600; color: #343a40;">Agensi di Bawah MAIS</h3>
+                <div style="display: flex; justify-content: center; flex-wrap: wrap; gap: 24px;">
+                    <t t-foreach="[1,2,3,4,5,6,7,8,9]" t-as="index" t-key="index">
+                        <div style="width: 80px; height: 80px; border-radius: 50%; overflow: hidden; box-shadow: 0 2px 6px rgba(0,0,0,0.1);">
+                            <img t-att-src="'/titah_sultan/static/src/img/agensi' + index + '.png'"
+                                 alt="Agensi Logo"
+                                 style="width: 100%; height: 100%; object-fit: cover;" />
+                        </div>
+                    </t>
+                </div>
+            </div>
+        </div>
+    </t>
+
+</templates>

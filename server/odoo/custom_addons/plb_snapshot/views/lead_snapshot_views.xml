@@ -1,0 +1,68 @@
+<odoo>
+
+    <!-- Tree View -->
+    <record id="view_crm_lead_snapshot_tree" model="ir.ui.view">
+        <field name="name">crm.lead.snapshot.tree</field>
+        <field name="model">crm.lead.snapshot</field>
+        <field name="arch" type="xml">
+            <tree>
+                <field name="snapshot_date"/>
+                <field name="lead_id"/>
+                <field name="stage_id"/>
+                <field name="expected_revenue"/>
+                <field name="probability"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Search View -->
+    <record id="view_crm_lead_snapshot_search" model="ir.ui.view">
+        <field name="name">crm.lead.snapshot.search</field>
+        <field name="model">crm.lead.snapshot</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="lead_id"/>
+                <field name="stage_id"/>
+
+                <filter name="filter_week"
+                        string="This Week"
+                        context="{'group_by': 'snapshot_date:week'}"/>
+            </search>
+        </field>
+    </record>
+
+    <!-- Correct Parent Menu (CRM → Reporting) -->
+    <menuitem id="menu_crm_lead_snapshot_root"
+              name="Lead Snapshots"
+              parent="crm.crm_menu_sales"
+              sequence="90"/>
+
+    <!-- Action -->
+    <record id="action_crm_lead_snapshot" model="ir.actions.act_window">
+        <field name="name">Lead Snapshots</field>
+        <field name="res_model">crm.lead.snapshot</field>
+        <field name="view_mode">tree,search</field>
+    </record>
+
+    <!-- Add manual "Snapshot Now" button to the crm.lead form header for testing -->
+    <record id="view_crm_lead_form_snapshot_button" model="ir.ui.view">
+        <field name="name">crm.lead.form.snapshot.button</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//form/header" position="inside">
+                <button name="action_create_weekly_snapshot"
+                        type="object"
+                        string="Snapshot Now"
+                        class="oe_highlight"/>
+            </xpath>
+        </field>
+    </record>
+
+    <menuitem id="menu_crm_lead_snapshot"
+              name="Lead Snapshots"
+              parent="crm.crm_menu_sales"
+              action="action_crm_lead_snapshot"
+              sequence="10"/>
+
+</odoo>
