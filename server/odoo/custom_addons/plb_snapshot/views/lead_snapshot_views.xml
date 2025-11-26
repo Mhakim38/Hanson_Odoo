@@ -6,9 +6,16 @@
         <field name="model">crm.lead.snapshot</field>
         <field name="arch" type="xml">
             <tree>
-                <field name="snapshot_date"/>
+<!--                <field name="snapshot_date"/>-->
+                <field name="plb_week"/>
                 <field name="lead_id"/>
+                <field name="user_id"/>
                 <field name="stage_id"/>
+                <field name="created_date" widget="datetime"/>
+                <field name="last_activity_date" widget="datetime"/>
+                <field name="last_activity_type_id"/>
+                <field name="expected_start_date"/>
+                <field name="date_go_live"/>
                 <field name="expected_revenue"/>
                 <field name="probability"/>
             </tree>
@@ -57,6 +64,60 @@
                         class="oe_highlight"/>
             </xpath>
         </field>
+    </record>
+
+    <!-- Server action to snapshot the current week (used by the kanban button) -->
+    <record id="action_server_snapshot_week" model="ir.actions.server">
+        <field name="name">Snapshot Week (PLB)</field>
+        <field name="model_id" ref="crm.model_crm_lead"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_create_weekly_snapshot()</field>
+    </record>
+
+    <!-- Add a prominent global button in the Kanban header to trigger weekly snapshot for all leads -->
+    <record id="view_crm_case_kanban_snapshot_button" model="ir.ui.view">
+        <field name="name">crm.lead.kanban.snapshot.button</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_case_kanban_view_leads"/>
+        <field name="mode">primary</field>
+        <field name="priority">10000</field>
+        <field name="arch" type="xml">
+            <!-- Insert a proper Kanban header element before the templates element (more robust across themes) -->
+            <xpath expr="//kanban/templates" position="before">
+                <header>
+                    <button type="action" name="%(plb_snapshot.action_server_snapshot_week)d" string="Snapshot Week" class="btn btn-primary btn-sm" display="always"/>
+                </header>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Also add the Kanban header button into crm_iap_mine's kanban view so it's visible when that module's view is used -->
+    <record id="view_crm_case_kanban_snapshot_button_iap_mine" model="ir.ui.view">
+        <field name="name">crm.lead.kanban.snapshot.button.iap_mine</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm_iap_mine.crm_case_kanban_view_leads"/>
+        <field name="mode">primary</field>
+        <field name="priority">10000</field>
+        <field name="arch" type="xml">
+            <!-- Insert a proper Kanban header element to ensure the button is visible for crm_iap_mine's kanban -->
+            <xpath expr="//kanban" position="inside">
+                <header>
+                    <button type="action" name="%(plb_snapshot.action_server_snapshot_week)d" string="Snapshot Week" class="btn btn-primary btn-sm" display="always"/>
+                </header>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Fallback view insertions that used raw <div> nodes before kanban/tree were removed because such nodes
+         are not valid to insert at those positions. Use the Kanban <header> insertion above and the
+         'Snapshot Week (Run Now)' menu under CRM → Sales as a reliable entry point. -->
+
+    <!-- Provide a global menu item under CRM -> Sales to run the weekly snapshot immediately -->
+    <record id="menu_crm_snapshot_week_now" model="ir.ui.menu">
+        <field name="name">Snapshot Week (Run Now)</field>
+        <field name="parent_id" ref="crm.crm_menu_sales"/>
+        <field name="action" ref="action_server_snapshot_week"/>
+        <field name="sequence">5</field>
     </record>
 
     <menuitem id="menu_crm_lead_snapshot"
