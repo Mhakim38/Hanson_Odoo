@@ -13,7 +13,7 @@ class LeadSnapshot(models.Model):
     probability = fields.Float()
     snapshot_date = fields.Date(default=fields.Date.today, required=True)
     # New snapshot fields requested
-    user_id = fields.Many2one('res.users', string='PIC')
+    user_id = fields.Many2one('res.users', string='Salesperson')
     created_date = fields.Datetime(string='Date Funnel')
     expected_start_date = fields.Date(string='Expected Start Date')
     date_go_live = fields.Date(string='Date Go Live')
