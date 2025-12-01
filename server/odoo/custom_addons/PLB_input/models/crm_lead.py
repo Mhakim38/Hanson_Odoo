@@ -101,6 +101,9 @@ class CrmLead(models.Model):
 
     # New fields requested
     remark = fields.Text(string='Remark')
+    # Use tags for multiple emails (many2many), since direct access to stand-alone email records is not allowed.
+    tag_ids = fields.Many2many('crm.lead.tag', 'crm_lead_tag_rel', 'lead_id', 'tag_id', string='Other Emails',
+                               help='Tag-style free-form email entries (enter multiple).')
 
     operating_profit_margin = fields.Float(
         string='Operating Profit Margin (%)',
@@ -234,3 +237,12 @@ class CrmLead(models.Model):
                 if vals.get('attachment_file') and not self._stage_is_contract(effective_stage):
                     raise ValidationError('Attachment can only be added when the lead stage is Contract.')
         return super(CrmLead, self).write(vals)
+
+
+# New tag model to represent email-like tags (used via many2many_tags on crm.lead)
+class CrmLeadTag(models.Model):
+    _name = 'crm.lead.tag'
+    _description = 'CRM Lead Email Tag'
+
+    name = fields.Char(string='Name', required=True)
+    color = fields.Integer(string='Color')
