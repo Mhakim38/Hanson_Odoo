@@ -85,13 +85,17 @@
                 <field name="name" string="Project" optional="show"/>
                 <field name="description" string="Remarks" optional="show"/>
                 <field name="user_id" string="PIC" optional="show"/>
-                <field name="create_date" string="Date Funnel" optional="show"/>
+<!--                <field name="create_date" string="Date Funnel" optional="show"/>-->
                 <field name="expected_start_date" string="Expected Start Date" optional="show"/>
                 <field name="date_go_live" string="Date Go Live" optional="show"/>
                 <field name="scope_of_service" string="Scope of service" optional="show"/>
                 <field name="product" string="Product" optional="show"/>
                 <field name="dept_region" string="Dept/region" optional="show"/>
                 <field name="realized_revenue_fy2025" optional="show"/>
+            </xpath>
+            <!-- Rename the existing create_date column label to 'Date Funnel' without uncommenting any field -->
+            <xpath expr="//tree/field[@name='create_date']" position="attributes">
+                <attribute name="string">Date Funnel</attribute>
             </xpath>
         </field>
     </record>
