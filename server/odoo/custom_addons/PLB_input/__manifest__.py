@@ -8,6 +8,7 @@
         'security/ir.model.access.csv',
         'views/crm_lead_views.xml',
         'views/mail_activity_schedule_views.xml',
+        'views/hr_employee_behavior_views.xml',
     ],
     'installable': True,
     'application': False,

@@ -246,3 +246,7 @@ class CrmLeadTag(models.Model):
 
     name = fields.Char(string='Name', required=True)
     color = fields.Integer(string='Color')
+    tag_type = fields.Selection([
+        ('crm', 'CRM'),
+        ('behavior', 'Behavior'),
+    ], string='Tag Type', default='crm', required=True)

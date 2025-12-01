@@ -433,6 +433,10 @@
 
 
 
+/* /hr_org_chart/static/src/scss/variables.scss */
+
+
+
 /* /web/static/src/scss/secondary_variables.scss */
 
 
@@ -4979,4 +4983,4 @@ we-select.o_grid we-toggler {
   animation: highlightPadding 2s;
   pointer-events: none;
 }
-/*# sourceMappingURL=/web/assets/1b3a0aa/web_editor.backend_assets_wysiwyg.css.map */
+/*# sourceMappingURL=/web/assets/97cc369/web_editor.backend_assets_wysiwyg.css.map */

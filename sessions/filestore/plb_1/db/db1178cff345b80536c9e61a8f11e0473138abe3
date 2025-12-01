@@ -158985,6 +158985,1317 @@ return __exports;
 });
 ;
 
+/*********************************************************************************
+*  Filepath: /hr/static/src/components/avatar_card/avatar_card_popover_patch.js  *
+*  Lines: 43                                                                     *
+*********************************************************************************/
+odoo.define('@hr/components/avatar_card/avatar_card_popover_patch', ['@web/core/utils/patch', '@mail/discuss/web/avatar_card/avatar_card_popover', '@web/core/utils/hooks'], function (require) {
+'use strict';
+let __exports = {};
+/* @odoo-module */
+
+const { patch } = require("@web/core/utils/patch");
+const { AvatarCardPopover } = require("@mail/discuss/web/avatar_card/avatar_card_popover");
+const { useService } = require("@web/core/utils/hooks");
+
+const patchAvatarCardPopover = __exports.patchAvatarCardPopover = {
+    setup() {
+        super.setup();
+        this.userInfoTemplate = "hr.avatarCardUserInfos",
+        this.actionService = useService("action");
+    },
+    get fieldNames(){
+        let fields = super.fieldNames;
+        return fields.concat([
+            "work_phone",
+            "work_email", 
+            "job_title", 
+            "department_id", 
+            "employee_parent_id",
+            "employee_ids",
+        ])
+    },
+    get email(){
+        return this.user.work_email || this.user.email;
+    },
+    get phone(){
+        return this.user.work_phone || this.user.phone;
+    },
+    async onClickViewEmployee(){
+        const employeeId = this.user.employee_ids[0];
+        const action = await this.orm.call('hr.employee', 'get_formview_action', [employeeId]);
+        this.actionService.doAction(action); 
+    }
+};
+
+const unpatchAvatarCardPopover = __exports.unpatchAvatarCardPopover = patch(AvatarCardPopover.prototype, patchAvatarCardPopover);
+
+return __exports;
+});
+;
+
+/*****************************************************************************
+*  Filepath: /hr/static/src/components/background_image/background_image.js  *
+*  Lines: 21                                                                 *
+*****************************************************************************/
+odoo.define('@hr/components/background_image/background_image', ['@web/core/registry', '@web/views/fields/image/image_field'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module */
+
+const { registry } = require('@web/core/registry');
+
+const { ImageField, imageField } = require('@web/views/fields/image/image_field');
+
+const BackgroundImageField = __exports.BackgroundImageField = class BackgroundImageField extends ImageField {}
+BackgroundImageField.template = 'hr.BackgroundImage';
+
+const backgroundImageField = __exports.backgroundImageField = {
+    ...imageField,
+    component: BackgroundImageField,
+};
+
+registry.category("fields").add("background_image", backgroundImageField);
+
+return __exports;
+});
+;
+
+/*****************************************************************************
+*  Filepath: /hr/static/src/components/department_chart/department_chart.js  *
+*  Lines: 53                                                                 *
+*****************************************************************************/
+odoo.define('@hr/components/department_chart/department_chart', ['@web/core/registry', '@web/core/utils/hooks', '@web/views/widgets/standard_widget_props', '@odoo/owl'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module */
+
+const { registry } = require("@web/core/registry");
+const { useService } = require("@web/core/utils/hooks");
+
+const { standardWidgetProps } = require("@web/views/widgets/standard_widget_props");
+const { onWillStart, useState, onWillUpdateProps, Component } = require("@odoo/owl");
+
+const DepartmentChart = __exports.DepartmentChart = class DepartmentChart extends Component {
+    setup() {
+        super.setup();
+
+        this.action = useService("action");
+        this.orm = useService("orm");
+        this.state = useState({
+            hierarchy: {},
+        });
+        onWillStart(async () => await this.fetchHierarchy(this.props.record.resId));
+
+        onWillUpdateProps(async (nextProps) => {
+            await this.fetchHierarchy(nextProps.record.resId);
+        });
+    }
+
+    async fetchHierarchy(departmentId) {
+        this.state.hierarchy = await this.orm.call("hr.department", "get_department_hierarchy", [
+            departmentId,
+        ]);
+    }
+
+    openDepartmentEmployees(departmentId) {
+        this.action.doAction("hr.act_employee_from_department", {
+            additionalContext: {
+                active_id: departmentId,
+            },
+        });
+    }
+}
+DepartmentChart.template = "hr.DepartmentChart";
+DepartmentChart.props = {
+    ...standardWidgetProps,
+};
+
+const departmentChart = __exports.departmentChart = {
+    component: DepartmentChart,
+};
+registry.category("view_widgets").add("hr_department_chart", departmentChart);
+
+return __exports;
+});
+;
+
+/***********************************************************************
+*  Filepath: /hr/static/src/components/employee_chat/employee_chat.js  *
+*  Lines: 29                                                           *
+***********************************************************************/
+odoo.define('@hr/components/employee_chat/employee_chat', ['@web/core/registry', '@web/views/widgets/standard_widget_props', '@mail/core/web/open_chat_hook', '@odoo/owl'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module */
+
+const { registry } = require("@web/core/registry");
+const { standardWidgetProps } = require("@web/views/widgets/standard_widget_props");
+
+const { useOpenChat } = require("@mail/core/web/open_chat_hook");
+const { Component } = require("@odoo/owl");
+
+const HrEmployeeChat = __exports.HrEmployeeChat = class HrEmployeeChat extends Component {
+    setup() {
+        super.setup();
+        this.openChat = useOpenChat(this.props.record.resModel);
+    }
+}
+HrEmployeeChat.props = {
+    ...standardWidgetProps,
+};
+HrEmployeeChat.template = "hr.OpenChat";
+
+const hrEmployeeChat = __exports.hrEmployeeChat = {
+    component: HrEmployeeChat,
+};
+registry.category("view_widgets").add("hr_employee_chat", hrEmployeeChat);
+
+return __exports;
+});
+;
+
+/*****************************************************************************************************
+*  Filepath: /hr/static/src/components/float_without_trailing_zeros/float_without_trailing_zeros.js  *
+*  Lines: 22                                                                                         *
+*****************************************************************************************************/
+odoo.define('@hr/components/float_without_trailing_zeros/float_without_trailing_zeros', ['@web/core/registry', '@web/views/fields/float/float_field'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module **/
+
+const { registry } = require("@web/core/registry");
+const { floatField, FloatField } = require("@web/views/fields/float/float_field");
+
+const fieldRegistry = registry.category("fields");
+
+class FloatWithoutTrailingZeros extends FloatField {
+    get formattedValue() {
+        return super.formattedValue.replace(/\.0+$/, "");
+    }
+}
+
+const floatWithoutTrailingZeros = { ...floatField, component: FloatWithoutTrailingZeros };
+
+fieldRegistry.add("float_without_trailing_zeros", floatWithoutTrailingZeros);
+
+return __exports;
+});
+;
+
+/*********************************************************************************
+*  Filepath: /hr/static/src/components/hr_presence_status/hr_presence_status.js  *
+*  Lines: 83                                                                     *
+*********************************************************************************/
+odoo.define('@hr/components/hr_presence_status/hr_presence_status', ['@odoo/owl', '@web/core/l10n/translation', '@web/core/registry', '@web/views/fields/standard_field_props'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module */
+
+const { Component } = require("@odoo/owl");
+
+const { _t } = require("@web/core/l10n/translation");
+const { registry } = require("@web/core/registry");
+const { standardFieldProps } = require("@web/views/fields/standard_field_props");
+
+const HrPresenceStatus = __exports.HrPresenceStatus = class HrPresenceStatus extends Component {
+    static template = "hr.HrPresenceStatus";
+    static props = {
+        ...standardFieldProps,
+        tag: { type: String, optional: true },
+    };
+    static defaultProps = {
+        tag: "small",
+    };
+
+    get classNames() {
+        const classNames = ["fa"];
+        classNames.push(
+            this.icon,
+            "fa-fw",
+            "o_button_icon",
+            "hr_presence",
+            "align-middle",
+            this.color,
+        )
+        return classNames.join(" ");
+    }
+
+    get color() {
+        switch (this.value) {
+            case "presence_present":
+            case "presence_absent_active":
+                return "text-success";
+            case "presence_absent":
+                return "text-muted";
+            case "presence_to_define":
+                return "text-warning";
+            default:
+                return "";
+        }
+    }
+
+    get icon() {
+        return `fa-circle${this.value.startsWith("presence_absent") ? "-o" : ""}`;
+    }
+
+    get label() {
+        return this.value !== false
+            ? this.options.find(([value, label]) => value === this.value)[1]
+            : "";
+    }
+
+    get options() {
+        return this.props.record.fields[this.props.name].selection.filter(
+            (option) => option[0] !== false && option[1] !== ""
+        );
+    }
+
+    get value() {
+        return this.props.record.data[this.props.name];
+    }
+}
+
+const hrPresenceStatus = __exports.hrPresenceStatus = {
+    component: HrPresenceStatus,
+    displayName: _t("HR Presence Status"),
+    extractProps({ viewType }, dynamicInfo) {
+        return {
+            tag: viewType === "kanban" ? "span" : "small",
+        };
+    },
+};
+
+registry.category("fields").add("hr_presence_status", hrPresenceStatus)
+
+return __exports;
+});
+;
+
+/*************************************************************************************************
+*  Filepath: /hr/static/src/components/hr_presence_status_private/hr_presence_status_private.js  *
+*  Lines: 19                                                                                     *
+*************************************************************************************************/
+odoo.define('@hr/components/hr_presence_status_private/hr_presence_status_private', ['@web/core/registry', '@hr/components/hr_presence_status/hr_presence_status'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module */
+
+const { registry } = require("@web/core/registry");
+const { HrPresenceStatus, hrPresenceStatus } = require("@hr/components/hr_presence_status/hr_presence_status");
+
+const HrPresenceStatusPrivate = __exports.HrPresenceStatusPrivate = class HrPresenceStatusPrivate extends HrPresenceStatus { }
+
+const hrPresenceStatusPrivate = __exports.hrPresenceStatusPrivate = {
+    ...hrPresenceStatus,
+    component: HrPresenceStatusPrivate,
+};
+
+registry.category("fields").add("hr_presence_status_private", hrPresenceStatusPrivate);
+
+return __exports;
+});
+;
+
+/*******************************************************************************
+*  Filepath: /hr/static/src/components/radio_image_field/radio_image_field.js  *
+*  Lines: 23                                                                   *
+*******************************************************************************/
+odoo.define('@hr/components/radio_image_field/radio_image_field', ['@web/core/registry', '@web/views/fields/radio/radio_field'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module */
+
+const { registry } = require("@web/core/registry");
+const { RadioField, preloadRadio, radioField } = require("@web/views/fields/radio/radio_field");
+
+class RadioImageField extends RadioField {}
+RadioImageField.template = "hr_homeworking.RadioImageField";
+
+registry.category("fields").add("hr_homeworking_radio_image", {
+    ...radioField,
+    component: RadioImageField,
+});
+
+registry.category("preloadedData").add("hr_homeworking_radio_image", {
+    loadOnTypes: ["many2one"],
+    preload: preloadRadio,
+});
+
+return __exports;
+});
+;
+
+/*********************************************************************************
+*  Filepath: /hr/static/src/components/work_permit_upload/work_permit_upload.js  *
+*  Lines: 20                                                                     *
+*********************************************************************************/
+odoo.define('@hr/components/work_permit_upload/work_permit_upload', ['@web/core/registry', '@web/views/fields/binary/binary_field'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module **/
+
+const { registry } = require("@web/core/registry");
+const { BinaryField, binaryField } = require("@web/views/fields/binary/binary_field");
+
+const WorkPermitUploadField = __exports.WorkPermitUploadField = class WorkPermitUploadField extends BinaryField {}
+WorkPermitUploadField.template = "hr.WorkPermitUploadField";
+
+const workPermitUploadField = __exports.workPermitUploadField = {
+    ...binaryField,
+    component: WorkPermitUploadField,
+};
+
+registry.category("fields").add("work_permit_upload", workPermitUploadField);
+
+return __exports;
+});
+;
+
+/****************************************************************
+*  Filepath: /hr/static/src/core/common/persona_model_patch.js  *
+*  Lines: 15                                                    *
+****************************************************************/
+odoo.define('@hr/core/common/persona_model_patch', ['@mail/core/common/persona_model', '@web/core/utils/patch'], function (require) {
+'use strict';
+let __exports = {};
+/* @odoo-module */
+
+const { Persona } = require("@mail/core/common/persona_model");
+
+const { patch } = require("@web/core/utils/patch");
+
+patch(Persona.prototype, {
+    employeeId: undefined,
+});
+
+return __exports;
+});
+;
+
+/********************************************************
+*  Filepath: /hr/static/src/core/web/thread_actions.js  *
+*  Lines: 49                                            *
+********************************************************/
+odoo.define('@hr/core/web/thread_actions', ['@mail/core/common/thread_actions', '@web/core/l10n/translation', '@odoo/owl', '@web/core/utils/hooks'], function (require) {
+'use strict';
+let __exports = {};
+/* @odoo-module */
+
+const { threadActionsRegistry } = require("@mail/core/common/thread_actions");
+const { _t } = require("@web/core/l10n/translation");
+const { useComponent } = require("@odoo/owl");
+const { useService } = require("@web/core/utils/hooks");
+
+threadActionsRegistry.add("open-hr-profile", {
+    condition(component) {
+        return (
+            component.thread?.type === "chat" &&
+            component.props.chatWindow?.isOpen &&
+            component.thread.chatPartner.employeeId
+        );
+    },
+    icon: "fa fa-fw fa-id-card",
+    name: _t("Open Profile"),
+    async open(component) {
+        component.actionService.doAction({
+            type: "ir.actions.act_window",
+            res_id: component.thread.correspondent.employeeId,
+            res_model: "hr.employee.public",
+            views: [[false, "form"]],
+        });
+    },
+    async setup(action) {
+        const component = useComponent();
+        const orm = useService("orm");
+        let employeeId;
+        if (!component.thread?.correspondent?.employeeId && component.thread?.chatPartner) {
+            const employees = await orm.silent.searchRead(
+                "hr.employee",
+                [["user_partner_id", "=", component.thread.chatPartner.id]],
+                ["id"]
+            );
+            employeeId = employees[0]?.id;
+            if (employeeId) {
+                component.thread.chatPartner.employeeId = employeeId;
+            }
+        }
+    },
+    sequence: 16,
+});
+
+return __exports;
+});
+;
+
+/********************************************************
+*  Filepath: /hr/static/src/messaging_service_patch.js  *
+*  Lines: 18                                            *
+********************************************************/
+odoo.define('@hr/messaging_service_patch', ['@mail/core/common/messaging_service', '@web/core/utils/patch'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module */
+
+const { Messaging } = require("@mail/core/common/messaging_service");
+
+const { patch } = require("@web/core/utils/patch");
+
+patch(Messaging.prototype, {
+    setup(...args) {
+        super.setup(...args);
+        this.store.employees = {};
+    },
+});
+
+return __exports;
+});
+;
+
+/*****************************************************
+*  Filepath: /hr/static/src/thread_service_patch.js  *
+*  Lines: 61                                         *
+*****************************************************/
+odoo.define('@hr/thread_service_patch', ['@web/core/l10n/translation', '@mail/core/common/thread_service', '@web/core/utils/patch'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module */
+
+const { _t } = require("@web/core/l10n/translation");
+const { ThreadService } = require("@mail/core/common/thread_service");
+const { patch } = require("@web/core/utils/patch");
+
+/** @type {import("@mail/core/common/thread_service").ThreadService} */
+const threadServicePatch = {
+    async getChat(person) {
+        const { employeeId } = person;
+        if (!employeeId) {
+            return super.getChat(person);
+        }
+        let employee = this.store.employees[employeeId];
+        if (!employee) {
+            this.store.employees[employeeId] = { id: employeeId };
+            employee = this.store.employees[employeeId];
+        }
+        if (!employee.user_id && !employee.hasCheckedUser) {
+            employee.hasCheckedUser = true;
+            const [employeeData] = await this.orm.silent.read(
+                "hr.employee.public",
+                [employee.id],
+                ["user_id", "user_partner_id"],
+                {
+                    context: { active_test: false },
+                }
+            );
+            if (employeeData) {
+                employee.user_id = employeeData.user_id[0];
+                let user = this.store.users[employee.user_id];
+                if (!user) {
+                    this.store.users[employee.user_id] = { id: employee.user_id };
+                    user = this.store.users[employee.user_id];
+                }
+                user.partner_id = employeeData.user_partner_id[0];
+                this.store.Persona.insert({
+                    displayName: employeeData.user_partner_id[1],
+                    id: employeeData.user_partner_id[0],
+                    type: "partner",
+                });
+            }
+        }
+        if (!employee.user_id) {
+            this.notificationService.add(
+                _t("You can only chat with employees that have a dedicated user."),
+                { type: "info" }
+            );
+            return;
+        }
+        return super.getChat({ userId: employee.user_id });
+    },
+};
+
+patch(ThreadService.prototype, threadServicePatch);
+
+return __exports;
+});
+;
+
+/*****************************************************
+*  Filepath: /hr/static/src/user_menu/my_profile.js  *
+*  Lines: 23                                         *
+*****************************************************/
+odoo.define('@hr/user_menu/my_profile', ['@web/core/l10n/translation', '@web/core/registry', '@web/webclient/user_menu/user_menu_items'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module **/
+
+const { _t } = require("@web/core/l10n/translation");
+const { registry } = require("@web/core/registry");
+const { preferencesItem } = require("@web/webclient/user_menu/user_menu_items");
+
+__exports.hrPreferencesItem = hrPreferencesItem; function hrPreferencesItem(env)  {
+    return Object.assign(
+        {}, 
+        preferencesItem(env),
+        {
+            description: _t('My Profile'),
+        }
+    );
+}
+
+registry.category("user_menuitems").add('profile', hrPreferencesItem, { force: true })
+
+return __exports;
+});
+;
+
+/************************************************************
+*  Filepath: /hr/static/src/views/archive_employee_hook.js  *
+*  Lines: 37                                                *
+************************************************************/
+odoo.define('@hr/views/archive_employee_hook', ['@web/core/l10n/translation', '@web/core/utils/hooks', '@odoo/owl'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module **/
+
+const { _t } = require("@web/core/l10n/translation");
+const { useService } = require("@web/core/utils/hooks");
+const { useComponent } = require("@odoo/owl");
+
+__exports.useArchiveEmployee = useArchiveEmployee; function useArchiveEmployee() {
+    const component = useComponent();
+    const action = useService("action");
+    return (id) => {
+        action.doAction(
+            {
+                type: "ir.actions.act_window",
+                name: _t("Employee Termination"),
+                res_model: "hr.departure.wizard",
+                views: [[false, "form"]],
+                view_mode: "form",
+                target: "new",
+                context: {
+                    active_id: id,
+                    toggle_active: true,
+                },
+            },
+            {
+                onClose: async () => {
+                    await component.model.load();
+                },
+            }
+        );
+    };
+}
+
+return __exports;
+});
+;
+
+/***************************************************************************
+*  Filepath: /hr/static/src/views/fields/employee_field_relation_mixin.js  *
+*  Lines: 39                                                               *
+***************************************************************************/
+odoo.define('@hr/views/fields/employee_field_relation_mixin', ['@odoo/owl', '@web/core/utils/hooks'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module **/
+
+const { onWillStart } = require("@odoo/owl");
+const { useService } = require("@web/core/utils/hooks");
+
+/**
+ * Mixin that handles public/private access of employee records in many2X fields
+ * @param { Class } fieldClass
+ * @returns Class
+ */
+__exports.EmployeeFieldRelationMixin = EmployeeFieldRelationMixin; function EmployeeFieldRelationMixin(fieldClass) {
+    return class extends fieldClass {
+        static props = {
+            ...fieldClass.props,
+            relation: { type: String, optional: true },
+        };
+
+        setup() {
+            super.setup();
+            this.user = useService("user");
+            onWillStart(async () => {
+                this.isHrUser = await this.user.hasGroup("hr.group_hr_user");
+            });
+        }
+
+        get relation() {
+            if (this.props.relation) {
+                return this.props.relation;
+            }
+            return this.isHrUser ? "hr.employee" : "hr.employee.public";
+        }
+    };
+}
+
+return __exports;
+});
+;
+
+/*************************************************************************************************************
+*  Filepath: /hr/static/src/views/fields/many2many_avatar_employee_field/many2many_avatar_employee_field.js  *
+*  Lines: 68                                                                                                 *
+*************************************************************************************************************/
+odoo.define('@hr/views/fields/many2many_avatar_employee_field/many2many_avatar_employee_field', ['@web/core/registry', '@mail/views/web/fields/many2many_avatar_user_field/many2many_avatar_user_field', '@hr/views/fields/employee_field_relation_mixin'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module **/
+
+const { registry } = require("@web/core/registry");
+const {
+    Many2ManyTagsAvatarUserField,
+    KanbanMany2ManyTagsAvatarUserField,
+    many2ManyTagsAvatarUserField,
+    kanbanMany2ManyTagsAvatarUserField,
+    listMany2ManyTagsAvatarUserField,
+} = require("@mail/views/web/fields/many2many_avatar_user_field/many2many_avatar_user_field");
+const { EmployeeFieldRelationMixin } = require("@hr/views/fields/employee_field_relation_mixin");
+
+const Many2ManyTagsAvatarEmployeeField = __exports.Many2ManyTagsAvatarEmployeeField = class Many2ManyTagsAvatarEmployeeField extends EmployeeFieldRelationMixin(
+    Many2ManyTagsAvatarUserField
+) {}
+
+const many2ManyTagsAvatarEmployeeField = __exports.many2ManyTagsAvatarEmployeeField = {
+    ...many2ManyTagsAvatarUserField,
+    component: Many2ManyTagsAvatarEmployeeField,
+    additionalClasses: [
+        ...many2ManyTagsAvatarUserField.additionalClasses,
+        "o_field_many2many_avatar_user",
+    ],
+    extractProps: (fieldInfo, dynamicInfo) => ({
+        ...many2ManyTagsAvatarUserField.extractProps(fieldInfo, dynamicInfo),
+        canQuickCreate: false,
+        relation: fieldInfo.options?.relation,
+    }),
+};
+
+registry.category("fields").add("many2many_avatar_employee", many2ManyTagsAvatarEmployeeField);
+
+const KanbanMany2ManyTagsAvatarEmployeeField = __exports.KanbanMany2ManyTagsAvatarEmployeeField = class KanbanMany2ManyTagsAvatarEmployeeField extends EmployeeFieldRelationMixin(
+    KanbanMany2ManyTagsAvatarUserField
+) {}
+
+const kanbanMany2ManyTagsAvatarEmployeeField = __exports.kanbanMany2ManyTagsAvatarEmployeeField = {
+    ...kanbanMany2ManyTagsAvatarUserField,
+    component: KanbanMany2ManyTagsAvatarEmployeeField,
+    additionalClasses: [
+        ...kanbanMany2ManyTagsAvatarUserField.additionalClasses,
+        "o_field_many2many_avatar_user",
+    ],
+    extractProps: (fieldInfo, dynamicInfo) => ({
+        ...kanbanMany2ManyTagsAvatarUserField.extractProps(fieldInfo, dynamicInfo),
+        relation: fieldInfo.options?.relation,
+    }),
+};
+
+registry
+    .category("fields")
+    .add("kanban.many2many_avatar_employee", kanbanMany2ManyTagsAvatarEmployeeField);
+const listMany2ManyTagsAvatarEmployeeField = __exports.listMany2ManyTagsAvatarEmployeeField = {
+    ...listMany2ManyTagsAvatarUserField,
+    additionalClasses: [
+        ...listMany2ManyTagsAvatarUserField.additionalClasses,
+        "o_field_many2many_avatar_user",
+    ],
+};
+registry
+    .category("fields")
+    .add("list.many2many_avatar_employee", listMany2ManyTagsAvatarEmployeeField);
+
+return __exports;
+});
+;
+
+/***********************************************************************************************************
+*  Filepath: /hr/static/src/views/fields/many2one_avatar_employee_field/many2one_avatar_employee_field.js  *
+*  Lines: 67                                                                                               *
+***********************************************************************************************************/
+odoo.define('@hr/views/fields/many2one_avatar_employee_field/many2one_avatar_employee_field', ['@web/core/registry', '@mail/views/web/fields/many2one_avatar_user_field/many2one_avatar_user_field', '@hr/views/fields/employee_field_relation_mixin'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module **/
+
+const { registry } = require("@web/core/registry");
+const {
+    Many2OneAvatarUserField,
+    KanbanMany2OneAvatarUserField,
+    many2OneAvatarUserField,
+    kanbanMany2OneAvatarUserField,
+} = require("@mail/views/web/fields/many2one_avatar_user_field/many2one_avatar_user_field");
+const { EmployeeFieldRelationMixin } = require("@hr/views/fields/employee_field_relation_mixin");
+
+const Many2OneAvatarEmployeeField = __exports.Many2OneAvatarEmployeeField = class Many2OneAvatarEmployeeField extends EmployeeFieldRelationMixin(
+    Many2OneAvatarUserField
+) {
+    get many2OneProps() {
+        return {
+            ...super.many2OneProps,
+            relation: this.relation,
+        };
+    }
+}
+
+const many2OneAvatarEmployeeField = __exports.many2OneAvatarEmployeeField = {
+    ...many2OneAvatarUserField,
+    component: Many2OneAvatarEmployeeField,
+    additionalClasses: [
+        ...many2OneAvatarUserField.additionalClasses,
+        "o_field_many2one_avatar_user",
+    ],
+    extractProps: (fieldInfo, dynamicInfo) => ({
+        ...many2OneAvatarUserField.extractProps(fieldInfo, dynamicInfo),
+        canQuickCreate: false,
+        relation: fieldInfo.options?.relation,
+    }),
+};
+
+registry.category("fields").add("many2one_avatar_employee", many2OneAvatarEmployeeField);
+
+const KanbanMany2OneAvatarEmployeeField = __exports.KanbanMany2OneAvatarEmployeeField = class KanbanMany2OneAvatarEmployeeField extends EmployeeFieldRelationMixin(
+    KanbanMany2OneAvatarUserField
+) {
+    get many2OneProps() {
+        return {
+            ...super.many2OneProps,
+            relation: this.relation,
+        };
+    }
+}
+
+const kanbanMany2OneAvatarEmployeeField = __exports.kanbanMany2OneAvatarEmployeeField = {
+    ...kanbanMany2OneAvatarUserField,
+    component: KanbanMany2OneAvatarEmployeeField,
+    extractProps: (fieldInfo, dynamicInfo) => ({
+        ...kanbanMany2OneAvatarUserField.extractProps(fieldInfo, dynamicInfo),
+        relation: fieldInfo.options?.relation,
+    }),
+};
+
+registry
+    .category("fields")
+    .add("kanban.many2one_avatar_employee", kanbanMany2OneAvatarEmployeeField);
+
+return __exports;
+});
+;
+
+/************************************************
+*  Filepath: /hr/static/src/views/form_view.js  *
+*  Lines: 32                                    *
+************************************************/
+odoo.define('@hr/views/form_view', ['@web/core/registry', '@web/views/form/form_view', '@web/views/form/form_controller', '@hr/views/archive_employee_hook'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module */
+
+const { registry } = require("@web/core/registry");
+
+const { formView } = require("@web/views/form/form_view");
+const { FormController } = require("@web/views/form/form_controller");
+
+const { useArchiveEmployee } = require("@hr/views/archive_employee_hook");
+
+const EmployeeFormController = __exports.EmployeeFormController = class EmployeeFormController extends FormController {
+    setup() {
+        super.setup();
+        this.archiveEmployee = useArchiveEmployee();
+    }
+
+    getStaticActionMenuItems() {
+        const menuItems = super.getStaticActionMenuItems();
+        menuItems.archive.callback = this.archiveEmployee.bind(this, this.model.root.resId);
+        return menuItems;
+    }
+}
+
+registry.category("views").add("hr_employee_form", {
+    ...formView,
+    Controller: EmployeeFormController,
+});
+
+return __exports;
+});
+;
+
+/************************************************
+*  Filepath: /hr/static/src/views/list_view.js  *
+*  Lines: 37                                    *
+************************************************/
+odoo.define('@hr/views/list_view', ['@web/core/registry', '@web/views/list/list_view', '@web/views/list/list_controller', '@hr/views/archive_employee_hook'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module */
+
+const { registry } = require('@web/core/registry');
+
+const { listView } = require('@web/views/list/list_view');
+const { ListController } = require('@web/views/list/list_controller');
+
+const { useArchiveEmployee } = require('@hr/views/archive_employee_hook');
+
+const EmployeeListController = __exports.EmployeeListController = class EmployeeListController extends ListController {
+    setup() {
+        super.setup();
+        this.archiveEmployee = useArchiveEmployee();
+    }
+
+    getStaticActionMenuItems() {
+        const menuItems = super.getStaticActionMenuItems();
+        const selectedRecords = this.model.root.selection;
+
+        // Only override the Archive action when only 1 record is selected.
+        if (selectedRecords.length === 1 && selectedRecords[0].data.active) {
+            menuItems.archive.callback = this.archiveEmployee.bind(this, selectedRecords[0].resId);
+        }
+        return menuItems;
+    }
+}
+
+registry.category('views').add('hr_employee_list', {
+    ...listView,
+    Controller: EmployeeListController,
+});
+
+return __exports;
+});
+;
+
+/*****************************************************
+*  Filepath: /hr/static/src/views/open_chat_hook.js  *
+*  Lines: 24                                         *
+*****************************************************/
+odoo.define('@hr/views/open_chat_hook', ['@mail/core/web/open_chat_hook', '@web/core/utils/patch'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module **/
+
+const { helpers } = require("@mail/core/web/open_chat_hook");
+const { patch } = require("@web/core/utils/patch");
+
+patch(helpers, {
+    SUPPORTED_M2X_AVATAR_MODELS: [
+        ...helpers.SUPPORTED_M2X_AVATAR_MODELS,
+        "hr.employee",
+        "hr.employee.public",
+    ],
+    buildOpenChatParams(resModel, id) {
+        if (["hr.employee", "hr.employee.public"].includes(resModel)) {
+            return { employeeId: id };
+        }
+        return super.buildOpenChatParams(...arguments);
+    }
+});
+
+return __exports;
+});
+;
+
+/********************************************************
+*  Filepath: /hr/static/src/views/profile_form_view.js  *
+*  Lines: 36                                            *
+********************************************************/
+odoo.define('@hr/views/profile_form_view', ['@web/core/registry', '@web/core/utils/hooks', '@web/views/form/form_view'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module */
+
+const { registry } = require("@web/core/registry");
+const { useService } = require("@web/core/utils/hooks");
+const { formView } = require("@web/views/form/form_view");
+
+const EmployeeProfileController = __exports.EmployeeProfileController = class EmployeeProfileController extends formView.Controller {
+    setup() {
+        super.setup();
+        this.action = useService("action");
+        this.mustReload = false;
+    }
+
+    onWillSaveRecord(record, changes) {
+        this.mustReload = "lang" in changes;
+    }
+
+    async onRecordSaved(record) {
+        await super.onRecordSaved(...arguments);
+        if (this.mustReload) {
+            this.mustReload = false;
+            return this.action.doAction("reload_context");
+        }
+    }
+}
+
+registry.category("views").add("hr_employee_profile_form", {
+    ...formView,
+    Controller: EmployeeProfileController,
+});
+
+return __exports;
+});
+;
+
+/******************************************************************************
+*  Filepath: /hr_skills/static/src/fields/skills_one2many/skills_one2many.js  *
+*  Lines: 125                                                                 *
+******************************************************************************/
+odoo.define('@hr_skills/fields/skills_one2many/skills_one2many', ['@web/views/fields/x2many/x2many_field', '@web/views/fields/relational_utils', '@web/core/registry', '@web/core/l10n/translation', '@hr_skills/views/skills_list_renderer', '@web/core/utils/hooks', '@odoo/owl'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module */
+
+const { X2ManyField, x2ManyField } = require("@web/views/fields/x2many/x2many_field");
+const {
+    useX2ManyCrud,
+    useOpenX2ManyRecord,
+} = require("@web/views/fields/relational_utils");
+const { registry } = require("@web/core/registry");
+const { _t } = require("@web/core/l10n/translation");
+const { CommonSkillsListRenderer } = require("@hr_skills/views/skills_list_renderer");
+const { useService } = require('@web/core/utils/hooks');
+const { onWillStart } = require("@odoo/owl");
+
+
+const SkillsListRenderer = __exports.SkillsListRenderer = class SkillsListRenderer extends CommonSkillsListRenderer {
+    setup() {
+        super.setup();
+        this.orm = useService('orm');
+        this.action = useService("action");
+        this.actionService = useService("action");
+
+        onWillStart(async () => {
+            const res = await this.orm.searchCount('hr.skill', []);
+            this.anySkills = res > 0;
+        });
+    }
+
+    get groupBy() {
+        return 'skill_type_id';
+    }
+
+    async skillTypesAction() {
+        return this.actionService.doAction("hr_skills.hr_skill_type_action");
+    }
+
+    async openSkillsReport() {
+        // fetch id through employee or public.employee
+        const id = this.env.model.root.data.id || this.env.model.root.data.employee_id[0];
+-        this.actionService.doAction({
+            type: "ir.actions.act_window",
+            name: _t("Skills Report"),
+            res_model: "hr.employee.skill.log",
+            view_mode: "graph,tree",
+            views: [[false, "graph"], [false, "tree"]],
+            context: {
+                'fill_temporal': 0,
+            },
+            target: "current",
+            domain: [['employee_id', '=', id]],
+        });
+    }
+
+    calculateColumnWidth(column) {
+        if (column.name != 'skill_level_id') {
+            return {
+                type: 'absolute',
+                value: '90px',
+            }
+        }
+
+        return super.calculateColumnWidth(column);
+    }
+}
+SkillsListRenderer.template = 'hr_skills.SkillsListRenderer';
+
+const SkillsX2ManyField = __exports.SkillsX2ManyField = class SkillsX2ManyField extends X2ManyField {
+    setup() {
+        super.setup()
+        const { saveRecord, updateRecord } = useX2ManyCrud(
+            () => this.list,
+            this.isMany2Many
+        );
+
+        const openRecord = useOpenX2ManyRecord({
+            resModel: this.list.resModel,
+            activeField: this.activeField,
+            activeActions: this.activeActions,
+            getList: () => this.list,
+            saveRecord: async (record) => {
+                await saveRecord(record);
+                await this.props.record.save();
+            },
+            updateRecord: updateRecord,
+            withParentId: this.props.widget !== "many2many",
+        });
+
+        this._openRecord = (params) => {
+            params.title = this.getWizardTitleName();
+            openRecord({...params});
+        };
+    }
+
+    getWizardTitleName() {
+        return _t("Select Skills")
+    }
+
+    async onAdd({ context, editable } = {}) {
+        const employeeId = this.props.record.resModel === "res.users" ? this.props.record.data.employee_id[0] : this.props.record.resId;
+        return super.onAdd({
+            editable,
+            context: {
+                ...context,
+                default_employee_id: employeeId,
+            }
+        });
+    }
+}
+
+SkillsX2ManyField.components = {
+    ...X2ManyField.components,
+    ListRenderer: SkillsListRenderer,
+};
+
+const skillsX2ManyField = __exports.skillsX2ManyField = {
+    ...x2ManyField,
+    component: SkillsX2ManyField,
+};
+
+registry.category("fields").add("skills_one2many", skillsX2ManyField);
+
+return __exports;
+});
+;
+
+/****************************************************************************************
+*  Filepath: /hr_skills/static/src/fields/auto_save_skill_type/auto_save_skill_type.js  *
+*  Lines: 25                                                                            *
+****************************************************************************************/
+odoo.define('@hr_skills/fields/auto_save_skill_type/auto_save_skill_type', ['@web/core/registry', '@web/views/fields/x2many/x2many_field'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module **/
+
+const { registry } = require("@web/core/registry");
+const { X2ManyField, x2ManyField } = require("@web/views/fields/x2many/x2many_field");
+
+
+const AutoSaveSkillTypeField = __exports.AutoSaveSkillTypeField = class AutoSaveSkillTypeField extends X2ManyField {
+     async onAdd({ context, editable } = {}) {
+        await this.props.record.model.root.save();
+        await super.onAdd({ context, editable });
+     }
+}
+
+const autoSaveSkillTypeField = __exports.autoSaveSkillTypeField = {
+    ...x2ManyField,
+    component: AutoSaveSkillTypeField,
+};
+
+registry.category("fields").add("auto_save_skill_type", autoSaveSkillTypeField);
+
+return __exports;
+});
+;
+
+/**************************************************************************************
+*  Filepath: /hr_skills/static/src/fields/boolean_toggle_load/boolean_toggle_load.js  *
+*  Lines: 25                                                                          *
+**************************************************************************************/
+odoo.define('@hr_skills/fields/boolean_toggle_load/boolean_toggle_load', ['@web/core/registry', '@web/views/fields/boolean_toggle/list_boolean_toggle_field'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module */
+
+const { registry } = require('@web/core/registry');
+const { ListBooleanToggleField, listBooleanToggleField } = require("@web/views/fields/boolean_toggle/list_boolean_toggle_field");
+
+const ListBooleanToggleLoadField = __exports.ListBooleanToggleLoadField = class ListBooleanToggleLoadField extends ListBooleanToggleField {
+    async onChange(value) {
+        await super.onChange(value);
+        await this.props.record.model.root.save();
+        return this.env.model.load();
+    }
+}
+
+const listBooleanToggleLoadField = __exports.listBooleanToggleLoadField = {
+    ...listBooleanToggleField,
+    component: ListBooleanToggleLoadField,
+};
+
+registry.category("fields").add("boolean_toggle_load", listBooleanToggleLoadField);
+
+return __exports;
+});
+;
+
+/******************************************************************************
+*  Filepath: /hr_skills/static/src/fields/resume_one2many/resume_one2many.js  *
+*  Lines: 55                                                                  *
+******************************************************************************/
+odoo.define('@hr_skills/fields/resume_one2many/resume_one2many', ['@web/core/l10n/translation', '@web/core/registry', '@web/core/l10n/dates', '@hr_skills/fields/skills_one2many/skills_one2many', '@hr_skills/views/skills_list_renderer'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module */
+
+const { _t } = require("@web/core/l10n/translation");
+const { registry } = require("@web/core/registry");
+
+const { formatDate } = require("@web/core/l10n/dates");
+
+const { SkillsX2ManyField, skillsX2ManyField } = require("@hr_skills/fields/skills_one2many/skills_one2many");
+const { CommonSkillsListRenderer } = require("@hr_skills/views/skills_list_renderer");
+
+const ResumeListRenderer = __exports.ResumeListRenderer = class ResumeListRenderer extends CommonSkillsListRenderer {
+    get groupBy() {
+        return 'line_type_id';
+    }
+
+    get colspan() {
+        if (this.props.activeActions) {
+            return 3;
+        }
+        return 2;
+    }
+
+    formatDate(date) {
+        return formatDate(date);
+    }
+
+    setDefaultColumnWidths() {}
+}
+ResumeListRenderer.template = 'hr_skills.ResumeListRenderer';
+ResumeListRenderer.rowsTemplate = "hr_skills.ResumeListRenderer.Rows";
+ResumeListRenderer.recordRowTemplate = "hr_skills.ResumeListRenderer.RecordRow";
+
+
+const ResumeX2ManyField = __exports.ResumeX2ManyField = class ResumeX2ManyField extends SkillsX2ManyField {
+    getWizardTitleName() {
+        return _t("Create a resume line");
+    }
+}
+ResumeX2ManyField.components = {
+    ...SkillsX2ManyField.components,
+    ListRenderer: ResumeListRenderer,
+};
+
+const resumeX2ManyField = __exports.resumeX2ManyField = {
+    ...skillsX2ManyField,
+    component: ResumeX2ManyField,
+};
+
+registry.category("fields").add("resume_one2many", resumeX2ManyField);
+
+return __exports;
+});
+;
+
+/**********************************************************
+*  Filepath: /hr_skills/static/src/views/skills_graph.js  *
+*  Lines: 30                                              *
+**********************************************************/
+odoo.define('@hr_skills/views/skills_graph', ['@web/core/registry', '@web/views/graph/graph_renderer', '@web/views/graph/graph_view'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module **/
+
+const { registry } = require("@web/core/registry");
+const { GraphRenderer } = require("@web/views/graph/graph_renderer");
+const { graphView } = require("@web/views/graph/graph_view");
+
+const SkillsGraphRenderer = __exports.SkillsGraphRenderer = class SkillsGraphRenderer extends GraphRenderer {
+    getScaleOptions() {
+        const scaleOptions = super.getScaleOptions();
+
+        if ('y' in scaleOptions) {
+            scaleOptions.y.suggestedMax = 100;
+        }
+
+        return scaleOptions;
+    }
+}
+
+const skillsGraphView = __exports.skillsGraphView = {
+    ...graphView,
+    Renderer: SkillsGraphRenderer,
+};
+
+registry.category("views").add("skills_graph", skillsGraphView);
+
+return __exports;
+});
+;
+
+/******************************************************************
+*  Filepath: /hr_skills/static/src/views/skills_list_renderer.js  *
+*  Lines: 64                                                      *
+******************************************************************/
+odoo.define('@hr_skills/views/skills_list_renderer', ['@web/core/l10n/translation', '@web/views/list/list_renderer'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module **/
+
+const { _t } = require("@web/core/l10n/translation");
+const { ListRenderer } = require("@web/views/list/list_renderer");
+
+const CommonSkillsListRenderer = __exports.CommonSkillsListRenderer = class CommonSkillsListRenderer extends ListRenderer {
+    get colspan() {
+        const span = this.allColumns.length;
+        if (this.isEditable) {
+            return span + 1;
+        }
+
+        return span;
+    }
+
+    get groupBy() {
+        return '';
+    }
+
+    get groupedList() {
+        const grouped = {};
+
+        for (const record of this.list.records) {
+            const data = record.data;
+            const group = data[this.groupBy];
+
+            if (grouped[group[1]] === undefined) {
+                grouped[group[1]] = {
+                    id: parseInt(group[0]),
+                    name: group[1] || _t('Other'),
+                    list: {
+                        records: [],
+                    },
+                };
+            }
+
+            grouped[group[1]].list.records.push(record);
+        }
+        return grouped;
+    }
+
+    get showTable() {
+        return this.props.list.records.length;
+    }
+
+    get isEditable() {
+        return this.props.editable !== false;
+    }
+
+    async onCellClicked(record, column, ev) {
+        if (!this.isEditable) {
+            return;
+        }
+
+        return await super.onCellClicked(record, column, ev);
+    }
+}
+CommonSkillsListRenderer.rowsTemplate = "hr_skills.SkillsListRenderer.Rows";
+
+return __exports;
+});
+;
+
 /*********************************************************************
 *  Filepath: /base_import/static/src/import_action/import_action.js  *
 *  Lines: 210                                                        *
@@ -161131,6 +162442,1874 @@ patch(registry.category("web_tour.tours").get("crm_tour"), {
         return originalSteps
     },
 });
+
+return __exports;
+});
+;
+
+/*****************************************************************
+*  Filepath: /web_hierarchy/static/src/hierarchy_arch_parser.js  *
+*  Lines: 80                                                     *
+*****************************************************************/
+odoo.define('@web_hierarchy/hierarchy_arch_parser', ['@web/core/utils/xml', '@web/views/fields/field', '@web/views/utils'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module */
+
+const { visitXML } = require("@web/core/utils/xml");
+const { Field } = require("@web/views/fields/field");
+const { archParseBoolean, getActiveActions } = require("@web/views/utils");
+
+const HierarchyArchParser = __exports.HierarchyArchParser = class HierarchyArchParser {
+    parse(xmlDoc, models, modelName) {
+        const archInfo = {
+            activeActions: getActiveActions(xmlDoc),
+            draggable: false,
+            icon: "fa-share-alt o_hierarchy_icon",
+            parentFieldName: "parent_id",
+            fieldNodes: {},
+            templateDocs: {},
+            xmlDoc,
+        };
+        const fieldNextIds = {};
+        const fields = models[modelName];
+
+        visitXML(xmlDoc, (node) => {
+            if (node.hasAttribute("t-name")) {
+                archInfo.templateDocs[node.getAttribute("t-name")] = node;
+                return;
+            }
+            if (node.tagName === "hierarchy") {
+                if (node.hasAttribute("parent_field")) {
+                    const parentFieldName = node.getAttribute("parent_field");
+                    if (!(parentFieldName in fields)) {
+                        throw new Error(`The parent field set (${parentFieldName}) is not defined in the model (${modelName}).`);
+                    } else if (fields[parentFieldName].type !== "many2one") {
+                        throw new Error(`Invalid parent field, it should be a Many2One field.`);
+                    } else if (fields[parentFieldName].relation !== modelName) {
+                        throw new Error(`Invalid parent field, the co-model should be same model than the current one (expected: ${modelName}).`);
+                    }
+                    archInfo.parentFieldName = parentFieldName;
+                }
+                if (node.hasAttribute("child_field")) {
+                    const childFieldName = node.getAttribute("child_field");
+                    if (!(childFieldName in fields)) {
+                        throw new Error(`The child field set (${childFieldName}) is not defined in the model (${modelName}).`);
+                    } else if (fields[childFieldName].type !== "one2many") {
+                        throw new Error(`Invalid child field, it should be a One2Many field.`);
+                    } else if (fields[childFieldName].relation !== modelName) {
+                        throw new Error(`Invalid child field, the co-model should be same model than the current one (expected: ${modelName}).`);
+                    }
+                    archInfo.childFieldName = childFieldName;
+                }
+                if (node.hasAttribute("draggable")) {
+                    archInfo.draggable = archParseBoolean(node.getAttribute("draggable"));
+                }
+                if (node.hasAttribute("icon")) {
+                    archInfo.icon = node.getAttribute("icon");
+                }
+            } else if (node.tagName === "field") {
+                const fieldInfo = Field.parseFieldNode(node, models, modelName, "hierarchy");
+                const name = fieldInfo.name;
+                if (!(name in fieldNextIds)) {
+                    fieldNextIds[name] = 0;
+                }
+                const fieldId = `${name}_${fieldNextIds[name]++}`;
+                archInfo.fieldNodes[fieldId] = fieldInfo;
+                node.setAttribute("field_id", fieldId);
+            }
+        });
+
+        const cardDoc = archInfo.templateDocs["hierarchy-box"];
+        if (!cardDoc) {
+            throw new Error("Missing 'hierarchy-box' template.");
+        }
+
+        return archInfo;
+    }
+}
+
+return __exports;
+});
+;
+
+/**********************************************************
+*  Filepath: /web_hierarchy/static/src/hierarchy_card.js  *
+*  Lines: 81                                              *
+**********************************************************/
+odoo.define('@web_hierarchy/hierarchy_card', ['@odoo/owl', '@web/views/fields/field', '@web/model/record', '@web/views/view_button/view_button', '@web/views/view_compiler', '@web_hierarchy/hierarchy_compiler', '@web/views/kanban/kanban_record'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module */
+
+const { Component } = require("@odoo/owl");
+
+const { Field } = require("@web/views/fields/field");
+const { Record } = require("@web/model/record");
+const { ViewButton } = require("@web/views/view_button/view_button");
+const { useViewCompiler } = require("@web/views/view_compiler");
+
+const { HierarchyCompiler } = require("@web_hierarchy/hierarchy_compiler");
+const { getFormattedRecord } = require("@web/views/kanban/kanban_record");
+
+const HierarchyCard = __exports.HierarchyCard = class HierarchyCard extends Component {
+    static components = {
+        Record,
+        Field,
+        ViewButton,
+    };
+    static props = {
+        node: Object,
+        openRecord: Function,
+        archInfo: Object,
+        templates: Object,
+        classNames: { type: String, optional: true },
+    };
+    static defaultProps = {
+        classNames: "",
+    };
+    static template = "web_hierarchy.HierarchyCard";
+    static Compiler = HierarchyCompiler;
+
+    setup() {
+        const { templates } = this.props;
+        this.templates = useViewCompiler(this.constructor.Compiler, templates);
+    }
+
+    get classNames() {
+        const classNames = [this.props.classNames];
+        if (this.props.node.nodes.length) {
+            classNames.push("o_hierarchy_node_unfolded");
+        }
+        return classNames.join(" ");
+    }
+
+    getRenderingContext(data) {
+        const record = getFormattedRecord(data.record);
+        return {
+            context: this.props.node.context,
+            JSON,
+            luxon,
+            record,
+            __comp__: Object.assign(Object.create(this), { this: this }),
+            __record__: data.record,
+        };
+    }
+
+    onGlobalClick(ev) {
+        if (ev.target.closest("button")) {
+            return;
+        }
+        this.props.openRecord(this.props.node);
+    }
+
+    onClickArrowUp(ev) {
+        this.props.node.fetchParentNode();
+    }
+
+    onClickArrowDown(ev) {
+        if (this.props.node.nodes.length) {
+            this.props.node.collapseChildNodes();
+        } else {
+            this.props.node.showChildNodes();
+        }
+    }
+}
+
+return __exports;
+});
+;
+
+/**************************************************************
+*  Filepath: /web_hierarchy/static/src/hierarchy_compiler.js  *
+*  Lines: 34                                                  *
+**************************************************************/
+odoo.define('@web_hierarchy/hierarchy_compiler', ['@web/views/kanban/kanban_compiler'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module **/
+
+const { KanbanCompiler } = require("@web/views/kanban/kanban_compiler");
+
+const HierarchyCompiler = __exports.HierarchyCompiler = class HierarchyCompiler extends KanbanCompiler {
+    /**
+     * @override
+     * @param {Element} el
+     * @param {Object} params
+     * @returns {Element}
+     */
+    compileField(el, params) {
+        const fieldName = el.getAttribute("name");
+        return super.compileField(el, {
+            ...(params || {}),
+            recordExpr: "__record__",
+            dataPointIdExpr: "__comp__.props.node.id",
+            formattedValueExpr: `record['${fieldName}'].value`,
+        });
+    }
+
+    compileButton(el, params) {
+        return super.compileButton(el, {
+            ...(params || {}),
+            recordExpr: "__record__",
+        });
+    }
+}
+
+return __exports;
+});
+;
+
+/****************************************************************
+*  Filepath: /web_hierarchy/static/src/hierarchy_controller.js  *
+*  Lines: 70                                                    *
+****************************************************************/
+odoo.define('@web_hierarchy/hierarchy_controller', ['@odoo/owl', '@web/core/utils/hooks', '@web/model/model', '@web/model/relational_model/utils', '@web/search/cog_menu/cog_menu', '@web/search/layout', '@web/search/search_bar/search_bar', '@web/search/search_bar/search_bar_toggler', '@web/views/standard_view_props', '@web/views/view_button/view_button_hook'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module */
+
+const { Component, useRef } = require("@odoo/owl");
+
+const { useBus } = require("@web/core/utils/hooks");
+const { useModel } = require("@web/model/model");
+const { addFieldDependencies, extractFieldsFromArchInfo } = require("@web/model/relational_model/utils");
+const { CogMenu } = require("@web/search/cog_menu/cog_menu");
+const { Layout } = require("@web/search/layout");
+const { SearchBar } = require("@web/search/search_bar/search_bar");
+const { useSearchBarToggler } = require("@web/search/search_bar/search_bar_toggler");
+const { standardViewProps } = require("@web/views/standard_view_props");
+const { useViewButtons } = require("@web/views/view_button/view_button_hook");
+
+const HierarchyController = __exports.HierarchyController = class HierarchyController extends Component {
+    static components = {
+        Layout,
+        CogMenu,
+        SearchBar,
+    };
+    static props = {
+        ...standardViewProps,
+        Model: Function,
+        Renderer: Function,
+        buttonTemplate: String,
+        archInfo: Object,
+    };
+    static template = "web_hierarchy.HierarchyView";
+
+    setup() {
+        this.rootRef = useRef("root");
+        const { parentFieldName, childFieldName } = this.props.archInfo;
+        const { activeFields, fields } = extractFieldsFromArchInfo(this.props.archInfo, this.props.fields);
+        addFieldDependencies(activeFields, fields, [{ name: parentFieldName }]);
+        this.model = useModel(this.props.Model, {
+            resModel: this.props.resModel,
+            activeFields,
+            fields,
+            parentFieldName,
+            childFieldName,
+        });
+        useBus(
+            this.model.bus,
+            "update",
+            () => {
+                this.render(true);
+            }
+        );
+        useViewButtons(this.model, this.rootRef, {
+            beforeExecuteAction: this.beforeExecuteActionButton.bind(this),
+            afterExecuteAction: this.afterExecuteActionButton.bind(this),
+        });
+        this.searchBarToggler = useSearchBarToggler();
+    }
+
+    async openRecord(node, mode) {
+        const activeIds = this.model.root.resIds;
+        this.props.selectRecord(node.resId, { activeIds, mode });
+    }
+
+    async beforeExecuteActionButton(clickParams) {}
+
+    async afterExecuteActionButton(clickParams) {}
+}
+
+return __exports;
+});
+;
+
+/***********************************************************
+*  Filepath: /web_hierarchy/static/src/hierarchy_model.js  *
+*  Lines: 990                                              *
+***********************************************************/
+odoo.define('@web_hierarchy/hierarchy_model', ['@web/core/domain', '@web/core/l10n/translation', '@web/core/utils/concurrency', '@web/core/utils/objects', '@web/model/model'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module */
+
+const { Domain } = require("@web/core/domain");
+const { _t } = require("@web/core/l10n/translation");
+const { KeepLast, Mutex } = require("@web/core/utils/concurrency");
+const { pick } = require("@web/core/utils/objects");
+const { Model } = require("@web/model/model");
+
+let nodeId = 0;
+let forestId = 0;
+let treeId = 0;
+
+/**
+ * Get the id of the given many2one field value
+ *
+ * @param {false | [Number, string]} value many2one value
+ * @returns {false | Number} id of the many2one
+ */
+function getIdOfMany2oneField(value) {
+    return value && value[0];
+}
+
+const HierarchyNode = __exports.HierarchyNode = class HierarchyNode {
+    /**
+     * Constructor of hierarchy node stored in hierarchy tree
+     *
+     * @param {HierarchyModel} model
+     * @param {Object} config
+     * @param {Object} data
+     * @param {HierarchyTree} tree
+     * @param {HierarchyNode} parentNode
+     * @param {Boolean} populateChildNodes
+     */
+    constructor(model, config, data, tree, parentNode = null, populateChildNodes = true) {
+        this.id = nodeId++;
+        this.data = data;
+        this.parentNode = parentNode;
+        this.tree = tree;
+        this.model = model;
+        this._config = config;
+        tree.addNode(this);
+        if (populateChildNodes) {
+            this.populateChildNodes();
+        }
+    }
+
+    /**
+     * Get ancestor node
+     *
+     * @returns {HierarchyNode} ancestor node
+     */
+    get ancestorNode() {
+        return this.parentNode ? this.ancestorNode : this;
+    }
+
+    /**
+     * Is leaf?
+     *
+     * @returns {Boolean} False if the current node has node as child nodes, otherwise True.
+     */
+    get isLeaf() {
+        return !this.nodes.length;
+    }
+
+    /**
+     * Get forest of the current node
+     *
+     * @returns {HierarchyForest}
+     */
+    get forest() {
+        return this.tree.forest;
+    }
+
+    /**
+     * Get the resId of current node
+     *
+     * @returns {Number}
+     */
+    get resId() {
+        return this.data.id;
+    }
+
+    /**
+     * Get parent field name
+     *
+     * @returns {String}
+     */
+    get parentFieldName() {
+        return this.model.parentFieldName;
+    }
+
+    /**
+     * Get parent res id
+     *
+     * @returns {Number}
+     */
+    get parentResId() {
+        return this.parentNode?.resId || getIdOfMany2oneField(this.data[this.parentFieldName]);
+    }
+
+    /**
+     * Get child node res ids
+     *
+     * @returns {Number[]}
+     */
+    get childResIds() {
+        return this.nodes.length ? this.nodes.map((node) => node.resId) : this.data[this.childFieldName]?.map((d) => typeof d === "number" ? d : d.id) || [];
+    }
+
+    /**
+     * Get child field name
+     *
+     * @returns {String}
+     */
+    get childFieldName() {
+        return this.model.childFieldName || this.model.defaultChildFieldName;
+    }
+
+    /**
+     * Has child nodes?
+     *
+     * @returns {Boolean}
+     */
+    get hasChildren() {
+        return this.nodes.length > 0 || this.data[this.childFieldName]?.length > 0;
+    }
+
+    /**
+     * Can show parent node
+     *
+     * Knows if the parent node can be fetched and displayed inside the view
+     *
+     * @returns {Boolean} True if the current node has a parent node but it is not yet displayed and the data of the
+     *                    current node is not already displayed in another node.
+     */
+    get canShowParentNode() {
+        return Boolean(this.parentResId)
+            && !this.parentNode
+            && this.tree.forest.resIds.filter((resId) => resId === this.resId).length === 1;
+    }
+
+
+    /**
+     * Can show child nodes
+     *
+     * Knows if the child nodes can be fetched and displayed inside the view
+     *
+     * @returns {Boolean} True if the current node has child nodes but they are not yet displayed and the data of the
+     *                    current node is not already displayed in another node.
+     */
+    get canShowChildNodes() {
+        return this.hasChildren
+            && this.nodes.length === 0
+            && this.tree.forest.resIds.filter((resId) => resId === this.resId).length === 1;
+    }
+
+    get descendantNodes() {
+        const subNodes = [];
+        if (!this.isLeaf) {
+            subNodes.push(...this.nodes);
+            for (const node of this.nodes) {
+                if (node.descendantNodes.length) {
+                    subNodes.push(...node.descendantNodes);
+                }
+            }
+        }
+        return subNodes;
+    }
+
+    /**
+     * Get all descendants nodes parent resIds. If the current node has
+     * descendants, the result also contains its resId.
+     */
+    get descendantsParentIds() {
+        const descendantsParentIds = [];
+        if (!this.isLeaf) {
+            descendantsParentIds.push(this.resId);
+            this.nodes.reduce((parentIds, node) => {
+                if (!node.isLeaf) {
+                    parentIds.push(...node.descendantsParentIds);
+                }
+                return parentIds;
+            }, descendantsParentIds);
+        }
+        return descendantsParentIds;
+    }
+
+    /**
+     * Get all descendants nodes resIds
+     *
+     * @returns {Number[]}
+     */
+    get allSubsidiaryResIds() {
+        return this.descendantNodes.map((n) => n.resId);
+    }
+
+    /**
+     * Populate child nodes
+     *
+     * Uses to create child nodes of the current one according to its data.
+     */
+    populateChildNodes() {
+        this.nodes = [];
+        const children = this.data[this.childFieldName] || [];
+        if (
+            children.length
+            && children[0] instanceof Object
+            && this.tree.forest.resIds.filter((resId) => resId === this.resId).length === 1
+        ) {
+            this.createChildNodes(children);
+        }
+    }
+
+    /**
+     * create child nodes
+     *
+     * @param {Object[]} childNodesData data of child nodes to generate
+     */
+    createChildNodes(childNodesData) {
+        this.nodes = (childNodesData || this.data[this.childFieldName]).map(
+            (childData) =>
+                new HierarchyNode(
+                    this.model,
+                    this._config,
+                    childData,
+                    this.tree,
+                    this
+                )
+        );
+    }
+
+    removeParentNode() {
+        this.parentNode?.removeChildNode(this);
+        this.parentNode = null;
+        this.data[this.parentFieldName] = false;
+    }
+
+    /**
+     * Fetch parent node
+     */
+    async fetchParentNode() {
+        await this.model.fetchManager(this);
+    }
+
+    /**
+     * Fetch child nodes
+     */
+    async showChildNodes() {
+        await this.model.fetchSubordinates(this);
+    }
+
+    /**
+     * Collapse child nodes
+     *
+     * Removes the descendant nodes of the current one and stores
+     * the resIds of the child nodes in the data of the current one
+     * to know it has child nodes to be able to show them again
+     * when it is needed.
+     */
+    collapseChildNodes() {
+        const childrenData = [];
+        for (const childNode of this.nodes) {
+            childNode.data[this.childFieldName] = childNode.childResIds;
+            childrenData.push(childNode.data);
+        }
+        this.data[this.childFieldName] = childrenData;
+        this.removeChildNodes();
+        this.model.notify();
+    }
+
+    removeChildNode(node) {
+        node.removeChildNodes();
+        this.tree.removeNodes([node]);
+        this.nodes = this.nodes.filter((n) => n.id !== node.id);
+        this.data[this.childFieldName] = this.nodes.map((n) => n.data);
+    }
+
+    /**
+     * Remove descendant nodes of the current one
+     */
+    removeChildNodes() {
+        for (const childNode of this.nodes) {
+            if (!childNode.isLeaf) {
+                childNode.removeChildNodes();
+            }
+        }
+        this.tree.removeNodes(this.nodes);
+        this.nodes = [];
+    }
+
+    /**
+     * Set parent node to the current node
+     *
+     * @param {HierarchyNode} node parent node to set
+     */
+    setParentNode(node) {
+        this.parentNode = node;
+        node.addChildNode(this);
+        const tree = node.tree;
+        if (tree.root === this) {
+            tree.root = node;
+        } else if (this.tree.root === this) {
+            this.tree.removeRoot();
+            this.setTree(node.tree);
+        }
+    }
+
+    setTree(tree) {
+        this.tree = tree;
+        for (const childNode of this.nodes) {
+            childNode.setTree(tree);
+        }
+    }
+
+    /**
+     * Adds child node to the current node
+     *
+     * @param {HierarchyNode} node child node to add
+     */
+    addChildNode(node) {
+        this.nodes.push(node);
+        this.data[this.childFieldName].push(node.data);
+        this.tree.addNode(node);
+    }
+}
+
+const HierarchyTree = __exports.HierarchyTree = class HierarchyTree {
+    /**
+     * Constructor
+     *
+     * @param {HierarchyModel} model
+     * @param {Object} config config of the model
+     * @param {Object} data root node data of the tree to create
+     * @param {HierarchyForest} forest hierarchy forest containing the tree to create
+     */
+    constructor(model, config, data, forest) {
+        this.id = treeId++;
+        this.nodePerNodeId = {};
+        this.forest = forest;
+        if (data) {
+            this.root = new HierarchyNode(model, config, data, this);
+            this.forest.nodePerNodeId = {
+                ...this.forest.nodePerNodeId,
+                ...this.nodePerNodeId,
+            };
+        }
+        this.model = model;
+        this._config = config;
+    }
+
+    /**
+     * Get node res ids inside the current tree
+     *
+     * @returns {Number}
+     */
+    get resIds() {
+        return Object.values(this.nodePerNodeId).map((node) => node.resId);
+    }
+
+    /**
+     * Add node inside the current tree
+     *
+     * @param {HierarchyNode} node node to add inside the current tree
+     */
+    addNode(node) {
+        this.nodePerNodeId[node.id] = node;
+        this.forest.addNode(node);
+    }
+
+    /**
+     * Remove nodes inside the current tree
+     *
+     * @param {HierarchyNode} nodes nodes to remove
+     */
+    removeNodes(nodes) {
+        const nodeIds = nodes.map((node) => node.id);
+        this.nodePerNodeId = Object.fromEntries(
+            Object.entries(this.nodePerNodeId)
+                .filter(
+                    ([nodeId,]) => !nodeIds.includes(Number(nodeId))
+                )
+            );
+        this.forest.removeNodes(nodes);
+    }
+
+    removeRoot() {
+        this.forest.removeTree(this);
+    }
+}
+
+const HierarchyForest = __exports.HierarchyForest = class HierarchyForest {
+    /**
+     *
+     * @param {HierarchyModel} model
+     * @param {Object} config model config
+     * @param {Object[]} data list of tree root nodes data
+     */
+    constructor(model, config, data) {
+        this.id = forestId++;
+        this.nodePerNodeId = {};
+        this.trees = data.map((d) => new HierarchyTree(model, config, d, this));
+        this.model = model;
+        this._config = config;
+    }
+
+    /**
+     * Get node res ids containing inside the current forest
+     *
+     * @returns {Number}
+     */
+    get resIds() {
+        return Object.values(this.nodePerNodeId).map((node) => node.resId);
+    }
+
+    /**
+     * Get root node of all trees inside the current forest
+     *
+     * @returns {HierarchyNode[]} root nodes
+     */
+    get rootNodes() {
+        return this.trees.map((t) => t.root);
+    }
+
+    /**
+     * Add a node inside the current forest
+     *
+     * @param {HierarchyNode} node node to add inside the current forest
+     */
+    addNode(node) {
+        this.nodePerNodeId[node.id] = node;
+    }
+
+    /**
+     * Removes nodes inside the current forest
+     *
+     * @param {HierarchyNode} nodes nodes to remove inside the current forest
+     */
+    removeNodes(nodes) {
+        const nodeIds = nodes.map((node) => node.id);
+        this.nodePerNodeId = Object.fromEntries(
+            Object.entries(this.nodePerNodeId)
+                .filter(
+                    ([nodeId,]) => !nodeIds.includes(Number(nodeId))
+                )
+        );
+    }
+
+    addNewRootNode(node) {
+        const tree = new HierarchyTree(this.model, this._config, null, this);
+        tree.root = node;
+        node.tree = tree;
+        tree.addNode(node);
+        for (const subNode of node.descendantNodes) {
+            tree.addNode(subNode);
+        }
+        this.trees.push(tree);
+    }
+
+    removeTree(tree) {
+        this.nodePerNodeId = Object.fromEntries(
+            Object.entries(this.nodePerNodeId)
+                .filter(
+                    ([nodeId, ]) => !(nodeId in tree.nodePerNodeId)
+                )
+        );
+        this.trees = this.trees.filter((t) => t.id !== tree.id);
+    }
+}
+
+const HierarchyModel = __exports.HierarchyModel = class HierarchyModel extends Model {
+    static services = ["notification"];
+
+    setup(params, { notification }) {
+        this.keepLast = new KeepLast();
+        this.mutex = new Mutex();
+        this.resModel = params.resModel;
+        this.fields = params.fields;
+        this.parentFieldName = params.parentFieldName;
+        this.childFieldName = params.childFieldName;
+        this.activeFields = params.activeFields;
+        this.notification = notification;
+        this.config = {
+            domain: this.defaultDomain,
+            isRoot: true,
+        };
+    }
+
+    /**
+     * Get parent field info
+     *
+     * @returns {Object} parent field info
+     */
+    get parentField() {
+        return this.fields[this.parentFieldName];
+    }
+
+    /**
+     * Get res ids of all nodes displayed in the view
+     *
+     * @returns {Number[]} resIds of all nodes displayed in the view
+     */
+    get resIds() {
+        return this.root?.resIds || [];
+    }
+
+    /**
+     * Get default child field name when no child field name is given to the view
+     *
+     * @returns {String} default child field name to use
+     */
+    get defaultChildFieldName() {
+        return "__child_ids__";
+    }
+
+    /**
+     * Get active fields name
+     *
+     * @returns {String[]} active fields name
+     */
+    get activeFieldNames() {
+        return Object.keys(this.activeFields);
+    }
+
+    /**
+     * Get default domain to use, when no domain is given in the config
+     *
+     * @returns {import("@web/src/core/domain").DomainListRepr} default domain
+     */
+    get defaultDomain() {
+        return [[this.parentFieldName, '=', false]];
+    }
+
+    /**
+     * Get fields to fetch
+     * @returns {String[]} fields to fetch
+     */
+    get fieldsToFetch() {
+        const fieldsToFetch = [
+            ...this.activeFieldNames,
+        ];
+        if (this.childFieldName) {
+            fieldsToFetch.push(this.childFieldName);
+        }
+        return fieldsToFetch;
+    }
+
+    get context() {
+        return {
+            bin_size: true,
+            ...(this.config.context || {}),
+        };
+    }
+
+    /**
+     * Load the config and data for hierarchy view
+     *
+     * @param {Object} params params to use to load data of hierarchy view
+     */
+    async load(params = {}) {
+        nodeId = forestId = treeId = 0;
+        const config = this._getNextConfig(this.config, params);
+        const data = await this.keepLast.add(this._loadData(config));
+        this.root = this._createRoot(config, data);
+        this.config = config;
+        this.notify();
+    }
+
+    /**
+     * @override
+     * Each notify should specify a scroll target (default is to scroll to the
+     * bottom).
+     */
+    notify(payload = { scrollTarget: "bottom" }) {
+        super.notify();
+        this.bus.trigger("hierarchyScrollTarget", payload);
+    }
+
+    /**
+     * Fetch parent node of given node
+     * @param {HierarchyNode} node node to fetch its parent node
+     */
+    async fetchManager(node) {
+        if (this.root.trees.length > 1) { // reset the hierarchy
+            const treeExpanded = this._findTreeExpanded();
+            const resIdsToFetch = [node.parentResId, node.resId, ...node.allSubsidiaryResIds];
+            if (treeExpanded && treeExpanded.root.id !== node.id && treeExpanded.root.parentResId === node.parentResId) {
+                resIdsToFetch.push(...treeExpanded.root.allSubsidiaryResIds);
+            }
+            const config = {
+                ...this.config,
+                domain: ["|", [this.parentFieldName, "=", node.parentResId], ["id", "in", resIdsToFetch]],
+            }
+            const data = await this._loadData(config);
+            this.root = this._createRoot(config, data);
+            this.notify();
+            return;
+        }
+        const managerData = await this.keepLast.add(this._fetchManager(node));
+        if (managerData) {
+            const parentNode = new HierarchyNode(this, this.config, managerData, node.tree, null, false);
+            parentNode.createChildNodes();
+            node.setParentNode(parentNode);
+            this.notify();
+        }
+    }
+
+    /**
+     * Fetch child nodes of given node
+     *
+     * @param {HierarchyNode} node node to fetch its child nodes
+     */
+    async fetchSubordinates(node) {
+        const childFieldName = this.childFieldName || this.defaultChildFieldName;
+        const children = node.data[childFieldName];
+        if (children.length) {
+            const nodesToUpdate = [];
+            if (!(children[0] instanceof Object)) {
+                const allNodeResIds = this.root.resIds;
+                const existingChildResIds = children.filter((childResId) => allNodeResIds.includes(childResId))
+                if (existingChildResIds.length) { // special case with result found with the search view
+                    for (const tree of this.root.trees) {
+                        if (existingChildResIds.includes(tree.root.resId)) {
+                            nodesToUpdate.push(tree.root);
+                        }
+                    }
+                }
+                const data = await this.keepLast.add(this._fetchSubordinates(node, existingChildResIds));
+                if (data && data.length) {
+                    node.data[childFieldName] = data;
+                }
+            }
+            const nodeToCollapse = this._searchNodeToCollapse(node);
+            if (nodeToCollapse && !nodesToUpdate.includes(nodeToCollapse)) {
+                nodeToCollapse.collapseChildNodes();
+            }
+            node.populateChildNodes();
+            for (const n of nodesToUpdate) {
+                n.setParentNode(node);
+            }
+            this.notify();
+        }
+    }
+
+    /**
+     * Search node to collapse to be able to show the child nodes of node given in parameter
+     *
+     * @param {HierarchyNode} node node to show its child nodes.
+     * @returns {HierarchyNode | null} node found to collapse
+     */
+    _searchNodeToCollapse(node) {
+        const parentNode = node.parentNode;
+        let nodeToCollapse = null;
+        if (parentNode) {
+            nodeToCollapse = parentNode.nodes.find((n) => n.nodes.length);
+        } else {
+            const treeExpanded = this._findTreeExpanded();
+            if (treeExpanded) {
+                nodeToCollapse = treeExpanded.root;
+            }
+        }
+        return nodeToCollapse;
+    }
+
+    _findTreeExpanded() {
+        return this.root.trees.find((t) => t.root.nodes.length);
+    }
+
+    /**
+     * Get the next model config to use
+     *
+     * @param {Object} currentConfig current model config used
+     * @param {Object} params new params
+     * @returns {Object} new model config to use
+     */
+    _getNextConfig(currentConfig, params) {
+        const config = Object.assign({}, currentConfig);
+        config.context = "context" in params ? params.context : config.context;
+        if ("domain" in params) {
+            config.domain = params.domain;
+            if (!params.domain.length) {
+                if (config.context.hierarchy_res_id) {
+                    config.domain = [["id", "=", config.context.hierarchy_res_id]];
+                    delete config.context.hierarchy_res_id; // just needed for the first load.
+                } else {
+                    config.domain = this.defaultDomain;
+                }
+            }
+        }
+        return config;
+    }
+
+    /**
+     * Load data for hierarchy view
+     *
+     * @param {Object} config model config
+     * @returns {Object[]} main data for hierarchy view
+     */
+    async _loadData(config) {
+        const result = await this.orm.call(
+            this.resModel,
+            "hierarchy_read",
+            [config.domain, this.fieldsToFetch, this.parentFieldName, this.childFieldName],
+            {
+                context: this.context,
+            },
+        );
+        const resultStringified = JSON.stringify(result);
+        const recordsPerParentId = {};
+        const recordPerId = {};
+        for (const record of result) {
+            recordPerId[record.id] = record;
+            const parentId = getIdOfMany2oneField(record[this.parentFieldName]);
+            if (!(parentId.toString() in recordsPerParentId)) {
+                recordsPerParentId[parentId] = [];
+            }
+            recordsPerParentId[parentId].push(record);
+        }
+        const data = [];
+        const recordIds = []; // to check if we have only one arborescence to display otherwise we display the result as the kanban view
+        for (const [parentId, records] of Object.entries(recordsPerParentId)) {
+            if (!parentId || !(parentId in recordPerId)) {
+                data.push(...records);
+            } else {
+                const parentRecord = recordPerId[parentId];
+                if (recordIds.includes(parentRecord.id)) {
+                    return JSON.parse(resultStringified);
+                }
+                const ancestorId = getIdOfMany2oneField(parentRecord[this.parentFieldName]);
+                if (ancestorId in recordsPerParentId) {
+                    recordIds.push(...recordsPerParentId[ancestorId].map((r) => r.id));
+                }
+                parentRecord[this.childFieldName || this.defaultChildFieldName] = records;
+            }
+        }
+        if (!data.length && result?.length) {
+            data.push(recordPerId[Object.keys(recordsPerParentId)[0]]);
+        }
+        return data;
+    }
+
+    /**
+     * Create forest
+     *
+     * @param {Object} config model config to use
+     * @param {Object[]} data root data
+     * @returns {HierarchyForest} forest hierarchy
+     */
+    _createRoot(config, data) {
+        return new HierarchyForest(this, config, data);
+    }
+
+    /**
+     * Fetch parent node and its children nodes data
+     *
+     * @param {HierarchyNode} node node to fetch its parent node
+     * @returns {Object} the parent node data with children data inside childFieldName
+     */
+    async _fetchManager(node, exclude_node=true) {
+        let domain = new Domain([
+            "|",
+                ["id", "=", node.parentResId],
+                [this.parentFieldName, "=", node.parentResId],
+        ]);
+        if (exclude_node) {
+            domain = Domain.and([
+                domain,
+                [["id", "!=", node.resId]],
+            ])
+        }
+        const result = await this.orm.searchRead(
+            this.resModel,
+            domain.toList({}),
+            this.fieldsToFetch,
+            { context: this.context },
+        );
+        let managerData = {};
+        const children = [];
+        for (const data of result) {
+            if (data.id === node.parentResId) {
+                managerData = data;
+            } else {
+                children.push(data);
+            }
+        }
+        if (!this.childFieldName) {
+            if (children.length) {
+                await this._fetchDescendants(children);
+            }
+        }
+        managerData[this.childFieldName || this.defaultChildFieldName] = children;
+        return managerData;
+    }
+
+    /**
+     * Fetch children nodes data for a given node
+     *
+     * @param {HierarchyNode} node node to fetch its children nodes
+     * @param {Array<number> | null} excludeResIds list of ids to exclude (because the nodes already exist)
+     * @returns {Object[]} list of child node data
+     */
+    async _fetchSubordinates(node, excludeResIds = null) {
+        let childrenResIds = node.data[this.childFieldName || this.defaultChildFieldName];
+        if (excludeResIds) {
+            childrenResIds = childrenResIds.filter((childResId) => !excludeResIds.includes(childResId));
+        }
+        const data = await this.orm.read(
+            this.resModel,
+            childrenResIds,
+            this.fieldsToFetch,
+            { context: this.context },
+        )
+        if (!this.childFieldName) {
+            await this._fetchDescendants(data);
+        }
+        return data;
+    }
+
+    /**
+     * fetch descendants nodes resIds to know if the child nodes have descendants
+     *
+     * @param {Object[]} childrenData child nodes data to fetch its descendants
+     */
+    async _fetchDescendants(childrenData) {
+        const resIds = childrenData.map((d) => d.id);
+        if (resIds.length) {
+            const fetchChildren = await this.orm.readGroup(
+                this.resModel,
+                [[this.parentFieldName, "in", resIds]],
+                ['id:array_agg'],
+                [this.parentFieldName],
+                { context: this.context },
+            );
+            const childIdsPerId = Object.fromEntries(
+                fetchChildren.map((r) => [r[this.parentFieldName][0], r.id])
+            );
+            for (const d of childrenData) {
+                if (d.id.toString() in childIdsPerId) {
+                    d[this.defaultChildFieldName] = childIdsPerId[d.id.toString()];
+                }
+            }
+        }
+    }
+
+    async updateParentNode(nodeId, { parentNodeId, parentResId }) {
+        const node = this.root.nodePerNodeId[nodeId];
+        const parentNode = parentNodeId ? this.root.nodePerNodeId[parentNodeId] : null;
+        if (node) {
+            const oldParentNode = node.parentNode;
+            let fetchParentChildren = false;
+            const descendantsParentIds = node.descendantsParentIds;
+            let domain = new Domain([["id", "=", node.resId]]);
+            if (oldParentNode) {
+                domain = Domain.or([domain, [["id", "=", oldParentNode.resId]]]);
+            }
+            if (parentNode) {
+                if (parentNode.resId === node.resId) {
+                    this.notification.add(
+                        _t("The parent record cannot be the record dragged."),
+                        {
+                            type: "danger",
+                        }
+                    );
+                    return;
+                } else if (node.allSubsidiaryResIds.includes(parentNode.resId)) {
+                    this.notification.add(
+                        _t("Cannot change the parent because it will cause a cyclic."),
+                        {
+                            type: "danger",
+                        }
+                    );
+                    return;
+                }
+                domain = Domain.or([
+                    domain,
+                    [["id", "in", [parentNode.resId, node.resId]]],
+                ]);
+                if (parentNode.nodes.length === 0 && parentNode.childResIds.length > 0) {
+                    fetchParentChildren = true;
+                    domain = Domain.or([domain, [[this.parentFieldName, "=", parentNode.resId]]]);
+                }
+                if (node.id === node.tree.root.id) {
+                    this.root.removeTree(node.tree);
+                    node.tree = parentNode.tree;
+                } else {
+                    node.removeParentNode();
+                }
+            } else {
+                node.removeParentNode();
+                this.root.addNewRootNode(node);
+            }
+            this.notify({ scrollTarget: "none" });
+            await this.mutex.exec(async () => {
+                await this.orm.write(
+                    this.resModel,
+                    [node.resId],
+                    { [this.parentFieldName]: parentResId || parentNode?.resId || false },
+                    { context: this.context }
+                );
+            });
+            if (descendantsParentIds.length) {
+                domain = Domain.or([domain, [[this.parentFieldName, "in", descendantsParentIds]]]);
+            }
+            domain = domain.toList({});
+            const descendants = {};
+            if (domain.length) {
+                const data = await this.orm.searchRead(
+                    this.resModel,
+                    domain,
+                    this.fieldsToFetch,
+                    { context: this.context },
+                );
+                const children = [];
+                for (const d of data) {
+                    const parentId = getIdOfMany2oneField(d[this.parentFieldName]);
+                    if (d.id === node.resId) {
+                        node.data = d;
+                    } else if (d.id === oldParentNode?.resId) {
+                        oldParentNode.data = d;
+                    } else if (parentNode?.resId === d.id) {
+                        const parentData = fetchParentChildren
+                            ? {}
+                            : pick(
+                                  parentNode.data,
+                                  this.childFieldName || this.defaultChildFieldName
+                              );
+                        parentNode.data = {
+                            ...d,
+                            ...parentData,
+                        };
+                    } else if (fetchParentChildren && parentId === parentNode.resId) {
+                        children.push(d);
+                    } else {
+                        if (!(parentId in descendants)) {
+                            descendants[parentId] = [];
+                        }
+                        descendants[parentId].push(d);
+                    }
+                }
+                if (children.length) {
+                    parentNode.data[this.childFieldName || this.defaultChildFieldName] = children;
+                }
+            }
+            const treeExpanded = this._findTreeExpanded();
+            if (parentNode) {
+                if (treeExpanded && treeExpanded.id !== parentNode.tree.id) {
+                    treeExpanded.root.collapseChildNodes();
+                } else if (treeExpanded) {
+                    const nodeToCollapse = this._searchNodeToCollapse(
+                        parentNode.nodes.length ? parentNode.nodes[0] : parentNode
+                    );
+                    if (
+                        nodeToCollapse &&
+                        (descendants[node.resId]?.length || !parentNode.nodes.length)
+                    ) {
+                        nodeToCollapse.collapseChildNodes();
+                    }
+                }
+                if (fetchParentChildren) {
+                    parentNode.populateChildNodes();
+                }
+                node.setParentNode(parentNode);
+            } else if (treeExpanded && descendants[node.resId]?.length) {
+                treeExpanded.root.collapseChildNodes();
+            }
+            let descendantsParent = node;
+            const handledParents = new Set([node.resId]);
+            while (descendantsParent) {
+                const parentId = descendantsParent.resId;
+                const childNodesData = descendants[parentId];
+                if (!childNodesData) {
+                    break;
+                }
+                descendantsParent.data[this.childFieldName || this.defaultChildFieldName] =
+                    childNodesData;
+                descendantsParent.populateChildNodes();
+                handledParents.add(descendantsParent.resId);
+                descendantsParent = descendantsParent.nodes.find((n) => {
+                    return !handledParents.has(n.resId) && n.resId in descendants;
+                });
+            }
+            this.notify({ scrollTarget: nodeId });
+        }
+    }
+}
+
+return __exports;
+});
+;
+
+/********************************************************************
+*  Filepath: /web_hierarchy/static/src/hierarchy_node_draggable.js  *
+*  Lines: 109                                                       *
+********************************************************************/
+odoo.define('@web_hierarchy/hierarchy_node_draggable', ['@odoo/owl', '@web/core/utils/timing', '@web/core/utils/objects', '@web/core/utils/draggable_hook_builder'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module */
+
+const { onWillUnmount, reactive, useEffect, useExternalListener } = require("@odoo/owl");
+const { useThrottleForAnimation } = require("@web/core/utils/timing");
+const { pick } = require("@web/core/utils/objects");
+const { makeDraggableHook } = require("@web/core/utils/draggable_hook_builder");
+
+const hookParams = {
+    name: "useHierarchyNodeDraggable",
+    acceptedParams: {
+        rows: [String],
+    },
+    defaultParams: {
+        edgeScrolling: { speed: 20, threshold: 60 },
+        rows: null,
+    },
+    onComputeParams({ ctx, params }) {
+        // Row selector
+        ctx.rowSelector = params.rows || null;
+        if (ctx.rowSelector) {
+            ctx.fullSelector = `${ctx.rowSelector} ${ctx.fullSelector}`;
+        }
+    },
+    onDragStart(params) {
+        const { ctx, addListener, callHandler } = params;
+
+        const onElementPointerEnter = (ev) => {
+            const element = ev.currentTarget;
+            current.hierarchyElement = element;
+            callHandler("onElementEnter", { element });
+        };
+
+        const onElementPointerLeave = (ev) => {
+            const element = ev.currentTarget;
+            current.hierarchyElement = null;
+            callHandler("onElementLeave", { element });
+        };
+
+        const onRowPointerEnter = (ev) => {
+            const row = ev.currentTarget;
+            current.hierarchyRow = row;
+            callHandler("onRowEnter", { row });
+        };
+
+        const onRowPointerLeave = (ev) => {
+            const row = ev.currentTarget;
+            current.hierarchyRow = null;
+            callHandler("onRowLeave", { row });
+        };
+
+        const { ref, current, elementSelector, rowSelector } = ctx;
+
+        for (const rowEl of ref.el.querySelectorAll(rowSelector)) {
+            addListener(rowEl, "pointerenter", onRowPointerEnter);
+            addListener(rowEl, "pointerleave", onRowPointerLeave);
+        }
+
+        for (const siblingEl of ref.el.querySelectorAll(elementSelector)) {
+            if (siblingEl !== current.element) {
+                addListener(siblingEl, "pointerenter", onElementPointerEnter);
+                addListener(siblingEl, "pointerleave", onElementPointerLeave);
+            }
+        }
+
+        return pick(current, "element", "row");
+    },
+    onDragEnd({ ctx }) {
+        return pick(ctx.current, "element", "row", "hierarchyRow");
+    },
+    onDrop({ ctx }) {
+        const { current } = ctx;
+        const rowElement = current.hierarchyRow;
+        const element = current.hierarchyElement;
+        if ((rowElement && rowElement !== current.row) || element) {
+            return {
+                element: current.element,
+                row: current.row,
+                nextRow: rowElement && current.row !== rowElement ? rowElement : null,
+                newParentNode: element,
+            };
+        }
+    },
+    onWillStartDrag({ ctx }) {
+        const { current, rowSelector } = ctx;
+
+        if (rowSelector) {
+            current.row = current.element.closest(rowSelector);
+        }
+
+        return pick(current, "element", "row");
+    },
+};
+
+__exports.useHierarchyNodeDraggable = useHierarchyNodeDraggable; function useHierarchyNodeDraggable(params) {
+    const setupHooks = {
+        addListener: useExternalListener,
+        setup: useEffect,
+        teardown: onWillUnmount,
+        throttle: useThrottleForAnimation,
+        wrapState: reactive,
+    }
+    return makeDraggableHook({ ...hookParams, setupHooks })(params);
+}
+
+return __exports;
+});
+;
+
+/**************************************************************
+*  Filepath: /web_hierarchy/static/src/hierarchy_renderer.js  *
+*  Lines: 151                                                 *
+**************************************************************/
+odoo.define('@web_hierarchy/hierarchy_renderer', ['@odoo/owl', '@web/core/l10n/translation', '@web/core/utils/hooks', '@web/core/utils/scrolling', '@web_hierarchy/hierarchy_card', '@web_hierarchy/hierarchy_node_draggable'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module */
+
+const { Component, useRef, onPatched } = require("@odoo/owl");
+
+const { _t } = require("@web/core/l10n/translation");
+const { useBus, useService } = require("@web/core/utils/hooks");
+const { scrollTo } = require("@web/core/utils/scrolling");
+
+const { HierarchyCard } = require("@web_hierarchy/hierarchy_card");
+const { useHierarchyNodeDraggable } = require("@web_hierarchy/hierarchy_node_draggable");
+
+const HierarchyRenderer = __exports.HierarchyRenderer = class HierarchyRenderer extends Component {
+    static components = {
+        HierarchyCard,
+    };
+    static props = {
+        model: Object,
+        openRecord: Function,
+        archInfo: Object,
+        templates: Object,
+    };
+    static template = "web_hierarchy.HierarchyRenderer";
+
+    setup() {
+        this.rendererRef = useRef("renderer");
+        this.notification = useService("notification");
+        if (this.canDragAndDropRecord) {
+            useHierarchyNodeDraggable({
+                ref: this.rendererRef,
+                enable: this.draggable,
+                elements: ".o_hierarchy_node_container",
+                handle: ".o_hierarchy_node",
+                rows: ".o_hierarchy_row",
+                ignore: "button",
+                onDragStart: ({ addClass, element }) => {
+                    addClass(element, "o_hierarchy_dragged");
+                    addClass(element.querySelector(".o_hierarchy_node"), "shadow");
+                },
+                onDragEnd: ({ removeClass, element, row, hierarchyRow }) => {
+                    removeClass(element, "o_hierarchy_dragged");
+                    if (row) {
+                        removeClass(row, "o_hierarchy_hover");
+                    }
+                    if (hierarchyRow) {
+                        removeClass(hierarchyRow, "o_hierarchy_hover");
+                    }
+                },
+                onDrop: (params) => {
+                    this.nodeDrop(params);
+                },
+                onElementEnter: ({ addClass, element }) => {
+                    addClass(element, "o_hierarchy_hover");
+                },
+                onElementLeave: ({ removeClass, element }) => {
+                    removeClass(element, "o_hierarchy_hover");
+                },
+                onRowEnter: ({ addClass, row }) => {
+                    addClass(row, "o_hierarchy_hover");
+                },
+                onRowLeave: ({ removeClass, row }) => {
+                    removeClass(row, "o_hierarchy_hover");
+                },
+            });
+        }
+        this.scrollTarget = "none";
+        useBus(this.props.model.bus, "hierarchyScrollTarget", (ev) => {
+            this.scrollTarget = ev.detail?.scrollTarget || "none";
+        });
+        onPatched(this.onPatched);
+    }
+
+    onPatched() {
+        if (this.scrollTarget === "none") {
+            return;
+        }
+        const row =
+            this.scrollTarget === "bottom"
+                ? this.rendererRef.el.querySelector(":scope .o_hierarchy_row:last-child")
+                : this.rendererRef.el
+                      .querySelector(
+                          `:scope .o_hierarchy_node[data-node-id="${this.scrollTarget}"]`
+                      )
+                      ?.closest(".o_hierarchy_row");
+        this.scrollTarget = "none";
+        if (!row) {
+            return;
+        }
+        scrollTo(row, { behavior: "smooth" });
+    }
+
+    get canDragAndDropRecord() {
+        return this.draggable && !this.env.isSmall;
+    }
+
+    get draggable() {
+        return this.props.archInfo.draggable;
+    }
+
+    get rows() {
+        const rootNodes = this.props.model.root.rootNodes;
+        const rows = [{ nodes: rootNodes }];
+        const processNode = (node) => {
+            if (!node.isLeaf) {
+                rows.push({ parentNode: node, nodes: node.nodes});
+                for (const subNode of node.nodes) {
+                    processNode(subNode);
+                }
+            }
+        };
+
+        for (const node of this.props.model.root.rootNodes) {
+            processNode(node);
+        }
+
+        return rows;
+    }
+
+    async nodeDrop({ element, row, nextRow, newParentNode }) {
+        let parentNodeId, parentResId;
+        if (newParentNode) {
+            parentNodeId = newParentNode.dataset.nodeId;
+        } else if (nextRow?.dataset.rowId !== row.dataset.rowId) {
+            parentNodeId = nextRow.dataset.parentNodeId;
+            if (!parentNodeId) {
+                const nodes = this.rows[nextRow.dataset.rowId].nodes || [];
+                if (nodes) {
+                    parentNodeId = nodes[0].parentNode?.id;
+                    if (!parentNodeId) {
+                        parentResId = nodes[0].parentResId;
+                        if (!nodes.every((node) => node.parentResId === parentResId)) {
+                            this.notification.add(
+                                _t("Impossible to update the parent node of the dragged node because no parent has been found."),
+                                {
+                                    type: "danger",
+                                }
+                            );
+                            return;
+                        }
+                    }
+                }
+            }
+        }
+        await this.props.model.updateParentNode(element.dataset.nodeId, { parentResId, parentNodeId });
+    }
+}
+
+return __exports;
+});
+;
+
+/**********************************************************
+*  Filepath: /web_hierarchy/static/src/hierarchy_view.js  *
+*  Lines: 42                                              *
+**********************************************************/
+odoo.define('@web_hierarchy/hierarchy_view', ['@web/core/l10n/translation', '@web/core/registry', '@web_hierarchy/hierarchy_arch_parser', '@web_hierarchy/hierarchy_controller', '@web_hierarchy/hierarchy_model', '@web_hierarchy/hierarchy_renderer'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module */
+
+const { _t } = require("@web/core/l10n/translation");
+const { registry } = require("@web/core/registry");
+const { HierarchyArchParser } = require("@web_hierarchy/hierarchy_arch_parser");
+const { HierarchyController } = require("@web_hierarchy/hierarchy_controller");
+const { HierarchyModel } = require("@web_hierarchy/hierarchy_model");
+const { HierarchyRenderer } = require("@web_hierarchy/hierarchy_renderer");
+
+const hierarchyView = __exports.hierarchyView = {
+    type: "hierarchy",
+    display_name: _t("Hierarchy"),
+    icon: "fa fa-share-alt o_hierarchy_icon",
+    isMobileFriendly: false,
+    multiRecord: true,
+    ArchParser: HierarchyArchParser,
+    Controller: HierarchyController,
+    Model: HierarchyModel,
+    Renderer: HierarchyRenderer,
+    buttonTemplate: "web_hierarchy.HierarchyButtons",
+    searchMenuTypes: [],
+
+    props: (genericProps, view) => {
+        const { ArchParser, Model, Renderer, buttonTemplate: viewButtonTemplate } = view;
+        const { arch, relatedModels, resModel, buttonTemplate } = genericProps;
+        return {
+            ...genericProps,
+            archInfo: new ArchParser().parse(arch, relatedModels, resModel),
+            buttonTemplate: buttonTemplate || viewButtonTemplate,
+            Model,
+            Renderer,
+        };
+    }
+}
+
+registry.category("views").add("hierarchy", hierarchyView);
+
+return __exports;
+});
+;
+
+/*******************************************************
+*  Filepath: /hr_org_chart/static/src/fields/hooks.js  *
+*  Lines: 51                                           *
+*******************************************************/
+odoo.define('@hr_org_chart/fields/hooks', ['@web/core/l10n/translation', '@web/session', '@web/core/utils/hooks'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module **/
+
+const { _t } = require("@web/core/l10n/translation");
+const { session } = require("@web/session");
+const { useService } = require("@web/core/utils/hooks");
+
+/**
+ * Redirect to the sub employee kanban view.
+ *
+ * @private
+ * @param {MouseEvent} event
+ * @returns {Promise} action loaded
+ *
+ */
+__exports.onEmployeeSubRedirect = onEmployeeSubRedirect; function onEmployeeSubRedirect() {
+    const actionService = useService('action');
+    const orm = useService('orm');
+    const rpc = useService('rpc');
+
+    return async (event) => {
+        const employeeId = parseInt(event.currentTarget.dataset.employeeId);
+        if (!employeeId) {
+            return {};
+        }
+        const type = event.currentTarget.dataset.type || 'direct';
+        // Get subordonates of an employee through a rpc call.
+        const subordinateIds = await rpc('/hr/get_subordinates', {
+            employee_id: employeeId,
+            subordinates_type: type,
+            context: session.user_context
+        });
+        let action = await orm.call('hr.employee', 'get_formview_action', [employeeId]);
+        action = {...action,
+            name: _t('Team'),
+            view_mode: 'kanban,list,form',
+            views: [[false, 'kanban'], [false, 'list'], [false, 'form']],
+            domain: [['id', 'in', subordinateIds]],
+            res_id: false,
+            context: {
+                default_parent_id: employeeId,
+            }
+        };
+        actionService.doAction(action);
+    };
+}
+
+return __exports;
+});
+;
+
+/**************************************************************
+*  Filepath: /hr_org_chart/static/src/fields/hr_org_chart.js  *
+*  Lines: 130                                                 *
+**************************************************************/
+odoo.define('@hr_org_chart/fields/hr_org_chart', ['@web/core/registry', '@web/core/utils/hooks', '@web/core/popover/popover_hook', '@hr_org_chart/fields/hooks', '@odoo/owl'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module */
+
+const { registry } = require("@web/core/registry");
+const { useService } = require("@web/core/utils/hooks");
+const { usePopover } = require("@web/core/popover/popover_hook");
+const { onEmployeeSubRedirect } = require("@hr_org_chart/fields/hooks");
+const { Component, onWillStart, onWillRender, useState } = require("@odoo/owl");
+
+class HrOrgChartPopover extends Component {
+    async setup() {
+        super.setup();
+
+        this.rpc = useService('rpc');
+        this.orm = useService('orm');
+        this.actionService = useService("action");
+        this._onEmployeeSubRedirect = onEmployeeSubRedirect();
+    }
+
+    /**
+     * Redirect to the employee form view.
+     *
+     * @private
+     * @param {MouseEvent} event
+     * @returns {Promise} action loaded
+     */
+    async _onEmployeeRedirect(employeeId) {
+        const action = await this.orm.call('hr.employee', 'get_formview_action', [employeeId]);
+        this.actionService.doAction(action); 
+    }
+}
+HrOrgChartPopover.template = 'hr_org_chart.hr_orgchart_emp_popover';
+
+const HrOrgChart = __exports.HrOrgChart = class HrOrgChart extends Component {
+    async setup() {
+        super.setup();
+
+        this.rpc = useService('rpc');
+        this.orm = useService('orm');
+        this.actionService = useService("action");
+        this.user = useService("user");
+        this.popover = usePopover(HrOrgChartPopover);
+
+        this.state = useState({'employee_id': null});
+        this.lastParent = null;
+        this._onEmployeeSubRedirect = onEmployeeSubRedirect();
+
+        onWillStart(this.handleComponentUpdate.bind(this));
+        onWillRender(this.handleComponentUpdate.bind(this));
+    }
+
+    /**
+     * Called on start and on render
+     */
+    async handleComponentUpdate() {
+        this.employee = this.props.record.data;
+        // the widget is either dispayed in the context of a hr.employee form or a res.users form
+        this.state.employee_id = this.employee.employee_ids !== undefined ? this.employee.employee_ids.resIds[0] : this.props.record.resId;
+        const manager = this.employee.parent_id || this.employee.employee_parent_id;
+        const forceReload = this.lastRecord !== this.props.record || this.lastParent != manager;
+        this.lastParent = manager;
+        this.lastRecord = this.props.record;
+        await this.fetchEmployeeData(this.state.employee_id, forceReload);
+    }
+
+    async fetchEmployeeData(employeeId, force = false) {
+        if (!employeeId) {
+            this.managers = [];
+            this.children = [];
+            if (this.view_employee_id) {
+                this.render(true);
+            }
+            this.view_employee_id = null;
+        } else if (employeeId !== this.view_employee_id || force) {
+            this.view_employee_id = employeeId;
+            let orgData = await this.rpc(
+                '/hr/get_org_chart',
+                {
+                    employee_id: employeeId,
+                    context: this.user.context,
+                }
+            );
+            if (Object.keys(orgData).length === 0) {
+                orgData = {
+                    managers: [],
+                    children: [],
+                }
+            }
+            this.managers = orgData.managers;
+            this.children = orgData.children;
+            this.managers_more = orgData.managers_more;
+            this.self = orgData.self;
+            this.render(true);
+        }
+    }
+
+    _onOpenPopover(event, employee) {
+        this.popover.open(event.currentTarget, { employee });
+    }
+
+    /**
+     * Redirect to the employee form view.
+     *
+     * @private
+     * @param {MouseEvent} event
+     * @returns {Promise} action loaded
+     */
+    async _onEmployeeRedirect(employeeId) {
+        const action = await this.orm.call('hr.employee', 'get_formview_action', [employeeId]);
+        this.actionService.doAction(action); 
+    }
+
+    async _onEmployeeMoreManager(managerId) {
+        await this.fetchEmployeeData(managerId);
+        this.state.employee_id = managerId;
+    }
+}
+
+HrOrgChart.template = 'hr_org_chart.hr_org_chart';
+
+const hrOrgChart = __exports.hrOrgChart = {
+    component: HrOrgChart,
+};
+
+registry.category("fields").add("hr_org_chart", hrOrgChart);
+
+return __exports;
+});
+;
+
+/*************************************************************************************************
+*  Filepath: /hr_org_chart/static/src/views/hr_employee_hierarchy/hr_employee_hierarchy_card.js  *
+*  Lines: 13                                                                                     *
+*************************************************************************************************/
+odoo.define('@hr_org_chart/views/hr_employee_hierarchy/hr_employee_hierarchy_card', ['@web_hierarchy/hierarchy_card'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module */
+
+const { HierarchyCard } = require("@web_hierarchy/hierarchy_card");
+
+const HrEmployeeHierarchyCard = __exports.HrEmployeeHierarchyCard = class HrEmployeeHierarchyCard extends HierarchyCard {
+    static template = "hr_org_chart.HrEmployeeHierarchyCard";
+}
+
+return __exports;
+});
+;
+
+/*****************************************************************************************************
+*  Filepath: /hr_org_chart/static/src/views/hr_employee_hierarchy/hr_employee_hierarchy_renderer.js  *
+*  Lines: 21                                                                                         *
+*****************************************************************************************************/
+odoo.define('@hr_org_chart/views/hr_employee_hierarchy/hr_employee_hierarchy_renderer', ['@mail/views/web/fields/avatar/avatar', '@web_hierarchy/hierarchy_renderer', '@hr_org_chart/views/hr_employee_hierarchy/hr_employee_hierarchy_card'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module **/
+
+const { Avatar } = require("@mail/views/web/fields/avatar/avatar");
+
+const { HierarchyRenderer } = require("@web_hierarchy/hierarchy_renderer");
+const { HrEmployeeHierarchyCard } = require("@hr_org_chart/views/hr_employee_hierarchy/hr_employee_hierarchy_card");
+
+const HrEmployeeHierarchyRenderer = __exports.HrEmployeeHierarchyRenderer = class HrEmployeeHierarchyRenderer extends HierarchyRenderer {
+    static template = "hr_org_chart.HrEmployeeHierarchyRenderer";
+    static components = {
+        ...HierarchyRenderer.components,
+        HierarchyCard: HrEmployeeHierarchyCard,
+        Avatar,
+    };
+}
+
+return __exports;
+});
+;
+
+/*************************************************************************************************
+*  Filepath: /hr_org_chart/static/src/views/hr_employee_hierarchy/hr_employee_hierarchy_view.js  *
+*  Lines: 18                                                                                     *
+*************************************************************************************************/
+odoo.define('@hr_org_chart/views/hr_employee_hierarchy/hr_employee_hierarchy_view', ['@web/core/registry', '@web_hierarchy/hierarchy_view', '@hr_org_chart/views/hr_employee_hierarchy/hr_employee_hierarchy_renderer'], function (require) {
+'use strict';
+let __exports = {};
+/** @odoo-module **/
+
+const { registry } = require("@web/core/registry");
+const { hierarchyView } = require("@web_hierarchy/hierarchy_view");
+const { HrEmployeeHierarchyRenderer } = require("@hr_org_chart/views/hr_employee_hierarchy/hr_employee_hierarchy_renderer");
+
+const hrEmployeeHierarchyView = __exports.hrEmployeeHierarchyView = {
+    ...hierarchyView,
+    Renderer: HrEmployeeHierarchyRenderer,
+};
+
+registry.category("views").add("hr_employee_hierarchy", hrEmployeeHierarchyView);
 
 return __exports;
 });
@@ -172190,7 +175369,7 @@ return __exports;
         <hr class="w-100 opacity-0"/>
     </t>
 
-<!-- Filepath: /mail/static/src/discuss/web/avatar_card/avatar_card_popover.xml -->
+<!-- Filepath: /mail/static/src/discuss/web/avatar_card/avatar_card_popover.xml => /hr/static/src/components/avatar_card/avatar_card_popover_patch.xml -->
 <t t-name="mail.AvatarCardPopover">
         <div class="o_avatar_card">
             <div class="card-body">
@@ -172220,6 +175399,7 @@ return __exports;
                     <div class="justify-content-end d-flex align-items-baseline">
                         <div class="d-flex gap-2 o_avatar_card_buttons">
                             <button t-if="!user.share" class="btn btn-secondary btn-sm" t-on-click.stop="onSendClick">Send message</button>
+            <!-- Filepath: /hr/static/src/components/avatar_card/avatar_card_popover_patch.xml ; position="inside" ; {'expr': "//div[hasclass('o_avatar_card_buttons')]"} --><button class="btn btn-secondary btn-sm" t-if="user.employee_ids?.length &gt; 0" t-on-click.stop="onClickViewEmployee">View profile</button>
                         </div>
                     </div>
                 </div>
@@ -173109,9 +176289,499 @@ return __exports;
         </div>
     </t>
 
+<!-- Filepath: /hr/static/src/components/avatar_card/avatar_card_popover_patch.xml -->
+
+    <t t-name="hr.avatarCardUserInfos">
+        <small class="text-muted text-truncate" t-if="user.job_title" t-att-title="user.job_title" t-esc="user.job_title"/>
+        <span class="text-muted text-truncate" t-if="user.department_id" data-tooltip="Department" t-att-title="user.department_id[1]" t-esc="user.department_id[1]"/>
+    </t>
+
+<!-- Filepath: /hr/static/src/components/background_image/background_image.xml -->
+<t t-name="hr.BackgroundImage">
+        <img loading="lazy" t-att-data-tooltip-template="hasTooltip and tooltipAttributes.template" t-att-data-tooltip-info="hasTooltip and tooltipAttributes.info" t-att-data-tooltip-delay="hasTooltip and props.zoomDelay" t-attf-src="#{getUrl(props.previewImage or props.name)}" alt="Binary file"/>
+    </t>
+
+<!-- Filepath: /hr/static/src/components/department_chart/department_chart.xml -->
+<t t-name="hr.DepartmentChart">
+        <div class="o_hr_department_chart">
+            <div class="o_horizontal_separator mb-3 text-uppercase fw-bolder small">Department Organization</div>
+            <t t-if="state.hierarchy.self">
+                <div class="o_hr_department_chart_parent">
+                    <t t-set="dept" t-value="state.hierarchy.parent"/>
+                    <t t-set="hideTree" t-value="true"/>
+                    <t t-call="hr.DepartmentChart.Department"/>
+                </div>
+
+                <div t-att-class="state.hierarchy.parent?'ms-4':''">
+                    <div class="o_hr_department_chart_self">
+                        <t t-set="dept" t-value="state.hierarchy.self"/>
+                        <t t-set="hideTree" t-value="!state.hierarchy.parent"/>
+                        <t t-call="hr.DepartmentChart.Department"/>
+                    </div>
+
+                    <t t-set="hideTree" t-value="false"/>
+                    <div class="o_hr_department_chart_children ms-4">
+                        <t t-foreach="state.hierarchy.children" t-as="dept" t-key="dept.name">
+                            <t t-call="hr.DepartmentChart.Department"/>
+                        </t>
+                    </div>
+                </div>
+            </t>
+        </div>
+    </t>
+
+<!-- Filepath: /hr/static/src/components/department_chart/department_chart.xml -->
+
+    <t t-name="hr.DepartmentChart.Department">
+        <t t-if="dept">
+            <div t-attf-class="#{hideTree?'':'o_treeEntry'} mb-0 ps-4">
+                <div class="d-flex justify-content-between">
+                    <span class="department_name ms-2">
+                        <t t-esc="dept.name"/>
+                    </span>
+                    <a class="badge rounded-pill bg-300 border px-2" role="button" title="Show employees" t-on-click.prevent="() =&gt; this.openDepartmentEmployees(dept.id)">
+                        <t t-esc="dept.employees"/>
+                    </a>
+                </div>
+            </div>
+        </t>
+    </t>
+
+<!-- Filepath: /hr/static/src/components/employee_chat/employee_chat.xml -->
+<t t-name="hr.OpenChat">
+        <a t-if="props.record.data.user_id and props.record.resId" title="Chat" icon="fa-comments" t-on-click.prevent="() =&gt; openChat(props.record.resId)" href="#" class="ml8 o_employee_chat_btn" role="button">
+            <i class="fa fa-comments align-middle fs-6"/>
+        </a>
+    </t>
+
+<!-- Filepath: /hr/static/src/components/hr_presence_status/hr_presence_status.xml -->
+<t t-name="hr.HrPresenceStatus">
+        <t t-tag="props.tag" role="img" t-att-class="classNames" t-att-aria-label="label" t-att-title="label"/>
+    </t>
+
+<!-- Filepath: /hr/static/src/components/radio_image_field/radio_image_field.xml -->
+
+<t t-name="hr_homeworking.RadioImageField">
+        <div role="radiogroup" class="d-flex flex-wrap" t-att-aria-label="string">
+            <t t-foreach="items" t-as="item" t-key="item[0]">
+                <t t-if="['office', 'home', 'other'].includes(item[0])">
+                    <div class="form-check o_radio_item me-1" aria-atomic="true">
+                        <input type="radio" class="form-check-input o_radio_input" t-att-checked="item[0] === value" t-att-disabled="props.readonly" t-att-name="id" t-att-data-value="item[0]" t-att-data-index="item_index" t-att-id="\`\${id}_\${item[0]}\`" t-on-change="() =&gt; this.onChange(item)"/>
+                        <t t-if="item[0] === 'office'">
+                            <i class="fa fa-building-o fa-2x" role="img"/>
+                        </t>
+                        <t t-elif="item[0] === 'home'">
+                            <i class="fa fa-home fa-2x" role="img"/>
+                        </t>
+                        <t t-else="">
+                            <i class="fa fa-map-marker fa-2x" role="img"/>
+                        </t>
+                    </div>
+                </t>
+            </t>
+        </div>
+    </t>
+
+<!-- Filepath: /web/static/src/views/fields/binary/binary_field.xml => /hr/static/src/components/work_permit_upload/work_permit_upload.xml -->
+
+
+<t t-name="hr.WorkPermitUploadField">
+        <t t-if="!props.readonly">
+            <t t-if="props.record.data[props.name]">
+                <div class="w-100 d-inline-flex gap-1">
+                    <FileUploader acceptedFileExtensions="props.acceptedFileExtensions" onUploaded.bind="update">
+                        <t name="download" t-if="props.record.resId and !props.record.dirty">
+                            <button class="btn btn-link btn-sm lh-1 fa fa-download o_download_file_button" data-tooltip="Download" aria-label="Download" t-on-click="onFileDownload">
+                            </button>
+                        </t>
+                        <t t-set-slot="toggler">
+                            <input type="text" class="o_input" t-att-value="fileName" readonly="readonly"/>
+                            <button class="btn btn-link btn-sm lh-1 fa fa-pencil o_select_file_button" data-tooltip="Edit" aria-label="Edit">
+                            </button>
+                        </t>
+                        <button class="btn btn-link btn-sm lh-1 fa fa-trash o_clear_file_button" data-tooltip="Clear" aria-label="Clear" t-on-click="() =&gt; this.update({})">
+                        </button>
+                    </FileUploader>
+                </div>
+            </t>
+            <t t-else=""><!-- Filepath: /hr/static/src/components/work_permit_upload/work_permit_upload.xml ; position="attributes" ; {'expr': "//label[hasclass('o_select_file_button')]"} -->
+                <label class="o_select_file_button btn btn-secondary">
+                    <FileUploader acceptedFileExtensions="props.acceptedFileExtensions" onUploaded.bind="update">
+                        <t t-set-slot="toggler">
+                            Upload your file
+                        </t>
+                    </FileUploader>
+                </label>
+            </t>
+        </t>
+        <t t-elif="props.record.resId and props.record.data[props.name]">
+            <a class="o_form_uri" href="#" t-on-click.prevent="onFileDownload">
+                <span class="fa fa-download me-2"/>
+                <t t-if="fileName" t-esc="fileName"/>
+            </a>
+        </t>
+    </t>
+
+<!-- Filepath: /web/static/src/views/list/list_renderer.xml => /hr_skills/static/src/fields/skills_one2many/skills_one2many.xml -->
+
+    <t t-name="hr_skills.SkillsListRenderer">
+        <t t-set="_canSelectRecord" t-value="canSelectRecord"/>
+        <div class="o_list_renderer o_renderer table-responsive" t-att-class="uniqueRendererClass" tabindex="-1" t-ref="root">
+            <t t-if="showNoContentHelper" t-call="web.ActionHelper">
+                <t t-set="noContentHelp" t-value="props.noContentHelp"/>
+            </t><!-- Filepath: /hr_skills/static/src/fields/skills_one2many/skills_one2many.xml ; position="attributes" ; {'expr': '//table'} -->
+            <!-- Filepath: /hr_skills/static/src/fields/skills_one2many/skills_one2many.xml ; position="before" ; {'expr': '//table'} --><div name="skills_header" class="text-uppercase fw-bolder small ms-3" style="margin-top: 2rem; box-shadow: 0 1px 0 #e6e6e6">
+                Skills
+                <a t-on-click="openSkillsReport" class="float-end me-3 cursor-pointer">
+                    <span class="fa fa-line-chart me-1"/>
+                    Timeline
+                </a>
+            </div>
+            <table t-attf-class="o_list_table table table-sm table-hover position-relative mb-0 {{props.list.isGrouped ? 'o_list_table_grouped' : 'o_list_table_ungrouped table-striped'}} mb-1 {{ !isEditable ? 'cursor-default' : '' }} {{ !showTable ? 'd-none' : ''}} o_skill_table" t-ref="table"><!-- Filepath: /hr_skills/static/src/fields/skills_one2many/skills_one2many.xml ; position="attributes" ; {'expr': '//thead'} -->
+                <thead style="visibility: collapse;">
+                    <tr>
+                        <th t-if="hasSelectors" class="o_list_record_selector o_list_controller align-middle pe-1 cursor-pointer" tabindex="-1" t-on-keydown="(ev) =&gt; this.onCellKeydown(ev)" t-on-click.stop="toggleSelection">
+                            <CheckBox disabled="!_canSelectRecord" value="selectAll" className="'d-flex m-0'" onChange.bind="toggleSelection"/>
+                        </th>
+                        <t t-foreach="state.columns" t-as="column" t-key="column.id">
+                            <th t-if="column.type === 'field'" t-att-data-name="column.name" t-att-class="getColumnClass(column) + ' opacity-trigger-hover'" t-on-pointerup="onColumnTitleMouseUp" t-on-click="() =&gt; this.onClickSortColumn(column)" t-on-keydown="(ev) =&gt; this.onCellKeydown(ev)" t-att-data-tooltip-template="isDebugMode ? 'web.FieldTooltip' : 'web.ListHeaderTooltip'" t-att-data-tooltip-info="makeTooltip(column)" data-tooltip-delay="1000" tabindex="-1">
+                                <t t-if="column.hasLabel and column.widget !== 'handle'">
+                                <t t-set="isNumeric" t-value="isNumericColumn(column)"/>
+                                    <div t-att-class="{'d-flex': true, 'flex-row-reverse': shouldReverseHeader(column)}">
+                                        <span class="d-block min-w-0 text-truncate flex-grow-1" t-att-class="isNumeric ? 'o_list_number_th' : ''" t-esc="column.label"/>
+                                        <i t-att-class="getSortableIconClass(column)"/>
+                                    </div>
+                                    <span class="o_resize position-absolute top-0 end-0 bottom-0 ps-1 bg-black-25 opacity-0 opacity-50-hover z-index-1" t-on-pointerdown.stop.prevent="onStartResize"/>
+                                </t>
+                            </th>
+                            <th t-else="" t-on-keydown="(ev) =&gt; this.onCellKeydown(ev)" t-att-class="{o_list_button: column.type === 'button_group'}"/>
+                        </t>
+                        <th t-if="props.onOpenFormView" t-on-keydown="(ev) =&gt; this.onCellKeydown(ev)" class="o_list_open_form_view"/>
+                        <th t-if="displayOptionalFields or activeActions.onDelete" t-on-keydown="(ev) =&gt; this.onCellKeydown(ev)" class="o_list_controller o_list_actions_header position-sticky end-0">
+                            <Dropdown t-if="displayOptionalFields" class="'o_optional_columns_dropdown text-center border-top-0'" togglerClass="'btn p-0'" skipTogglerTabbing="true" listRendererClass="uniqueRendererClass" position="'bottom-end'">
+                                <t t-set-slot="toggler">
+                                    <i class="o_optional_columns_dropdown_toggle oi oi-fw oi-settings-adjust"/>
+                                </t>
+
+                                <t t-foreach="optionalFieldGroups" t-as="group" t-key="group_index">
+                                    <div t-if="!group_first" role="separator" class="dropdown-divider"/>
+                                    <DropdownItem t-if="group.displayName" parentClosingMode="'none'" onSelected="() =&gt; this.toggleOptionalFieldGroup(group.id)">
+                                        <div class="fw-bold" t-esc="group.displayName"/>
+                                    </DropdownItem>
+                                    <t t-foreach="group.optionalFields" t-as="field" t-key="field_index">
+                                        <DropdownItem parentClosingMode="'none'" onSelected="() =&gt; this.toggleOptionalField(field.name)">
+                                            <CheckBox onChange="() =&gt; this.toggleOptionalField(field.name)" value="field.value" name="field.name">
+                                                <span class="d-flex align-items-center"><span class="text-truncate" t-esc="field.label"/><span class="ps-1" t-if="env.debug" t-esc="' (' + field.name + ')'"/></span>
+                                            </CheckBox>
+                                        </DropdownItem>
+                                    </t>
+                                </t>
+                            </Dropdown>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody class="ui-sortable">
+                    <t t-call="{{ constructor.rowsTemplate }}">
+                        <t t-set="list" t-value="props.list"/>
+                    </t>
+                </tbody>
+                <tfoot t-on-click="() =&gt; props.list.leaveEditMode()" class="o_list_footer cursor-default" t-att-class="{o_sample_data_disabled: props.list.model.useSampleModel}">
+                    <tr>
+                        <td t-if="hasSelectors"/>
+                        <t t-foreach="state.columns" t-as="column" t-key="column.id">
+                            <t t-set="aggregate" t-value="aggregates[column.name]"/>
+                            <td t-if="aggregate" class="o_list_number">
+                                <span t-esc="aggregate.value" t-att-data-tooltip="aggregate.help"/>
+                            </td>
+                            <td t-else=""/>
+                        </t>
+                        <td t-if="props.onOpenFormView"/>
+                        <td t-if="displayOptionalFields or activeActions.onDelete"/>
+                    </tr>
+                </tfoot>
+            </table>
+            <!-- Filepath: /hr_skills/static/src/fields/skills_one2many/skills_one2many.xml ; position="after" ; {'expr': '//table'} --><t t-if="!showTable">
+                <t t-if="!anySkills">
+                    <div name="no_skills" class="ms-3 mt-3">
+                        <p>
+                            There are no skills defined in the library.<br/>
+                            Why not try adding some ?
+                        </p>
+                        <button t-on-click="skillTypesAction" class="btn btn-secondary ms-4 mt-3 text-center" role="button" t-if="isEditable">
+                            Create new Skills
+                        </button>
+                    </div>
+                </t>
+                <t t-else="">
+                    <div name="skills_available" class="ms-3 mt-3">
+                        <p class="mt-3">You can add skills from our library to the employee profile.<br/>
+                        If skills are missing, they can be created by an HR officer.</p>
+                        <div class="ms-5">
+                             <button t-on-click="props.onAdd" class="btn btn-secondary ms-4 mt-3 text-center" role="button" t-if="isEditable">
+                                Pick a skill from the list
+                            </button>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </div>
+    </t>
+
+<!-- Filepath: /hr_skills/static/src/fields/skills_one2many/skills_one2many.xml -->
+
+    <t t-name="hr_skills.SkillsListRenderer.Rows">
+        <t t-foreach="Object.entries(groupedList)" t-as="skill_group" t-key="skill_group[0]">
+            <tr class="o_group_has_content o_group_header">
+                <th tabindex="-1" class="o_group_name" t-att-colspan="colspan">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span t-esc="skill_group[1].name"/>
+                        <button class="btn btn-secondary btn-sm" t-if="isEditable" t-on-click="() =&gt; props.onAdd({ context: { default_skill_type_id: skill_group[1].id }})" role="button">ADD</button>
+                    </div>
+                </th>
+            </tr>
+            <t t-foreach="skill_group[1].list.records" t-as="record" t-key="record.id">
+                <t t-set="group" t-value="skill_group[1]"/>
+                <t t-call="{{ constructor.recordRowTemplate }}"/>
+            </t>
+        </t>
+    </t>
+
+<!-- Filepath: /web/static/src/views/fields/relational_utils.xml => /hr_skills/static/src/fields/form_view_one2many/form_view_one2many.xml -->
+<t t-name="hr_skills.X2ManyFieldDialog">
+    <Dialog title="title" withBodyPadding="false" modalRef="modalRef" contentClass="contentClass">
+        <FormRenderer record="record" archInfo="archInfo"/>
+        <t t-set-slot="footer">
+            <t t-if="footerArchInfo">
+                <FormRenderer record="record" archInfo="footerArchInfo"/>
+            </t>
+            <t t-else="">
+                <t t-if="record.isInEdition">
+                    <t t-if="canCreate">
+                        <!-- Filepath: /hr_skills/static/src/fields/form_view_one2many/form_view_one2many.xml ; position="replace" ; {'expr': "//button[hasclass('o_form_button_save')]"} --><button class="btn btn-primary o_form_button_save" t-on-click="() =&gt; this.save()" data-hotkey="c">Select &amp; Close</button>
+        <!-- Filepath: /hr_skills/static/src/fields/form_view_one2many/form_view_one2many.xml ; position="replace" ; {'expr': "//button[hasclass('o_form_button_save_new')]"} --><button class="btn btn-primary o_form_button_save_new" t-on-click="saveAndNew" data-hotkey="n">Select &amp; New</button>
+        </t>
+                    <t t-else="">
+                        <button class="btn btn-primary o_form_button_save" t-on-click="save" data-hotkey="c">Save</button>
+                    </t>
+                    <button class="btn btn-secondary o_form_button_cancel" t-on-click="discard" data-hotkey="j">Discard</button>
+
+                    <t t-if="props.delete">
+                        <button class="btn btn-secondary o_btn_remove" t-on-click="remove" data-hotkey="k">
+                            <t t-if="props.deleteButtonLabel" t-out="props.deleteButtonLabel"/>
+                            <t t-else="">Remove</t>
+                        </button>
+                    </t>
+                </t>
+                <t t-else="">
+                    <button class="btn btn-primary o_form_button_cancel" t-on-click="() =&gt; this.props.close()" data-hotkey="j">Close</button>
+                </t>
+            </t>
+        </t>
+    </Dialog>
+</t>
+
+<!-- Filepath: /web/static/src/views/list/list_renderer.xml => /hr_skills/static/src/fields/skills_one2many/skills_one2many.xml => /hr_skills/static/src/fields/resume_one2many/resume_one2many.xml -->
+
+<t t-name="hr_skills.ResumeListRenderer">
+        <t t-set="_canSelectRecord" t-value="canSelectRecord"/>
+        <div class="o_list_renderer o_renderer table-responsive" t-att-class="uniqueRendererClass" tabindex="-1" t-ref="root">
+            <t t-if="showNoContentHelper" t-call="web.ActionHelper">
+                <t t-set="noContentHelp" t-value="props.noContentHelp"/>
+            </t><!-- Filepath: /hr_skills/static/src/fields/skills_one2many/skills_one2many.xml ; position="attributes" ; {'expr': '//table'} -->
+            <!-- Filepath: /hr_skills/static/src/fields/skills_one2many/skills_one2many.xml ; position="before" ; {'expr': '//table'} --><!-- Filepath: /hr_skills/static/src/fields/resume_one2many/resume_one2many.xml ; position="replace" ; {'expr': "//div[@name='skills_header']"} --><!-- Filepath: /hr_skills/static/src/fields/resume_one2many/resume_one2many.xml ; position="attributes" ; {'expr': '//table'} -->
+            <table t-attf-class="o_list_table table table-sm table-hover position-relative mb-0 {{props.list.isGrouped ? 'o_list_table_grouped' : 'o_list_table_ungrouped table-striped'}} mb-1 {{ !isEditable ? 'cursor-default' : '' }} {{ !showTable ? 'd-none' : ''}} o_skill_table table-borderless {{ !showTable ? 'd-none' : ''}}" t-ref="table"><!-- Filepath: /hr_skills/static/src/fields/skills_one2many/skills_one2many.xml ; position="attributes" ; {'expr': '//thead'} -->
+                <thead style="visibility: collapse;">
+                    <!-- Filepath: /hr_skills/static/src/fields/resume_one2many/resume_one2many.xml ; position="replace" ; {'expr': '//thead/tr'} --><tr>
+                <th style="width: 32px; min-width: 32px;"/>
+                <th class="w-100"/>
+                <th t-if="isEditable" class="o_list_actions_header" style="width: 32px; min-width: 32px"/>
+            </tr>
+        </thead>
+                <tbody class="ui-sortable">
+                    <t t-call="{{ constructor.rowsTemplate }}">
+                        <t t-set="list" t-value="props.list"/>
+                    </t>
+                </tbody>
+                <tfoot t-on-click="() =&gt; props.list.leaveEditMode()" class="o_list_footer cursor-default" t-att-class="{o_sample_data_disabled: props.list.model.useSampleModel}">
+                    <tr>
+                        <td t-if="hasSelectors"/>
+                        <t t-foreach="state.columns" t-as="column" t-key="column.id">
+                            <t t-set="aggregate" t-value="aggregates[column.name]"/>
+                            <td t-if="aggregate" class="o_list_number">
+                                <span t-esc="aggregate.value" t-att-data-tooltip="aggregate.help"/>
+                            </td>
+                            <td t-else=""/>
+                        </t>
+                        <td t-if="props.onOpenFormView"/>
+                        <td t-if="displayOptionalFields or activeActions.onDelete"/>
+                    </tr>
+                </tfoot>
+            </table>
+             <!-- Filepath: /hr_skills/static/src/fields/resume_one2many/resume_one2many.xml ; position="after" ; {'expr': '//table'} --><t t-if="!showTable">
+                 <button t-on-click="props.onAdd" class="btn btn-secondary ms-4 mt-3" role="button" t-if="isEditable">
+                    Create a new entry
+                 </button>
+             </t>
+            <!-- Filepath: /hr_skills/static/src/fields/skills_one2many/skills_one2many.xml ; position="after" ; {'expr': '//table'} --><t t-if="!showTable">
+                <t t-if="!anySkills">
+                    <!-- Filepath: /hr_skills/static/src/fields/resume_one2many/resume_one2many.xml ; position="replace" ; {'expr': "//div[@name='no_skills']"} --></t>
+                <t t-else="">
+                    <div name="skills_available" class="ms-3 mt-3">
+                        <p class="mt-3">You can add skills from our library to the employee profile.<br/>
+                        If skills are missing, they can be created by an HR officer.</p>
+                        <div class="ms-5">
+                             <button t-on-click="props.onAdd" class="btn btn-secondary ms-4 mt-3 text-center" role="button" t-if="isEditable">
+                                Pick a skill from the list
+                            </button>
+                        </div>
+                    </div>
+                </t>
+            </t>
+        </div>
+    </t>
+
+<!-- Filepath: /hr_skills/static/src/fields/skills_one2many/skills_one2many.xml => /hr_skills/static/src/fields/resume_one2many/resume_one2many.xml -->
+
+    <t t-name="hr_skills.ResumeListRenderer.Rows">
+        <t t-foreach="Object.entries(groupedList)" t-as="skill_group" t-key="skill_group[0]"><!-- Filepath: /hr_skills/static/src/fields/resume_one2many/resume_one2many.xml ; position="attributes" ; {'expr': '//tr'} -->
+            <tr class="o_group_has_content o_group_header o_resume_group_header">
+                <th tabindex="-1" class="o_group_name" t-att-colspan="colspan">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span t-esc="skill_group[1].name"/>
+                        <button class="btn btn-secondary btn-sm" t-if="isEditable" t-on-click="() =&gt; props.onAdd({ context: { default_skill_type_id: skill_group[1].id }})" role="button">ADD</button>
+                    </div>
+                </th>
+            <!-- Filepath: /hr_skills/static/src/fields/resume_one2many/resume_one2many.xml ; position="after" ; {'expr': "//th[hasclass('o_group_name')]"} --><th/>
+            </tr>
+            <t t-foreach="skill_group[1].list.records" t-as="record" t-key="record.id">
+                <t t-set="group" t-value="skill_group[1]"/>
+                <t t-call="{{ constructor.recordRowTemplate }}"/>
+            </t>
+        </t>
+    </t>
+
+<!-- Filepath: /web/static/src/views/list/list_renderer.xml => /hr_skills/static/src/fields/resume_one2many/resume_one2many.xml -->
+<t t-name="hr_skills.ResumeListRenderer.RecordRow">
+        <tr class="o_data_row" t-att-class="getRowClass(record)" t-att-data-id="record.id" t-on-click.capture="(ev) =&gt; this.onClickCapture(record, ev)" t-on-mouseover.capture="(ev) =&gt; this.ignoreEventInSelectionMode(ev)" t-on-mouseout.capture="(ev) =&gt; this.ignoreEventInSelectionMode(ev)" t-on-mouseenter.capture="(ev) =&gt; this.ignoreEventInSelectionMode(ev)" t-on-touchstart="(ev) =&gt; this.onRowTouchStart(record, ev)" t-on-touchend="() =&gt; this.onRowTouchEnd(record)" t-on-touchmove="() =&gt; this.onRowTouchMove(record)">
+            <td t-on-keydown="(ev) =&gt; this.onCellKeydown(ev, group, record)" t-if="hasSelectors" class="o_list_record_selector user-select-none" t-on-click.stop="() =&gt; this.toggleRecordSelection(record)" tabindex="-1">
+                <CheckBox disabled="!_canSelectRecord" value="record.selected" onChange.alike="() =&gt; this.toggleRecordSelection(record)"/>
+            </td>
+            <!-- Filepath: /hr_skills/static/src/fields/resume_one2many/resume_one2many.xml ; position="replace" ; {'expr': "//t[@t-foreach='getColumns(record)']"} --><t t-set="data" t-value="record.data"/>
+            <t t-if="data.display_type === 'classic'" id="row">
+                <td class="o_resume_timeline_cell position-relative pe-lg-2">
+                    <div class="rounded-circle bg-info position-relative"/>
+                </td>
+                <td class="o_data_cell pt-0" t-on-click="(ev) =&gt; this.onCellClicked(record, null, ev)">
+                    <div class="o_resume_line" t-att-data-id="id">
+                        <small class="o_resume_line_dates fw-bold">
+                            <t t-esc="formatDate(data.date_start)"/> -
+                            <t t-if="data.date_end and +data.date_end != +data.date_start" t-esc="formatDate(data.date_end)"/>
+                            <t t-else="">Current</t>
+                        </small>
+                        <h4 class="o_resume_line_title mt-2" t-esc="data.name"/>
+                        <p t-if="data.description" class="o_resume_line_desc" t-esc="data.description"/>
+                    </div>
+                </td>
+            </t>
+        <t t-if="props.onOpenFormView">
+                <td class="o_list_record_open_form_view text-center" t-on-keydown="(ev) =&gt; this.onCellKeydown(ev, group, record)" t-on-click.stop="() =&gt; isX2Many and record.isNew ? this.displaySaveNotification() : props.onOpenFormView(record)" tabindex="-1">
+                    <button class="btn btn-link align-top text-end" name="Open in form view" aria-label="Open in form view" tabindex="-1">View</button>
+                </td>
+            </t>
+
+            <t t-set="useUnlink" t-value="'unlink' in activeActions"/>
+            <t t-set="hasX2ManyAction" t-value="isX2Many and (useUnlink ? activeActions.unlink : activeActions.delete)"/>
+            <t t-if="displayOptionalFields or hasX2ManyAction">
+                <t t-if="hasX2ManyAction">
+                    <td class="o_list_record_remove text-center" t-on-keydown="(ev) =&gt; this.onCellKeydown(ev, group, record)" t-on-click.stop="(ev) =&gt; this.onDeleteRecord(record, ev)" tabindex="-1">
+                        <button class="fa" t-att-class="{                                 'fa-trash-o': !useUnlink and activeActions.delete,                                 'fa-times': useUnlink and activeActions.unlink,                             }" name="delete" aria-label="Delete row" tabindex="-1"/>
+                    </td>
+                </t>
+                <td t-else="" tabindex="-1"/>
+            </t>
+        </tr>
+    </t>
+
+<!-- Filepath: /hr_skills/static/src/xml/resume_templates.xml -->
+
+    <t t-name="hr_resume_data_row">
+    <tr class="o_data_row cursor-default" t-attf-class="o_data_row #{is_last? 'o_data_row_last' : ''}" t-att-data-id="id">
+        <t t-if="data.display_type === 'classic'">
+            <td class="o_resume_timeline_cell position-relative pe-lg-2">
+                <div class="rounded-circle bg-info position-relative"/>
+            </td>
+            <td class="o_data_cell pt-0 w-100">
+                <div class="o_resume_line" t-att-data-id="id">
+                    <small class="o_resume_line_dates">
+                        <b t-esc="data.date_start"/> - <b t-esc="data.date_end"/>
+                    </small>
+                    <h4 class="o_resume_line_title mt-2" t-esc="data.name"/>
+                    <p t-if="data.description" class="o_resume_line_desc" t-esc="data.description"/>
+                </div>
+            </td>
+        </t>
+    </tr>
+</t>
+
+<!-- Filepath: /hr_skills/static/src/xml/resume_templates.xml -->
+
+<t t-name="hr_trash_button">
+    <td class="o_list_record_remove pe-3">
+        <button name="delete" arial-label="Delete row" class="btn btn-link text-danger">
+            <i class="fa fa-trash"/>
+        </button>
+    </td>
+</t>
+
+<!-- Filepath: /hr_skills/static/src/xml/resume_templates.xml -->
+
+<t t-name="hr_resume_group_row">
+    <tr class="o_resume_group_header">
+        <td class="o_group_name" colspan="100%"><span class="o_horizontal_separator my-0" t-esc="display_name"/></td>
+    </tr>
+</t>
+
+<!-- Filepath: /hr_skills/static/src/xml/resume_templates.xml -->
+
+<t t-name="group_add_item">
+    <t t-set="empty" t-value="Object.keys(context).length == 2"/>
+
+    <div t-attf-class="o_field_x2many_list_row_add #{empty? 'd-block w-100' : 'd-inline float-end'}">
+        <a href="#" role="button" t-attf-class="btn btn-secondary o-kanban-button-new #{empty? 'btn-primary mt-3' : 'btn-secondary btn-sm'}" t-attf-data-context="{{ context }}">
+                <t t-if="empty">CREATE A NEW ENTRY</t>
+                <t t-else="">ADD</t>
+            </a>
+    </div>
+</t>
+
+<!-- Filepath: /hr_skills/static/src/xml/skills_templates.xml -->
+
+
+<t t-name="hr_skill_data_row">
+    <tr class="o_data_row cursor-default" t-att-data-id="id">
+        <td class="o_data_cell o_skill_cell w-100">
+            <t t-esc="data.skill_id.data.display_name"/>
+        </td>
+        <td class="o_data_cell o_skill_cell pe-3">
+            <t t-esc="data.skill_level_id.data.display_name"/>
+        </td>
+    </tr>
+</t>
+
+<!-- Filepath: /hr_skills/static/src/xml/skills_templates.xml -->
+
+<t t-name="hr_default_group_row">
+    <tr class="o_group_header o_group_has_content">
+        <td class="o_group_name border-0 pe-2" colspan="99">
+            <b t-esc="display_name"/>
+        </td>
+    </tr>
+</t>
+
 <!-- Filepath: /base_import/static/src/import_action/import_action.xml -->
 
-    <t t-name="ImportAction">
+
+<t t-name="ImportAction">
         <div class="h-100 d-flex flex-column">
             <Layout className="'o_import_action d-flex h-100 overflow-auto'" display="display">
                 <t t-set-slot="control-panel-create-button">
@@ -173497,6 +177167,304 @@ return __exports;
             </div>
     </t>
 
+<!-- Filepath: /web_hierarchy/static/src/hierarchy_card.xml -->
+
+<t t-name="web_hierarchy.HierarchyCard">
+        <div class="o_hierarchy_node_container d-flex flex-column" t-att-class="classNames" t-att-data-node-id="props.node.id">
+            <div class="o_hierarchy_node_button_container w-100 d-flex justify-content-center">
+                <button t-if="props.node.parentResId !== false and !props.node.parentNode and props.node.parentResId !== props.node.resId" name="hierarchy_search_parent_node" class="btn p-0" t-on-click.synthetic="onClickArrowUp">
+                    <i class="fa fa-chevron-up"/>
+                </button>
+            </div>
+            <div class="o_hierarchy_node w-100 h-100 d-flex flex-column justify-content-between border mt-4" t-att-class="{                     'border-bottom-0': props.node.nodes.length or props.node.canShowChildNodes,                 }" t-att-data-node-id="props.node.id" t-on-click.synthetic="onGlobalClick">
+                <div class="o_hierarchy_node_content">
+                    <Record resModel="props.node.model.resModel" resId="props.node.resId" fields="props.node.model.fields" activeFields="props.node.model.activeFields" values="props.node.data" t-slot-scope="data">
+                        <t t-call="{{ templates['hierarchy-box'] }}" t-call-context="getRenderingContext(data)"/>
+                    </Record>
+                </div>
+                <button t-if="props.node.nodes.length or props.node.canShowChildNodes" name="hierarchy_search_subsidiaries" class="o_hierarchy_node_button btn rounded-0 d-grid" t-att-class="{                             'btn-primary': !props.node.nodes.length,                             'btn-secondary': props.node.nodes.length &gt; 0,                         }" t-on-click.synthetic="onClickArrowDown">
+                    <t t-if="!props.node.nodes.length">
+                        <span style="grid-column: 2;">
+                            Unfold
+                        </span>
+                        <span class="text-end" style="grid-column: 3;">
+                            <t t-out="props.node.childResIds.length"/>
+                            <i class="fa ps-1" t-att-class="props.archInfo.icon"/>
+                        </span>
+                    </t>
+                    <t t-else="">
+                        <span style="grid-column: 2;">
+                            Fold
+                        </span>
+                    </t>
+                </button>
+            </div>
+        </div>
+    </t>
+
+<!-- Filepath: /web_hierarchy/static/src/hierarchy_controller.xml -->
+
+<t t-name="web_hierarchy.HierarchyButtons">
+        <div class="d-flex o_grid_buttons">
+            <div class="me-2" t-if="props.archInfo.activeActions.create and (!props.archInfo.createInline or displayNoContent)">
+                <button class="btn btn-primary o_hierarchy_button_add" type="button" t-on-click="props.createRecord">
+                    New
+                </button>
+            </div>
+        </div>
+    </t>
+
+<!-- Filepath: /web_hierarchy/static/src/hierarchy_controller.xml -->
+    <t t-name="web_hierarchy.HierarchyView">
+        <div t-attf-class="o_hierarchy_view {{ isMobile ? 'o_action_delegate_scroll' : '' }} {{ props.className }}" t-ref="root">
+            <Layout className="(model.useSampleModel ? 'o_view_sample_data' : '') + ' d-flex'" display="props.display">
+                <t t-set-slot="control-panel-additional-actions">
+                    <CogMenu/>
+                </t>
+                <t t-set-slot="layout-buttons">
+                    <t t-call="{{ props.buttonTemplate }}"/>
+                </t>
+                <t t-set-slot="layout-actions">
+                    <SearchBar t-if="searchBarToggler.state.showSearchBar"/>
+                </t>
+                <t t-set-slot="control-panel-navigation-additional">
+                    <t t-component="searchBarToggler.component" t-props="searchBarToggler.props"/>
+                </t>
+                <t t-set-slot="default" t-slot-scope="layout">
+                    <t t-if="displayNoContent">
+                        <t t-call="web.ActionHelper">
+                            <t t-set="noContentHelp" t-value="props.info.noContentHelp"/>
+                        </t>
+                    </t>
+                    <t t-component="props.Renderer" model="model" openRecord.bind="openRecord" archInfo="props.archInfo" templates="props.archInfo.templateDocs"/>
+                </t>
+            </Layout>
+        </div>
+    </t>
+
+<!-- Filepath: /web_hierarchy/static/src/hierarchy_renderer.xml -->
+<t t-name="web_hierarchy.HierarchyRenderer">
+        <div class="o_hierarchy_renderer w-100 d-flex justify-content-center" t-ref="renderer">
+            <div class="o_hierarchy_container d-flex flex-column px-3 pt-4 mw-xl-75">
+                <t t-foreach="rows" t-as="row" t-key="row_index">
+                    <t t-set="previousRow" t-value="!row_first ? rows[row_index - 1] : null"/>
+                    <t t-if="!row_first">
+                        <div t-if="row.parentNode and previousRow.nodes.length &gt; 1" class="o_hierarchy_parent_node_container d-flex justify-content-center">
+                            <span t-esc="row.parentNode.data.name"/>
+                        </div>
+                        <div class="o_hierarchy_separator d-flex">
+                            <div class="o_hierarchy_line_part o_hierarchy_line_left"/>
+                            <div class="o_hierarchy_line_part o_hierarchy_line_right"/>
+                        </div>
+                    </t>
+                    <div class="o_hierarchy_row row justify-content-center flex-wrap row-cols-2 row-cols-lg-5 g-2 g-lg-3" t-att-class="{ 'pb-4': row_last }" t-att-data-parent-node-id="row.parentNode?.id" t-att-data-row-id="row_index">
+                        <t t-foreach="row.nodes" t-as="node" t-key="node.id">
+                            <HierarchyCard node="node" openRecord="props.openRecord" archInfo="props.archInfo" templates="props.templates"/>
+                        </t>
+                    </div>
+                </t>
+            </div>
+        </div>
+    </t>
+
+<!-- Filepath: /hr_org_chart/static/src/fields/hr_org_chart.xml -->
+
+<t t-name="hr_org_chart.hr_org_chart_employee">
+    <t t-set="is_self" t-value="employee.id == view_employee_id"/>
+
+    <section t-if="employee_type == 'self'" t-attf-class="o_org_chart_entry_self_container #{managers.length &gt; 0 ? 'o_org_chart_has_managers' : ''}">
+        <div t-attf-class="o_org_chart_entry o_org_chart_entry_#{employee_type} d-flex position-relative py-2 overflow-visible #{managers.length &gt; 0 ? 'o_treeEntry' : ''}">
+            <t t-call="hr_org_chart.hr_org_chart_employee_content">
+                <t t-set="is_self" t-value="is_self"/>
+            </t>
+        </div>
+    </section>
+
+    <div t-else="" t-attf-class="o_org_chart_entry o_org_chart_entry_#{employee_type} o_treeEntry d-flex position-relative py-2 overflow-visible">
+        <t t-call="hr_org_chart.hr_org_chart_employee_content">
+            <t t-set="is_self" t-value="is_self"/>
+        </t>
+    </div>
+</t>
+
+<!-- Filepath: /hr_org_chart/static/src/fields/hr_org_chart.xml -->
+
+<t t-name="hr_org_chart.hr_org_chart_employee_content">
+    <div class="o_media_left position-relative">
+
+        <a t-if="! is_self" class="o_media_object d-block rounded o_employee_redirect" t-att-style="'background-image:url(\\'/web/image/hr.employee.public/' + employee.id + '/avatar_1024/\\')'" t-att-alt="employee.name" t-att-data-employee-id="employee.id" t-att-href="employee.link" t-on-click.prevent="() =&gt; this._onEmployeeRedirect(employee.id)"/>
+        <div t-if="is_self" class="o_media_object d-block rounded border border-info" t-att-style="'background-image:url(\\'/web/image/hr.employee.public/' + employee.id + '/avatar_1024/\\')'"/>
+    </div>
+
+    <div class="d-flex flex-grow-1 align-items-center justify-content-between position-relative px-3">
+        <a t-if="!is_self" t-att-href="employee.link" class="o_employee_redirect d-flex flex-column" t-att-data-employee-id="employee.id" t-on-click.prevent="() =&gt; this._onEmployeeRedirect(employee.id)">
+            <b class="o_media_heading m-0 fs-6" t-esc="employee.name"/>
+            <small class="text-muted fw-bold" t-esc="employee.job_title"/>
+        </a>
+        <div t-if="is_self" class="d-flex flex-column">
+            <h5 class="o_media_heading m-0" t-esc="employee.name"/>
+            <small class="text-muted fw-bold" t-esc="employee.job_title"/>
+        </div>
+        <button t-if="employee.indirect_sub_count &gt; 0" class="btn p-0 fs-3" tabindex="0" t-att-data-emp-name="employee.name" t-att-data-emp-id="employee.id" t-att-data-emp-dir-subs="employee.direct_sub_count" t-att-data-emp-ind-subs="employee.indirect_sub_count" data-bs-trigger="focus" data-bs-toggle="popover" t-on-click="(event) =&gt; this._onOpenPopover(event, employee)">
+            <a href="#" t-attf-class="badge rounded-pill bg-300 border {{employee.indirect_sub_count &lt; 10 ? 'px-2' : 'px-1' }}" t-esc="employee.indirect_sub_count"/>
+        </button>
+
+    </div>
+</t>
+
+<!-- Filepath: /hr_org_chart/static/src/fields/hr_org_chart.xml -->
+
+<t t-name="hr_org_chart.hr_org_chart">
+
+    <t t-set="emp_count" t-value="0"/>
+    <div t-if="managers.length &gt; 0" class="o_org_chart_group_up position-relative">
+        <div t-if="managers_more" class="o_org_chart_more pe-3">
+            <a href="#" t-att-data-employee-id="managers[0].id" class="o_employee_more_managers d-block bg-100 px-3" t-on-click.prevent="() =&gt; this._onEmployeeMoreManager(managers[0].id)">
+                <i class="fa fa-angle-double-up" role="img" aria-label="More managers" title="More managers"/>
+            </a>
+        </div>
+
+        <t t-foreach="managers" t-as="employee" t-key="employee_index">
+            <t t-set="emp_count" t-value="emp_count + 1"/>
+            <t t-call="hr_org_chart.hr_org_chart_employee">
+                <t t-set="employee_type" t-value="'manager'"/>
+            </t>
+        </t>
+    </div>
+
+    <t t-if="children.length || managers.length" t-call="hr_org_chart.hr_org_chart_employee">
+        <t t-set="employee_type" t-value="'self'"/>
+        <t t-set="employee" t-value="self"/>
+    </t>
+
+    <t t-if="!children.length &amp;&amp; !managers.length">
+        <div class="alert alert-info" role="alert">
+            <p><b>No hierarchy position.</b></p>
+            <p>This employee has no manager or subordinate.</p>
+            <p>In order to get an organigram, set a manager and save the record.</p>
+        </div>
+    </t>
+
+    <div t-if="children.length" t-attf-class="o_org_chart_group_down position-relative #{managers.length &gt; 0 ? 'o_org_chart_has_managers' : ''}">
+        <t t-foreach="children" t-as="employee" t-key="employee_index">
+            <t t-set="emp_count" t-value="emp_count + 1"/>
+            <t t-if="emp_count &lt; 20">
+                <t t-call="hr_org_chart.hr_org_chart_employee">
+                    <t t-set="employee_type" t-value="'sub'"/>
+                </t>
+            </t>
+        </t>
+
+        <t t-if="(children.length + managers.length) &gt; 19">
+            <div class="o_org_chart_entry o_org_chart_more d-flex overflow-visible">
+                <div class="o_media_left position-relative">
+                    <a href="#" t-att-data-employee-id="self.id" t-att-data-employee-name="self.name" class="o_org_chart_show_more o_employee_sub_redirect btn btn-link ps-2" t-on-click.prevent="_onEmployeeSubRedirect">See All</a>
+                </div>
+            </div>
+        </t>
+    </div>
+</t>
+
+<!-- Filepath: /hr_org_chart/static/src/fields/hr_org_chart.xml -->
+
+<t t-name="hr_org_chart.hr_orgchart_emp_popover">
+    <div class="popover o_org_chart_popup" role="tooltip">
+        <div class="tooltip-arrow">
+
+        </div>
+        <h3 class="popover-header">
+            <div class="d-flex align-items-center">
+                <span class="flex-shrink-0" t-att-style="&quot;background-image:url(\\&quot;/web/image/hr.employee.public/&quot; + props.employee.id + &quot;/avatar_1024/\\&quot;)&quot;"/>
+                <b class="flew-grow-1"><t t-esc="props.employee.name"/></b>
+                <a href="#" class="ms-auto o_employee_redirect" t-att-data-employee-id="props.employee.id" t-on-click.prevent="() =&gt; this._onEmployeeRedirect(props.employee.id)"><i class="fa fa-external-link" role="img" aria-label="Redirect" title="Redirect"/></a>
+            </div>
+        </h3>
+        <div class="popover-body">
+            <table class="table table-sm table-borderless mb-0">
+                <tbody>
+                    <tr>
+                        <td class="text-end"><b t-esc="props.employee.direct_sub_count"/></td>
+                        <td>
+                            <a href="#" class="o_employee_sub_redirect" data-type="direct" t-att-data-employee-name="props.employee.name" t-att-data-employee-id="props.employee.id" t-on-click.prevent="_onEmployeeSubRedirect">
+                                <b>Direct subordinates</b></a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-end">
+                            <b t-esc="props.employee.indirect_sub_count - props.employee.direct_sub_count"/>
+                        </td>
+                        <td>
+                            <a href="#" class="o_employee_sub_redirect" data-type="indirect" t-att-data-employee-name="props.employee.name" t-att-data-employee-id="props.employee.id" t-on-click.prevent="_onEmployeeSubRedirect">
+                                Indirect subordinates</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="text-end"><b t-esc="props.employee.indirect_sub_count"/></td>
+                        <td>
+                            <a href="#" class="o_employee_sub_redirect" data-type="total" t-att-data-employee-name="props.employee.name" t-att-data-employee-id="props.employee.id" t-on-click.prevent="_onEmployeeSubRedirect">
+                                Total</a>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</t>
+
+<!-- Filepath: /web_hierarchy/static/src/hierarchy_card.xml => /hr_org_chart/static/src/views/hr_employee_hierarchy/hr_employee_hierarchy_card.xml -->
+
+<t t-name="hr_org_chart.HrEmployeeHierarchyCard">
+        <div class="o_hierarchy_node_container d-flex flex-column" t-att-class="classNames" t-att-data-node-id="props.node.id">
+            <div class="o_hierarchy_node_button_container w-100 d-flex justify-content-center">
+                <button t-if="props.node.parentResId !== false and !props.node.parentNode and props.node.parentResId !== props.node.resId" name="hierarchy_search_parent_node" class="btn p-0" t-on-click.synthetic="onClickArrowUp">
+                    <i class="fa fa-chevron-up"/>
+                </button>
+            </div>
+            <div class="o_hierarchy_node w-100 h-100 d-flex flex-column justify-content-between border mt-4" t-att-class="{                     'border-bottom-0': props.node.nodes.length or props.node.canShowChildNodes,                 }" t-att-data-node-id="props.node.id" t-on-click.synthetic="onGlobalClick">
+                <div class="o_hierarchy_node_content">
+                    <Record resModel="props.node.model.resModel" resId="props.node.resId" fields="props.node.model.fields" activeFields="props.node.model.activeFields" values="props.node.data" t-slot-scope="data">
+                        <t t-call="{{ templates['hierarchy-box'] }}" t-call-context="getRenderingContext(data)"/>
+                    </Record>
+                </div><!-- Filepath: /hr_org_chart/static/src/views/hr_employee_hierarchy/hr_employee_hierarchy_card.xml ; position="attributes" ; {'expr': "//button[@name='hierarchy_search_subsidiaries']"} -->
+                <button t-if="props.node.nodes.length or props.node.canShowChildNodes" name="hierarchy_search_subsidiaries" class="o_hierarchy_node_button btn" t-att-class="{                             'btn-primary': !props.node.nodes.length,                             'btn-secondary': props.node.nodes.length &gt; 0,                         }" t-on-click.synthetic="onClickArrowDown">
+                    <!-- Filepath: /hr_org_chart/static/src/views/hr_employee_hierarchy/hr_employee_hierarchy_card.xml ; position="replace" ; {'expr': "//button[@name='hierarchy_search_subsidiaries']/t[@t-if]"} --><t t-if="!props.node.nodes.length">
+                <i class="fa fa-fw fa-caret-right"/>
+            </t>
+        <!-- Filepath: /hr_org_chart/static/src/views/hr_employee_hierarchy/hr_employee_hierarchy_card.xml ; position="replace" ; {'expr': "//button[@name='hierarchy_search_subsidiaries']/t[@t-else]"} --><t t-else="">
+                <i class="fa fa-fw fa-caret-down"/>
+            </t>
+        <!-- Filepath: /hr_org_chart/static/src/views/hr_employee_hierarchy/hr_employee_hierarchy_card.xml ; position="inside" ; {'expr': "//button[@name='hierarchy_search_subsidiaries']"} --><t t-out="props.node.childResIds.length"/> people
+                </button>
+            </div>
+        </div>
+    </t>
+
+<!-- Filepath: /web_hierarchy/static/src/hierarchy_renderer.xml => /hr_org_chart/static/src/views/hr_employee_hierarchy/hr_employee_hierarchy_renderer.xml -->
+
+<t t-name="hr_org_chart.HrEmployeeHierarchyRenderer">
+        <div class="o_hierarchy_renderer w-100 d-flex justify-content-center" t-ref="renderer">
+            <div class="o_hierarchy_container d-flex flex-column px-3 pt-4 mw-xl-75">
+                <t t-foreach="rows" t-as="row" t-key="row_index">
+                    <t t-set="previousRow" t-value="!row_first ? rows[row_index - 1] : null"/>
+                    <t t-if="!row_first">
+                        <div t-if="row.parentNode and previousRow.nodes.length &gt; 1" class="o_hierarchy_parent_node_container d-flex justify-content-center">
+                            <!-- Filepath: /hr_org_chart/static/src/views/hr_employee_hierarchy/hr_employee_hierarchy_renderer.xml ; position="replace" ; {'expr': "//div[hasclass('o_hierarchy_parent_node_container')]/span"} --><Avatar resModel="row.parentNode.model.resModel" resId="row.parentNode.resId" displayName="row.parentNode.data.name"/>
+        </div>
+                        <div class="o_hierarchy_separator d-flex">
+                            <div class="o_hierarchy_line_part o_hierarchy_line_left"/>
+                            <div class="o_hierarchy_line_part o_hierarchy_line_right"/>
+                        </div>
+                    </t>
+                    <div class="o_hierarchy_row row justify-content-center flex-wrap row-cols-2 row-cols-lg-5 g-2 g-lg-3" t-att-class="{ 'pb-4': row_last }" t-att-data-parent-node-id="row.parentNode?.id" t-att-data-row-id="row_index">
+                        <t t-foreach="row.nodes" t-as="node" t-key="node.id">
+                            <HierarchyCard node="node" openRecord="props.openRecord" archInfo="props.archInfo" templates="props.templates"/>
+                        </t>
+                    </div>
+                </t>
+            </div>
+        </div>
+    </t>
+
 <!-- Filepath: /web/static/src/core/autocomplete/autocomplete.xml => /partner_autocomplete/static/src/xml/partner_autocomplete.xml -->
 
 <t t-name="partner_autocomplete.PartnerAutoComplete">
@@ -173655,4 +177623,4 @@ return __exports;
 </templates>`);
                     });
 
-//# sourceMappingURL=/web/assets/d555061/web.assets_web.js.map
+//# sourceMappingURL=/web/assets/d0081f1/web.assets_web.js.map
