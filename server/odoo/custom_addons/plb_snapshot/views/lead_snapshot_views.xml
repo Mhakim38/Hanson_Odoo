@@ -6,18 +6,24 @@
         <field name="model">crm.lead.snapshot</field>
         <field name="arch" type="xml">
             <tree>
-<!--                <field name="snapshot_date"/>-->
-                <field name="plb_week"/>
-                <field name="lead_id"/>
-                <field name="user_id"/>
-                <field name="stage_id"/>
-                <field name="created_date" widget="datetime"/>
-                <field name="last_activity_date" widget="datetime"/>
-                <field name="last_activity_type_id"/>
-                <field name="expected_start_date"/>
-                <field name="date_go_live"/>
-                <field name="expected_revenue"/>
-                <field name="probability"/>
+                <!-- User requested sequence -->
+                <field name="create_date" string="Date Funnel"/>
+                <field name="name" string="Opportunity"/>
+                <field name="description" string="Remarks"/>
+                <field name="user_id" string="PIC"/>
+                <field name="expected_start_date" string="Expected Start Date"/>
+                <field name="date_go_live" string="Date Go Live"/>
+                <field name="scope_of_service" string="Scope of service"/>
+                <field name="product" string="Product"/>
+                <field name="dept_region" string="Dept/region"/>
+                <field name="realized_revenue_fy2025" string="Realized Revenue FY2025"/>
+                <field name="contact_name" string="Contact Name"/>
+                <field name="email_from" string="Email"/>
+                    <field name="tag_list" string="Other Emails"/>
+                <field name="user_id" string="Salesperson"/>
+                <field name="expected_revenue" string="Expected Revenue"/>
+                <field name="stage_id" string="Stage"/>
+                <field name="probability" string="Probability"/>
             </tree>
         </field>
     </record>
@@ -112,11 +118,36 @@
          are not valid to insert at those positions. Use the Kanban <header> insertion above and the
          'Snapshot Week (Run Now)' menu under CRM → Sales as a reliable entry point. -->
 
-    <!-- Provide a global menu item under CRM -> Sales to run the weekly snapshot immediately -->
+    <!-- Wizard form to run snapshot immediately -->
+    <record id="view_plb_snapshot_wizard_form" model="ir.ui.view">
+        <field name="name">plb.snapshot.wizard.form</field>
+        <field name="model">plb.snapshot.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Run Snapshot">
+                <group>
+                    <field name="note" readonly="1"/>
+                </group>
+                <footer>
+                    <button string="Run" type="object" name="action_run_snapshot" class="btn btn-primary"/>
+                    <button string="Cancel" class="btn btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_plb_snapshot_wizard" model="ir.actions.act_window">
+        <field name="name">Run Snapshot</field>
+        <field name="res_model">plb.snapshot.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_plb_snapshot_wizard_form"/>
+        <field name="target">new</field>
+    </record>
+
+    <!-- Provide a global menu item under CRM -> Sales to run the weekly snapshot immediately (open wizard) -->
     <record id="menu_crm_snapshot_week_now" model="ir.ui.menu">
         <field name="name">Snapshot Week (Run Now)</field>
         <field name="parent_id" ref="crm.crm_menu_sales"/>
-        <field name="action" ref="action_server_snapshot_week"/>
+        <field name="action" ref="action_plb_snapshot_wizard"/>
         <field name="sequence">5</field>
     </record>
 
