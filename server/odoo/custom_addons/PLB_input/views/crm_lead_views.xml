@@ -129,13 +129,12 @@
                 <attribute name="string">What</attribute>
             </xpath>
             <!-- date_deadline label updated to include question mark -->
-            <xpath expr="//tree/field[@name='date_deadline']" position="attributes">
-                <attribute name="string">When ?</attribute>
+            <xpath expr="//tree/field[@name='activity_type_id']" position="after">
+                <field name="date_deadline" string="When"/>
             </xpath>
             <xpath expr="//tree/field[@name='date_deadline']" position="after">
-                <field name="plb_week"/>
-                <field name="user_id" string="Sales"/>
                 <field name="partner_id"/>
+                <field name="user_id" string="Sales"/>
             </xpath>
             <xpath expr="//tree/field[@name='res_name']" position="replace"/>
 
@@ -145,8 +144,9 @@
             <xpath expr="//tree/field[@name='contact_id']" position="after">
                 <field name="contact_position"/>
             </xpath>
-            <xpath expr="//tree/field[@name='contact_position']" position="after">
+            <xpath expr="//tree/field[@name='summary']" position="after">
                 <field name="plb_why"/>
+                <field name="plb_week"/>
             </xpath>
         </field>
     </record>
