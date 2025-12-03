@@ -63,14 +63,18 @@
                 </page>
             </xpath>
 
-            <!-- Insert Schedule Activity button into the form header -->
-<!--            <xpath expr="//form/header" position="inside">-->
-<!--                <button name="%(PLB_input.action_schedule_activity_plb)d"-->
-<!--                        type="action"-->
-<!--                        string="Schedule Activity"-->
-<!--                        class="oe_highlight"/>-->
-<!--            </xpath>-->
-
+            <xpath expr="//label[@for='probability']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='probability']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+            <xpath expr="//field[@name='probability']" position="after">
+                <div style="display:flex; flex-direction:column;" class="mb-2">
+                    <label for="priority" string="Priority" style="font-weight:bold;" class="mb-1 mt-2"/>
+                    <field name="priority" widget="priority" nolabel="1"/>
+                </div>
+            </xpath>
         </field>
     </record>
 
@@ -93,20 +97,46 @@
                 <field name="dept_region" string="Dept/region" optional="show"/>
                 <field name="realized_revenue_fy2025" optional="show"/>
             </xpath>
-            <!-- Rename the existing create_date column label to 'Date Funnel' without uncommenting any field -->
-            <xpath expr="//tree/field[@name='create_date']" position="attributes">
-                <attribute name="string">Date Funnel</attribute>
+            <xpath expr="//field[@name='create_date']" position="after">
+                <field name="priority" widget="priority"/>
+            </xpath>
+            <xpath expr="//field[@name='probability']" position="attributes">
+                <attribute name="invisible">1</attribute>
             </xpath>
         </field>
     </record>
 
     <!-- Action + Menu: open mail.activity tree under Sales -->
+    <!-- Calendar view for mail.activity (PLB) - compatible with mail.activity fields -->
+    <record id="plb_mail_activity_view_calendar" model="ir.ui.view">
+        <field name="name">mail.activity.calendar.plb</field>
+        <field name="model">mail.activity</field>
+        <field name="arch" type="xml">
+            <!-- Use date_deadline as the start (and stop) date so calendar can render activities -->
+            <calendar string="Activities (PLB)" date_start="date_deadline" date_stop="date_deadline" color="user_id">
+                <field name="summary"/>
+                <field name="date_deadline"/>
+                <field name="user_id"/>
+                <field name="partner_id"/>
+            </calendar>
+        </field>
+    </record>
+
     <record id="action_mail_activity_my_plb" model="ir.actions.act_window">
         <field name="name">My Activities (PLB)</field>
         <field name="res_model">mail.activity</field>
-        <field name="view_mode">tree,form</field>
+        <!-- Expose calendar view in addition to tree and form. We provide a PLB calendar view
+             compatible with `mail.activity` so users can switch to Calendar without
+             loading the calendar.event view (which expects different fields). -->
+        <field name="view_mode">tree,form,calendar</field>
+        <!-- Keep the tree view as the default view_id -->
         <field name="view_id" ref="mail.mail_activity_view_tree"/>
         <field name="search_view_id" ref="mail.mail_activity_view_search"/>
+        <!-- Provide explicit view entries so the calendar view appears in the view switcher.
+             Note: the referenced calendar view is an external ID and should exist in the
+             `calendar` module. We provide a PLB calendar view compatible with `mail.activity`.
+         -->
+        <field name="view_ids" eval="[(5, 0, 0), (0, 0, {'view_mode': 'tree', 'view_id': ref('mail.mail_activity_view_tree')}), (0, 0, {'view_mode': 'form', 'view_id': ref('mail.mail_activity_view_form')}), (0, 0, {'view_mode': 'calendar', 'view_id': ref('PLB_input.plb_mail_activity_view_calendar')})]"/>
         <field name="domain">[('res_model', '=', 'crm.lead')]</field>
     </record>
 
