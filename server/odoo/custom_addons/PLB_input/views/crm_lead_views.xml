@@ -15,6 +15,29 @@
         <field name="inherit_id" ref="crm.crm_lead_view_form"/>
         <field name="arch" type="xml">
 
+            <!-- Add Decline button to the form header -->
+            <xpath expr="//form/header" position="inside">
+                    <!-- ensure the computed flag is available to header modifiers -->
+                <field name="is_decline_stage" invisible="1"/>
+                <button name="action_decline" string="Decline" type="object" class="btn-danger" groups="base.group_system"/>
+            </xpath>
+
+            <!-- Hide core Won button when stage is Decline -->
+            <xpath expr="//form/header/button[@name='action_set_won_rainbowman']" position="attributes" optional="true">
+                <attribute name="modifiers">{"invisible": [["is_decline_stage","=", true]]}</attribute>
+                <attribute name="invisible">is_decline_stage</attribute>
+            </xpath>
+
+            <!-- Hide core Lost buttons when stage is Decline -->
+            <xpath expr="//form/header/button[@name='%(crm.crm_lead_lost_action)d']" position="attributes" optional="true">
+                <attribute name="modifiers">{"invisible": [["is_decline_stage","=", true]]}</attribute>
+                <attribute name="invisible">is_decline_stage</attribute>
+            </xpath>
+            <xpath expr="(//form/header/button[@name='%(crm.crm_lead_lost_action)d'])[2]" position="attributes" optional="true">
+                <attribute name="modifiers">{"invisible": [["is_decline_stage","=", true]]}</attribute>
+                <attribute name="invisible">is_decline_stage</attribute>
+            </xpath>
+
             <!-- Existing info before the notebook -->
             <xpath expr="//sheet/notebook" position="before">
                 <group colspan="2">
@@ -30,6 +53,8 @@
                         <field name="attachment_filename" readonly="1"/>
                         <!-- computed boolean used in modifiers must be present in the view -->
                         <field name="is_contract_stage" invisible="1"/>
+                        <!-- computed boolean used to hide buttons when the lead is in a Decline stage -->
+                        <field name="is_decline_stage" invisible="1"/>
                     </group>
 
                     <group string="Service Information">

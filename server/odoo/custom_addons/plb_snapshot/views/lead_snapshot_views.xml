@@ -19,7 +19,7 @@
                 <field name="realized_revenue_fy2025" string="Realized Revenue FY2025"/>
                 <field name="contact_name" string="Contact Name"/>
                 <field name="email_from" string="Email"/>
-                    <field name="tag_list" string="Other Emails"/>
+                <field name="tag_list" string="Other Emails"/>
                 <field name="user_id" string="Salesperson"/>
                 <field name="expected_revenue" string="Expected Revenue"/>
                 <field name="stage_id" string="Stage"/>
@@ -57,20 +57,20 @@
         <field name="view_mode">tree,search</field>
     </record>
 
-    <!-- Add manual "Snapshot Now" button to the crm.lead form header for testing -->
-    <record id="view_crm_lead_form_snapshot_button" model="ir.ui.view">
-        <field name="name">crm.lead.form.snapshot.button</field>
-        <field name="model">crm.lead</field>
-        <field name="inherit_id" ref="crm.crm_lead_view_form"/>
-        <field name="arch" type="xml">
-            <xpath expr="//form/header" position="inside">
-                <button name="action_create_weekly_snapshot"
-                        type="object"
-                        string="Snapshot Now"
-                        class="oe_highlight"/>
-            </xpath>
-        </field>
-    </record>
+<!--    &lt;!&ndash; Add manual "Snapshot Now" button to the crm.lead form header for testing &ndash;&gt;-->
+<!--    <record id="view_crm_lead_form_snapshot_button" model="ir.ui.view">-->
+<!--        <field name="name">crm.lead.form.snapshot.button</field>-->
+<!--        <field name="model">crm.lead</field>-->
+<!--        <field name="inherit_id" ref="crm.crm_lead_view_form"/>-->
+<!--        <field name="arch" type="xml">-->
+<!--            <xpath expr="//form/header" position="inside">-->
+<!--                <button name="action_create_weekly_snapshot"-->
+<!--                        type="object"-->
+<!--                        string="Snapshot Now"-->
+<!--                        class="oe_highlight"/>-->
+<!--            </xpath>-->
+<!--        </field>-->
+<!--    </record>-->
 
     <!-- Server action to snapshot the current week (used by the kanban button) -->
     <record id="action_server_snapshot_week" model="ir.actions.server">

@@ -1,5 +1,5 @@
 from odoo import api, fields, models
-from odoo.exceptions import ValidationError
+from odoo.exceptions import ValidationError, UserError, AccessError
 
 
 class CrmLead(models.Model):
@@ -123,6 +123,14 @@ class CrmLead(models.Model):
         for rec in self:
             rec.is_contract_stage = bool(rec.stage_id and (getattr(rec.stage_id, 'name', '') or '').strip().lower() == 'contract')
 
+    # New helper boolean for views: True when the current stage name contains 'decline'
+    is_decline_stage = fields.Boolean(string='Is Decline Stage', compute='_compute_is_decline_stage', store=True)
+
+    @api.depends('stage_id')
+    def _compute_is_decline_stage(self):
+        for rec in self:
+            rec.is_decline_stage = bool(rec.stage_id and ('decline' in (getattr(rec.stage_id, 'name', '') or '').strip().lower()))
+
     # === COMPUTE METHODS ===
     # Note: contract_months is user-editable. Validation is handled by _check_contract_months.
 
@@ -237,6 +245,53 @@ class CrmLead(models.Model):
                 if vals.get('attachment_file') and not self._stage_is_contract(effective_stage):
                     raise ValidationError('Attachment can only be added when the lead stage is Contract.')
         return super(CrmLead, self).write(vals)
+
+    # New action to move leads to a Decline stage
+    def action_decline(self):
+        """Move selected leads to the 'Decline' stage.
+
+        For each lead we try to find a crm.stage whose name contains 'decline' (case-insensitive).
+        We prefer a stage belonging to the lead's team/section when available, otherwise any matching stage.
+        Raises a UserError when no matching stage is found.
+        """
+        # Security: only allow administrators (Settings) to run this action
+        if not self.env.user.has_group('base.group_system'):
+            raise AccessError('Only users with Administrator (Settings) access may mark a lead as Decline.')
+        Stage = self.env['crm.stage']
+        for rec in self:
+            # Prefer team/section-specific stage if available
+            team_id = False
+            if hasattr(rec, 'team_id') and rec.team_id:
+                team_id = rec.team_id.id
+            elif hasattr(rec, 'section_id') and rec.section_id:
+                team_id = rec.section_id.id
+
+            stage = False
+            if team_id:
+                stage = Stage.search([('name', 'ilike', 'decline'), ('team_id', 'in', (team_id, False))], limit=1)
+            if not stage:
+                stage = Stage.search([('name', 'ilike', 'decline')], limit=1)
+            # Try plural/alternative spelling
+            if not stage:
+                stage = Stage.search([('name', 'ilike', 'declined')], limit=1)
+
+            if not stage:
+                raise UserError("Couldn't find a CRM stage named 'Decline' (or similar). Please create one before using the Decline action.")
+
+            # Move the lead to the decline stage
+            rec.write({'stage_id': stage.id})
+        # If single record, reopen its form so the client refreshes that record and modifiers re-evaluate.
+        if len(self) == 1:
+            return {
+                'type': 'ir.actions.act_window',
+                'res_model': 'crm.lead',
+                'view_mode': 'form',
+                'res_id': self.id,
+                'views': [(False, 'form')],
+                'target': 'current',
+            }
+        # For multiple records, return a client reload so the UI refreshes generally
+        return {'type': 'ir.actions.client', 'tag': 'reload'}
 
 
 # New tag model to represent email-like tags (used via many2many_tags on crm.lead)
