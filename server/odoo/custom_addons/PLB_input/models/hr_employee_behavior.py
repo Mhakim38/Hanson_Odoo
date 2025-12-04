@@ -9,3 +9,8 @@ class HrEmployee(models.Model):
         'crm.lead.tag', 'hr_employee_behavior_rel', 'employee_id', 'tag_id',
         string='Behavior', help='Tag-style behavior entries (enter multiple)'
     )
+
+    initial = fields.Char(
+        string="Initials",
+        help="Employee initials (e.g., JD for John Doe)"
+    )
