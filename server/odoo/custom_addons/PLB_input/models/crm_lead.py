@@ -185,8 +185,8 @@ class CrmLead(models.Model):
                     ('res_id', '=', rec.id),
                 ])
                 # Consider either an attached ir.attachment record OR the new binary field as satisfying the requirement
-                if att_count == 0 and not rec.attachment_file:
-                    raise ValidationError('Please attach at least one document to the lead when marking it as Won.')
+                # if att_count == 0 and not rec.attachment_file:
+                #     raise ValidationError('Please attach at least one document to the lead when marking it as Won.')
 
     # === Prevent date_secured being set unless stage == 'contract' ===
     def _stage_is_contract(self, stage):

@@ -2,7 +2,7 @@
     'name': 'PLB (CRM) Lead Extension Custom',
     'version': '17.0.1.0',
     'summary': 'Extends CRM Lead with additional business fields and logic',
-    'depends': ['crm', 'base', 'crm_port', 'mail'],
+    'depends': ['crm', 'base', 'crm_port', 'mail', 'hr'],
     'data': [
         'security/crm_lead_security.xml',
         'security/ir.model.access.csv',
