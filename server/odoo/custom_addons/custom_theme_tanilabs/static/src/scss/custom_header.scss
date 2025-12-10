@@ -1,0 +1,123 @@
+/* ==========================================
+   CORPORATE RED + BLUE THEME (Odoo backend)
+   ========================================== */
+
+/* -------- NAVBAR (Primary Red) -------- */
+.o_main_navbar {
+    background-color: rgb(194, 24, 24) !important; /* Corporate red */
+    color: white !important;
+}
+
+.o_main_navbar .o_topbar {
+    background-color: rgb(194, 24, 24) !important;
+}
+
+/* Menu text */
+.o_main_navbar .o_menu_item,
+.o_main_navbar .o_menu_brand,
+.o_main_navbar .o_menu_toggle,
+.o_main_navbar .o_nav_entry,
+.o_main_navbar .o_menu_sections .o_menu_item,
+.o_main_navbar a,
+.o_main_navbar .o_menu_item a {
+    color: white !important;
+}
+
+/* Hover/Active → darker red */
+.o_main_navbar .o_menu_item:hover,
+.o_main_navbar .o_menu_item:active,
+.o_main_navbar .o_menu_item.active,
+.o_menu_sections .dropdown-toggle:hover,
+.o_menu_sections .dropdown-toggle:active,
+.o_menu_sections .dropdown-toggle:focus {
+    background-color: rgb(153, 19, 19) !important; /* Dark red */
+    color: white !important;
+}
+
+/* Inactive items */
+.o_main_navbar .o_menu_item:not(.active),
+.o_main_navbar .o_menu_item.o_inactive {
+    background-color: rgb(194, 24, 24) !important;
+    color: white !important;
+}
+
+/* -------- MODULE ICONS (Blue accents) -------- */
+.o_app_icon {
+    background-color: rgb(32, 78, 183) !important; /* Corporate blue */
+    color: white !important;
+}
+
+/* -------- DROPDOWN MENU (clean white) -------- */
+.o_main_navbar .dropdown-menu {
+    background-color: white !important;
+    box-shadow: 0px 3px 6px rgba(0,0,0,0.15);
+}
+
+.o_main_navbar .dropdown-menu .dropdown-item {
+    background-color: white !important;
+    color: black !important;
+}
+
+.o_main_navbar .dropdown-menu .dropdown-item:hover {
+    background-color: rgb(240, 240, 240) !important;
+    color: black !important;
+}
+
+/* -------- BUTTONS (Corporate Blue) -------- */
+button.btn,
+a.btn,
+input[type="button"].btn,
+input[type="submit"].btn,
+.btn-primary,
+.btn-secondary {
+    background-color: rgb(32, 78, 183) !important;
+    border-color: rgb(32, 78, 183) !important;
+    color: white !important;
+}
+
+/* Hover/Active → darker blue */
+button.btn:hover,
+a.btn:hover,
+input[type="button"].btn:hover,
+input[type="submit"].btn:hover,
+button.btn:active,
+a.btn:active,
+input[type="button"].btn:active,
+input[type="submit"].btn:active,
+.btn-primary:hover,
+.btn-primary:active,
+.btn-secondary:hover,
+.btn-secondary:active {
+    background-color: rgb(26, 63, 150) !important; /* Darker corporate blue */
+    border-color: rgb(26, 63, 150) !important;
+}
+
+/* Apply the same to buttons inside forms and list views */
+.o_control_panel .o_cp_buttons button,
+.o_list_buttons button,
+.o_form_buttons_edit button,
+.o_control_panel .o_cp_buttons a,
+.o_list_buttons a,
+.o_form_buttons_edit a {
+    background-color: rgb(32, 78, 183) !important;
+    border-color: rgb(32, 78, 183) !important;
+    color: white !important;
+}
+
+/* -------- NAVBAR DROPDOWNS / SECTIONS -------- */
+.o_menu_sections .dropdown-toggle {
+    background-color: rgb(194, 24, 24) !important;
+    color: white !important;
+}
+
+/* Hover = dark red */
+.o_menu_sections .dropdown-toggle:hover {
+    background-color: rgb(153, 19, 19) !important;
+    color: white !important;
+}
+
+/* -------- Clean corporate dropdown style -------- */
+.o_main_navbar .dropdown-menu {
+    border-radius: 4px !important;
+    border: 1px solid rgb(230, 230, 230);
+}

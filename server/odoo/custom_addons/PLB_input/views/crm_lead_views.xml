@@ -31,11 +31,11 @@
             <!-- Hide core Lost buttons when stage is Decline -->
             <xpath expr="//form/header/button[@name='%(crm.crm_lead_lost_action)d']" position="attributes" optional="true">
                 <attribute name="modifiers">{"invisible": [["is_decline_stage","=", true]]}</attribute>
-                <attribute name="invisible">is_decline_stage</attribute>
             </xpath>
+             <!-- Also target the second Lost button occurrence if present -->
             <xpath expr="(//form/header/button[@name='%(crm.crm_lead_lost_action)d'])[2]" position="attributes" optional="true">
-                <attribute name="modifiers">{"invisible": [["is_decline_stage","=", true]]}</attribute>
                 <attribute name="invisible">is_decline_stage</attribute>
+                <attribute name="modifiers">{"invisible": [["is_decline_stage","=", true]]}</attribute>
             </xpath>
 
             <!-- Existing info before the notebook -->
@@ -47,14 +47,16 @@
                         <field name="expected_start_date"/>
                         <field name="date_go_live"/>
                         <!-- date_secured readonly unless computed boolean is_contract_stage is True -->
-                        <field name="date_secured" readonly="not is_contract_stage"/>
-                        <!-- New: inline attachment stored on the lead; editable only in Contract stage -->
-                        <field name="attachment_file" filename="attachment_filename" readonly="not is_contract_stage"/>
+                        <field name="date_secured" modifiers='{"readonly":[["is_contract_stage","=", false]]}'/>
+                        <!-- New: inline attachment stored on the lead; editable only in Shortlisted or Verbal stages -->
+                        <field name="attachment_file" filename="attachment_filename" modifiers='{"readonly":[["is_contract_stage","=", false]]}'/>
                         <field name="attachment_filename" readonly="1"/>
                         <!-- computed boolean used in modifiers must be present in the view -->
                         <field name="is_contract_stage" invisible="1"/>
                         <!-- computed boolean used to hide buttons when the lead is in a Decline stage -->
                         <field name="is_decline_stage" invisible="1"/>
+                        <!-- computed boolean used to make fields required/visible when in Qualify -->
+                        <field name="is_qualify_stage" invisible="1"/>
                     </group>
 
                     <group string="Service Information">
@@ -74,8 +76,11 @@
                         <field name="realized_revenue_fy2025"/>
                         <!-- moved fields: remark, operating_profit_margin, expected_revenue_annum -->
                         <field name="remark"/>
-                        <field name="operating_profit_margin" widget="percent"/>
-                        <field name="expected_revenue_annum"/>
+                        <field name="operating_profit_margin" widget="percent" modifiers='{"required":[["is_qualify_stage","=", true]]}'/>
+                        <field name="expected_revenue_annum" modifiers='{"required":[["is_qualify_stage","=", true]]}'/>
+                        <!-- Quotation attachment required in Qualify and editable in Qualify stage -->
+                        <field name="quotation_attachment" filename="quotation_attachment_filename" modifiers='{"required":[["is_qualify_stage","=", true]], "readonly":[["is_qualify_stage","=", false]]}'/>
+                        <field name="quotation_attachment_filename" readonly="1"/>
                         <!-- Hide category_type as requested -->
                         <field name="category_type" invisible="1"/>
                     </group>

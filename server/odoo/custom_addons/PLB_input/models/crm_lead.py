@@ -35,6 +35,8 @@ class CrmLead(models.Model):
         ('warehousing', 'Warehousing'),
         ('depot_yard', 'Depot / Yard'),
         ('distribution', 'Distribution'),
+        ('customs_clearance', 'Customs Clearance'),
+        ('others', 'Others'),
     ], string='Scope of Service')
 
     freight_type = fields.Selection([
@@ -116,12 +118,17 @@ class CrmLead(models.Model):
     )
 
     # New helper boolean for views: True when the current stage is the 'contract' stage
-    is_contract_stage = fields.Boolean(string='Is Contract Stage', compute='_compute_is_contract_stage')
+    # Note: historically this was 'contract'; updated to reflect new business rule:
+    # fields that were previously allowed only in the 'Contract' stage are now allowed
+    # when the stage name contains 'shortlisted' or 'verbal'. The field name is
+    # kept as `is_contract_stage` for compatibility with existing views/modifiers.
+    is_contract_stage = fields.Boolean(string='Is Shortlisted/Verbal Stage', compute='_compute_is_contract_stage')
 
     @api.depends('stage_id')
     def _compute_is_contract_stage(self):
         for rec in self:
-            rec.is_contract_stage = bool(rec.stage_id and (getattr(rec.stage_id, 'name', '') or '').strip().lower() == 'contract')
+            name = (getattr(rec.stage_id, 'name', '') or '').strip().lower()
+            rec.is_contract_stage = bool(name and ("shortlisted" in name or "verbal" in name))
 
     # New helper boolean for views: True when the current stage name contains 'decline'
     is_decline_stage = fields.Boolean(string='Is Decline Stage', compute='_compute_is_decline_stage', store=True)
@@ -130,6 +137,15 @@ class CrmLead(models.Model):
     def _compute_is_decline_stage(self):
         for rec in self:
             rec.is_decline_stage = bool(rec.stage_id and ('decline' in (getattr(rec.stage_id, 'name', '') or '').strip().lower()))
+
+    # New helper boolean for views: True when the current stage name contains 'qualify'
+    # Used by view modifiers to make certain fields required/editable in the Qualify stage.
+    is_qualify_stage = fields.Boolean(string='Is Qualify Stage', compute='_compute_is_qualify_stage', store=True)
+
+    @api.depends('stage_id')
+    def _compute_is_qualify_stage(self):
+        for rec in self:
+            rec.is_qualify_stage = bool(rec.stage_id and ('qualify' in (getattr(rec.stage_id, 'name', '') or '').strip().lower()))
 
     # === COMPUTE METHODS ===
     # Note: contract_months is user-editable. Validation is handled by _check_contract_months.
@@ -199,51 +215,157 @@ class CrmLead(models.Model):
     # === Prevent date_secured being set unless stage == 'contract' ===
     def _stage_is_contract(self, stage):
         """Return True if the given stage record or id refers to a 'contract' stage by name."""
+        # Accept either a record, id, or falsy value. We treat stages whose names
+        # contain 'shortlisted' or 'verbal' (case-insensitive) as the stages that
+        # allow attachment_file and date_secured.
         if not stage:
             return False
         if isinstance(stage, int):
             stage = self.env['crm.stage'].browse(stage)
-        # safe lower-case compare of name
         name = (getattr(stage, 'name', '') or '').strip().lower()
-        return name == 'contract'
+        return bool(name and ("shortlisted" in name or "verbal" in name))
+
+    # --- New: fields that must be provided during Qualify before moving to Proposal ---
+    # Quotation attachment (separate from attachment_file which is used for "won" flows)
+    quotation_attachment = fields.Binary(string='Quotation Attachment')
+    quotation_attachment_filename = fields.Char(string='Quotation Attachment Filename')
+
+    # Helper to detect Qualify / Proposal stages by name (case-insensitive contains)
+    def _stage_name_contains(self, stage, keyword):
+        if not stage:
+            return False
+        if isinstance(stage, int):
+            stage = self.env['crm.stage'].browse(stage)
+        name = (getattr(stage, 'name', '') or '').strip().lower()
+        return bool(name and keyword in name)
+
+    def _is_proposal_stage(self):
+        self.ensure_one()
+        return self._stage_name_contains(self.stage_id, 'proposal')
+
+    def _is_qualify_stage(self):
+        self.ensure_one()
+        return self._stage_name_contains(self.stage_id, 'qualify')
+
+    def _find_qualify_stage(self, team_id=False):
+        Stage = self.env['crm.stage']
+        domain = [('name', 'ilike', 'qualify')]
+        if team_id:
+            # prefer team-specific or global (False)
+            stage = Stage.search([('name', 'ilike', 'qualify'), ('team_id', 'in', (team_id, False))], limit=1)
+            if stage:
+                return stage
+        return Stage.search(domain, limit=1)
+
+    @api.onchange('stage_id')
+    def _onchange_stage_require_qualify_fields(self):
+        """When user selects a Proposal stage, ensure required fields (operating_profit_margin,
+        expected_revenue_annum and quotation_attachment) have been filled. If not, revert to a Qualify stage
+        and show a friendly warning.
+        """
+        for rec in self:
+            if not rec.stage_id:
+                continue
+            if self._stage_name_contains(rec.stage_id, 'proposal'):
+                missing = []
+                if rec.operating_profit_margin in (False, None):
+                    missing.append('Operating Profit Margin')
+                if not rec.expected_revenue_annum:
+                    missing.append('Expected Revenue (Annum)')
+                # Accept either the dedicated quotation_attachment binary OR any existing ir.attachment for this lead
+                att_ok = False
+                if rec.quotation_attachment:
+                    att_ok = True
+                else:
+                    Attachment = self.env['ir.attachment']
+                    if rec.id:
+                        count = Attachment.search_count([('res_model', '=', 'crm.lead'), ('res_id', '=', rec.id)])
+                        if count:
+                            att_ok = True
+                if not att_ok:
+                    missing.append('Quotation Attachment')
+
+                if missing:
+                    # revert to a qualify stage (if possible) and show a warning
+                    qualify_stage = self._find_qualify_stage(team_id=(rec.team_id.id if getattr(rec, 'team_id', False) else False))
+                    if qualify_stage:
+                        rec.stage_id = qualify_stage
+                    return {
+                        'warning': {
+                            'title': 'Missing required information',
+                            'message': 'You must fill the following fields before moving to Proposal: %s.\nThe stage has been reverted to Qualify.' % (', '.join(missing))
+                        }
+                    }
 
     @api.model_create_multi
     def create(self, vals_list):
+        # Validate on create: if user tries to create a record in a Proposal stage, prevent it unless required fields are set
         for vals in vals_list:
-            # if user provided date_secured, ensure stage in vals is contract (or stage_id in context)
-            if 'date_secured' in vals and vals.get('date_secured'):
-                stage_id = vals.get('stage_id')
-                if not stage_id:
-                    # if no stage provided, try to get default stage from team or use False
-                    stage_id = vals.get('section_id') and self.env['crm.stage'].search([('team_id', '=', vals.get('section_id'))], limit=1).id
-                if not self._stage_is_contract(stage_id):
-                    raise ValidationError('Date Secured can only be set when the lead stage is Contract.')
-            # if user provided attachment_file, ensure stage in vals is contract as well
-            if 'attachment_file' in vals and vals.get('attachment_file'):
-                stage_id = vals.get('stage_id')
-                if not stage_id:
-                    stage_id = vals.get('section_id') and self.env['crm.stage'].search([('team_id', '=', vals.get('section_id'))], limit=1).id
-                if not self._stage_is_contract(stage_id):
-                    raise ValidationError('Attachment can only be added when the lead stage is Contract.')
+            stage_id = vals.get('stage_id')
+            if stage_id:
+                stage = self.env['crm.stage'].browse(stage_id)
+                name = (getattr(stage, 'name', '') or '').strip().lower()
+                if 'proposal' in name:
+                    missing = []
+                    if vals.get('operating_profit_margin') in (None, False):
+                        missing.append('Operating Profit Margin')
+                    if not vals.get('expected_revenue_annum'):
+                        missing.append('Expected Revenue (Annum)')
+                    # check attachment either in vals or existing attachments (none on create)
+                    if not vals.get('quotation_attachment') and not vals.get('attachment_file'):
+                        missing.append('Quotation Attachment')
+                    if missing:
+                        raise ValidationError('Cannot create lead in Proposal stage: missing %s. Please fill them while in Qualify stage.' % (', '.join(missing)))
         return super(CrmLead, self).create(vals_list)
 
     def write(self, vals):
-        # For each record, check if date_secured is being set/changed while stage is not (or will not be) contract
+        # For each record, check if user is attempting to move it to a Proposal stage without required fields
         for rec in self:
-            # Determine resulting stage id after write
+            # determine effective stage after write
             new_stage_id = vals.get('stage_id', False)
-            # If stage is not in vals, use existing stage id
             effective_stage = new_stage_id if new_stage_id else rec.stage_id.id
+            if effective_stage:
+                stage = self.env['crm.stage'].browse(effective_stage)
+                name = (getattr(stage, 'name', '') or '').strip().lower()
+                if 'proposal' in name:
+                    missing = []
+                    # Check operating_profit_margin: if it's being changed in vals, consider that; otherwise use rec
+                    opm = vals.get('operating_profit_margin') if 'operating_profit_margin' in vals else rec.operating_profit_margin
+                    if opm in (None, False):
+                        missing.append('Operating Profit Margin')
+                    # expected_revenue_annum
+                    exp_rev = vals.get('expected_revenue_annum') if 'expected_revenue_annum' in vals else rec.expected_revenue_annum
+                    if not exp_rev:
+                        missing.append('Expected Revenue (Annum)')
+                    # quotation attachment: check vals, existing dedicated field, or ir.attachment
+                    att_ok = False
+                    if 'quotation_attachment' in vals and vals.get('quotation_attachment'):
+                        att_ok = True
+                    elif 'attachment_file' in vals and vals.get('attachment_file'):
+                        # allow existing attachment_file too
+                        att_ok = True
+                    elif rec.quotation_attachment:
+                        att_ok = True
+                    else:
+                        Attachment = self.env['ir.attachment']
+                        if rec.id and Attachment.search_count([('res_model', '=', 'crm.lead'), ('res_id', '=', rec.id)]):
+                            att_ok = True
+                    if not att_ok:
+                        missing.append('Quotation Attachment')
+
+                    if missing:
+                        # Friendly server-side error to prevent stage move (covers mass writes / automated transitions)
+                        raise ValidationError('Cannot move lead to Proposal: missing %s. Please fill them while in Qualify stage.' % (', '.join(missing)))
+
+            # Existing checks for date_secured and attachment_file constraints
             # If date_secured included in vals, ensure effective stage is contract
             if 'date_secured' in vals:
-                # If date_secured is being changed/added but effective stage isn't contract -> block
                 if not self._stage_is_contract(effective_stage):
-                    raise ValidationError('Date Secured can only be set when the lead stage is Contract.')
-            # If attachment_file included in vals, ensure effective stage is contract
+                    raise ValidationError('Date Secured can only be set when the lead stage is Shortlisted or Verbal.')
             if 'attachment_file' in vals:
-                # If attachment is being added/changed but effective stage isn't contract -> block
                 if vals.get('attachment_file') and not self._stage_is_contract(effective_stage):
-                    raise ValidationError('Attachment can only be added when the lead stage is Contract.')
+                    raise ValidationError('Attachment can only be added when the lead stage is Shortlisted or Verbal.')
+
         return super(CrmLead, self).write(vals)
 
     # New action to move leads to a Decline stage

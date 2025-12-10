@@ -1,0 +1,5 @@
+/* static/src/css/styles.css */
+.o_field_widget[name="favicon"] img {
+    width: 32px !important;
+    height: 32px !important;
+}

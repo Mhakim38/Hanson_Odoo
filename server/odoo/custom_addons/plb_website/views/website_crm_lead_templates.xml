@@ -1,0 +1,100 @@
+<odoo>
+  <template id="template_website_enquiry_form" name="PLB Enquiry Form">
+    <t t-call="website.layout">
+      <div class="container py-5">
+        <div class="row g-4 align-items-start">
+          <!-- Left: Company Info -->
+          <div class="col-md-5">
+            <div class="card shadow-sm border-0">
+              <div class="card-body">
+                <h4 class="card-title mb-3">POS LOGISTICS BERHAD (89243-A)</h4>
+                <p class="mb-1">Lot 775, Jalan Subang 4</p>
+                <p class="mb-1">Kawasan Perusahaan Sungai Penaga</p>
+                <p class="mb-1">47610 Subang Jaya, Selangor</p>
+                <p class="mb-1"><strong>Tel:</strong> +60 (3) 8021 5311</p>
+                <p class="mb-3"><strong>Fax:</strong> +60 (3) 8021 5922</p>
+                <hr/>
+                <h4 class="mb-2">Other Locations</h4>
+                  <a href="https://www.poslogistics.com.my/coverage-network/" target="_blank" rel="noopener">click here</a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Enquiry Form -->
+          <div class="col-md-7">
+            <div class="card border-0 shadow-sm">
+              <div class="card-body">
+                <h3 class="mb-3">Enquiry Form</h3>
+                <!-- Use a simple absolute path for form action, don't rely on ir.http.root_url -->
+                <form action="/plb/enquiry/submit" method="post" class="row g-3">
+                  <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+                  <div class="col-12">
+                    <label for="customer" class="form-label">Company's Name</label>
+                    <input id="customer" name="customer" class="form-control" placeholder="Company name" required="required"/>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="title" class="form-label">Title</label>
+                    <input id="title" name="title" class="form-control" placeholder="Opportunity title / subject" required="required"/>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="contact_name" class="form-label">Name</label>
+                    <input id="contact_name" name="contact_name" class="form-control" placeholder="Your full name" required="required"/>
+                  </div>
+
+                  <!-- New fields: phone, email, service, message -->
+                  <div class="col-md-6">
+                    <label for="phone" class="form-label">Phone</label>
+                    <input id="phone" name="phone" class="form-control" placeholder="Mobile number"/>
+                  </div>
+                  <div class="col-md-6">
+                    <label for="email" class="form-label">Email</label>
+                    <input id="email" name="email_form" type="email" class="form-control" placeholder="Email address"/>
+                  </div>
+
+                  <div class="col-12">
+                    <label for="service" class="form-label">Service (Scope of Service)</label>
+                    <select id="service" name="service" class="form-select">
+                      <option value="">-- Select service --</option>
+                      <option value="freight_forwarding">Freight Forwarding</option>
+                      <option value="warehousing">Warehousing</option>
+                      <option value="customs_clearance">Customs Clearance</option>
+                      <option value="others">Others</option>
+                    </select>
+                  </div>
+
+                  <div class="col-12">
+                    <label for="message" class="form-label">Message</label>
+                    <textarea id="message" name="message" rows="4" class="form-control" placeholder="Tell us about your requirement"></textarea>
+                  </div>
+
+                  <div class="col-12 d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary">Submit Enquiry</button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </t>
+  </template>
+
+  <template id="template_website_enquiry_thanks" name="PLB Enquiry Thanks">
+    <t t-call="website.layout">
+      <div class="container py-5">
+        <div class="row justify-content-center">
+          <div class="col-md-8">
+            <div class="card shadow-sm border-0 text-center p-4">
+              <div class="card-body">
+                <h3 class="mb-3">Thank you</h3>
+                <p class="mb-2">Your enquiry has been submitted successfully.</p>
+                <p class="text-muted mb-3">Reference: <t t-esc="lead.name"/></p>
+                <a href="/plb/enquiry" class="btn btn-outline-primary">Submit another enquiry</a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </t>
+  </template>
+</odoo>

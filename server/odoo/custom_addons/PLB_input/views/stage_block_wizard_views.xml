@@ -1,0 +1,19 @@
+<odoo>
+    <record id="view_plb_stage_block_wizard_form" model="ir.ui.view">
+        <field name="name">plb.stage.block.wizard.form</field>
+        <field name="model">plb.stage.block.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Stage Blocked">
+                <sheet>
+                    <group>
+                        <field name="message" nolabel="1"/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button string="OK" class="btn-primary" type="object" name="action_ok"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>
+
