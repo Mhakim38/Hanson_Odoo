@@ -23,19 +23,13 @@
             </xpath>
 
             <!-- Hide core Won button when stage is Decline -->
-            <xpath expr="//form/header/button[@name='action_set_won_rainbowman']" position="attributes" optional="true">
-                <attribute name="modifiers">{"invisible": [["is_decline_stage","=", true]]}</attribute>
-                <attribute name="invisible">is_decline_stage</attribute>
+            <xpath expr="//form/header/button[@name='action_set_won_rainbowman']" position="replace" optional="true">
+                <!-- 'Won' button removed by PLB_input customisation -->
             </xpath>
 
             <!-- Hide core Lost buttons when stage is Decline -->
-            <xpath expr="//form/header/button[@name='%(crm.crm_lead_lost_action)d']" position="attributes" optional="true">
-                <attribute name="modifiers">{"invisible": [["is_decline_stage","=", true]]}</attribute>
-            </xpath>
-             <!-- Also target the second Lost button occurrence if present -->
-            <xpath expr="(//form/header/button[@name='%(crm.crm_lead_lost_action)d'])[2]" position="attributes" optional="true">
-                <attribute name="invisible">is_decline_stage</attribute>
-                <attribute name="modifiers">{"invisible": [["is_decline_stage","=", true]]}</attribute>
+            <xpath expr="//form/header/button[@name='%(crm.crm_lead_lost_action)d']" position="replace" optional="true">
+                <!-- 'Lost' button removed by PLB_input customisation -->
             </xpath>
 
             <!-- Existing info before the notebook -->
@@ -115,13 +109,18 @@
         <field name="model">crm.lead</field>
         <field name="inherit_id" ref="crm.crm_case_tree_view_oppor"/>
         <field name="arch" type="xml">
-            <xpath expr="field[@name='partner_id']" position="replace">
+            <xpath expr="field[@name='name']" position="after">
                 <field name="team_id" invisible="1" optional="show"/>
-                <field name="name" string="Project" optional="show"/>
-                <field name="partner_id" string="Customer" optional="show"/>
+<!--                <field name="name" string="Project" optional="show"/>-->
+<!--                <field name="partner_id" string="Customer" optional="show"/>-->
+
+<!--                <field name="user_id" string="PIC" optional="show"/>-->
+<!--                <field name="create_date" string="Date Funnel" optional="show"/>-->
+            </xpath>
+            <xpath expr="field[@name='stage_id']" position="after">
                 <field name="description" string="Remarks" optional="show"/>
-                <field name="user_id" string="PIC" optional="show"/>
-                <field name="create_date" string="Date Funnel" optional="show"/>
+            </xpath>
+            <xpath expr="field[@name='create_date']" position="after">
                 <field name="expected_start_date" string="Expected Start Date" optional="show"/>
                 <field name="date_secured" string="Date Secured" optional="show"/>
                 <field name="date_go_live" string="Date Go Live" optional="show"/>
