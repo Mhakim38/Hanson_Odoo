@@ -17582,6 +17582,287 @@ const partnerAutoCompleteMany2one=__exports.partnerAutoCompleteMany2one={...many
 /* /partner_autocomplete/static/src/js/web_company_autocomplete.js */
 odoo.define('@partner_autocomplete/js/web_company_autocomplete',['@web/core/registry','@web/session'],function(require){'use strict';let __exports={};const{registry}=require("@web/core/registry");const{session}=require("@web/session");const companyAutocompleteService=__exports.companyAutocompleteService={dependencies:["orm","company"],start(env,{orm,company}){if(session.iap_company_enrich){const currentCompanyId=company.currentCompany.id;orm.silent.call("res.company","iap_enrich_auto",[currentCompanyId],{});}},};registry.category("services").add("partner_autocomplete.companyAutocomplete",companyAutocompleteService);return __exports;});;
 
+/* /plb_dashboard/static/src/js/dashboard.js */
+odoo.define('@plb_dashboard/js/dashboard',['@web/core/registry','@odoo/owl','@web/core/utils/hooks'],function(require){'use strict';let __exports={};const{registry}=require("@web/core/registry");const{Component,xml,useState,onMounted}=require("@odoo/owl");const{useService}=require("@web/core/utils/hooks");const PLBDashboard=__exports.PLBDashboard=class PLBDashboard extends Component{setup(){this.state=useState({rows:[],years:[],salespersons:[],stages:[],services:[],filters:{salesperson:'All',stage:'All',service:'All',year:'All'},customers:[],stageCounts:{},revenueSummary:{total_expected_revenue:0,total_annual_revenue:0,total_realized_revenue:0,lead_count:0,},monthlySubtotals:Array(12).fill(0),monthlyCumulative:Array(12).fill(0),totalCarryForward:null,serviceSegments:[],tooltip:{visible:false,left:0,top:0,title:'',value:0,percent:0,key:null},loading:true,});this.rpc=useService("rpc");onMounted(async()=>{await this.loadDashboardData();});}
+async loadDashboardData(){try{this.state.loading=true;const dashboardData=await this.rpc("/plb/dashboard_data");if(dashboardData&&dashboardData.rows){this.state.rows=dashboardData.rows;}
+const customersData=await this.rpc("/plb/customers");if(customersData&&customersData.customers){this.state.customers=customersData.customers;}
+const stageCounts=await this.rpc("/plb/stage_counts");if(stageCounts){this.state.stageCounts=stageCounts;}
+const revenueSummary=await this.rpc("/plb/revenue_summary");if(revenueSummary){this.state.revenueSummary=revenueSummary;}
+this.computeFilterOptions();this.computeTotals();console.debug('PLB Dashboard loaded:',{rows:this.state.rows.length,customers:this.state.customers.length,stageCounts:this.state.stageCounts,revenueSummary:this.state.revenueSummary,});}catch(err){console.error('Failed to load PLB dashboard data:',err);}finally{this.state.loading=false;}}
+computeFilterOptions(){const salesSet=new Set();const stageSet=new Set();const serviceSet=new Set();(this.state.rows||[]).forEach(r=>{if(r.salesperson){salesSet.add(r.salesperson);}
+if(r.stage){stageSet.add(r.stage);}
+if(r.services){serviceSet.add(r.services);}});this.state.salespersons=['All',...Array.from(salesSet).sort()];this.state.stages=['All',...Array.from(stageSet).sort()];this.state.services=['All',...Array.from(serviceSet).sort()];this.computeYearOptions();}
+computeYearOptions(){const now=new Date();const currentYear=now.getFullYear();const years=[];for(let y=currentYear;y>=2000;y--){years.push(String(y));}
+this.state.years=['All',...years];}
+getFilteredRows(){const f=this.state.filters||{};return(this.state.rows||[]).filter(r=>{if(f.salesperson&&f.salesperson!=='All'){if((r.salesperson||'')!==f.salesperson)return false;}
+if(f.stage&&f.stage!=='All'){if((r.stage||'')!==f.stage)return false;}
+if(f.service&&f.service!=='All'){if((r.services||'')!==f.service)return false;}
+if(f.year&&f.year!=='All'){const cd=r.createDate;if(!cd)return false;let year=null;if(typeof cd==='string'){const m=cd.match(/(20\d{2}|19\d{2})/);if(m){year=m[0];}}else if(cd instanceof Date){year=String(cd.getFullYear());}
+if(String(year)!==String(f.year))return false;}
+return true;});}
+setFilter=(name,evOrValue)=>{const value=(evOrValue&&evOrValue.target&&evOrValue.target.value!==undefined)?evOrValue.target.value:evOrValue;this.state.filters[name]=value;this.computeTotals();}
+resetFilters=()=>{this.state.filters={salesperson:'All',stage:'All',service:'All',year:'All'};this.computeTotals();}
+formatNumber(value){if(value===false||value===null||value===undefined||value===''){return'NULL';}
+const n=Number(value);if(Number.isNaN(n)){return'NULL';}
+return n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});}
+formatCurrency(value){const formatted=this.formatNumber(value);return formatted==='NULL'?'NULL':`${formatted}`;}
+formatText(value){if(value===false||value===null||value===undefined||value===''){return'NULL';}
+return value;}
+formatServiceName(key){if(!key&&key!==0)return'NULL';const s=String(key);return s.replace(/[_-]+/g,' ').replace(/\b\w/g,ch=>ch.toUpperCase());}
+buildArcPath(cx,cy,r,startAngle,endAngle){const startX=cx+r*Math.cos(startAngle);const startY=cy+r*Math.sin(startAngle);const endX=cx+r*Math.cos(endAngle);const endY=cy+r*Math.sin(endAngle);const largeArcFlag=(endAngle-startAngle)>Math.PI?1:0;return`M ${cx} ${cy} L ${startX} ${startY} A ${r} ${r} 0 ${largeArcFlag} 1 ${endX} ${endY} Z`;}
+computeTotals(){const subtotals=Array(12).fill(0);let totalCarry=0;let carryCount=0;const rows=this.getFilteredRows();(rows||[]).forEach(row=>{const months=Array.isArray(row.monthlyRevenue)?row.monthlyRevenue:[];for(let i=0;i<12;i++){const v=months[i]!=null?Number(months[i]):0;subtotals[i]+=Number.isFinite(v)?v:0;}
+const cfRaw=row.carryForward;if(cfRaw!==null&&cfRaw!==undefined&&cfRaw!==false&&cfRaw!==''){const cf=Number(cfRaw);if(Number.isFinite(cf)){totalCarry+=cf;carryCount+=1;}}});const cumulative=Array(12).fill(0);let run=0;for(let i=0;i<12;i++){run+=subtotals[i];cumulative[i]=run;}
+const serviceMap={};let grandTotal=0;(rows||[]).forEach(row=>{const key=(row.services||'Unknown');const valRaw=row.sales;const val=(valRaw===false||valRaw===null||valRaw===undefined||valRaw==='')?0:Number(valRaw);const num=Number.isFinite(val)?val:0;serviceMap[key]=(serviceMap[key]||0)+num;grandTotal+=num;});const colors=["#0d6efd","#198754","#dc3545","#6f42c1","#fd7e14","#20c997","#6610f2","#e83e8c","#0dcaf0","#adb5bd"];const segments=[];let angleStart=-Math.PI/2;const radius=90;const cx=0,cy=0;const keys=Object.keys(serviceMap).sort();keys.forEach((k,idx)=>{const v=serviceMap[k]||0;if(!Number.isFinite(v)||v<=0){return;}
+const portion=grandTotal>0?v/grandTotal:0;const angle=portion*Math.PI*2;const angleEnd=angleStart+angle;const path=this.buildArcPath(cx,cy,radius,angleStart,angleEnd);segments.push({name:this.formatServiceName(k),rawKey:k,value:v,percent:grandTotal>0?(portion*100):0,color:colors[idx%colors.length],path:path,});angleStart=angleEnd;});this.state.monthlySubtotals=subtotals;this.state.monthlyCumulative=cumulative;this.state.totalCarryForward=carryCount>0?totalCarry:null;this.state.serviceSegments=segments;}
+showTooltip=(seg,ev)=>{try{ev=ev||(window&&window.event)||{};const pageX=(ev&&typeof ev.pageX==='number')?ev.pageX:undefined;const pageY=(ev&&typeof ev.pageY==='number')?ev.pageY:undefined;const clientX=(typeof ev.clientX==='number')?ev.clientX:(typeof pageX==='number'?(pageX-(window.scrollX||window.pageXOffset||0)):0);const clientY=(typeof ev.clientY==='number')?ev.clientY:(typeof pageY==='number'?(pageY-(window.scrollY||window.pageYOffset||0)):0);const offsetX=12,offsetY=12;let left=clientX+offsetX;let top=clientY+offsetY;const maxLeft=window.innerWidth-240;const maxTop=window.innerHeight-40;left=Math.max(4,Math.min(left,maxLeft));top=Math.max(4,Math.min(top,maxTop));this.state.tooltip.title=seg&&seg.name?seg.name:'Unknown';this.state.tooltip.value=seg&&seg.value?seg.value:0;this.state.tooltip.percent=seg&&seg.percent?seg.percent:0;this.state.tooltip.key=(seg&&seg.rawKey)?seg.rawKey:(seg&&seg.name)||null;-this.state.tooltip.left=Number.isFinite(left)?left:0;-this.state.tooltip.top=Number.isFinite(top)?top:0;-this.state.tooltip.visible=true;+this._showDomTooltip(this.state.tooltip.title,this.state.tooltip.value,this.state.tooltip.percent,left,top);}catch(e){console.error('PLB showTooltip error',e);}}
+moveTooltip=(seg,ev)=>{if(!this.state.tooltip.visible)return;try{ev=ev||(window&&window.event)||{};const pageX=(ev&&typeof ev.pageX==='number')?ev.pageX:undefined;const pageY=(ev&&typeof ev.pageY==='number')?ev.pageY:undefined;const clientX=(typeof ev.clientX==='number')?ev.clientX:(typeof pageX==='number'?(pageX-(window.scrollX||window.pageXOffset||0)):0);const clientY=(typeof ev.clientY==='number')?ev.clientY:(typeof pageY==='number'?(pageY-(window.scrollY||window.pageYOffset||0)):0);const offsetX=12,offsetY=12;let left=clientX+offsetX;let top=clientY+offsetY;const maxLeft=window.innerWidth-240;const maxTop=window.innerHeight-40;left=Math.max(4,Math.min(left,maxLeft));top=Math.max(4,Math.min(top,maxTop));-this.state.tooltip.left=Number.isFinite(left)?left:this.state.tooltip.left;-this.state.tooltip.top=Number.isFinite(top)?top:this.state.tooltip.top;+this._moveDomTooltip(left,top);}catch(e){console.error('PLB moveTooltip error',e);}}
+-hideTooltip=()=>{-this.state.tooltip.visible=false;-this.state.tooltip.key=null;-}
++hideTooltip=()=>{+this.state.tooltip.visible=false;+this.state.tooltip.key=null;+this._hideDomTooltip();+}
++
++
++_getDomTooltip(){+let el=document.getElementById('plb-dashboard-tooltip');+return el;+}
++
++_createDomTooltip(title,value,percent,left,top){+const el=document.createElement('div');+el.id='plb-dashboard-tooltip';+el.className='badge bg-dark text-white';+el.style.position='fixed';+el.style.left=`${left}px`;+el.style.top=`${top}px`;+el.style.zIndex='1200';+el.style.whiteSpace='nowrap';+el.style.padding='6px 8px';+el.style.pointerEvents='none';+
++const escapeHtml=s=>String(s).replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"})[c]);+el.innerHTML=`<div style="font-weight:600;">${escapeHtml(title)}</div><div style="font-size:12px; opacity:0.95;">${this.formatCurrency(value)} (${Number(percent).toFixed(2)}%)</div>`;document.body.appendChild(el);+return el;+}
++
++_showDomTooltip(title,value,percent,left,top){+try{+
++const escapeHtml=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;"})[c]);+let el=this._getDomTooltip();+if(!el){+el=document.createElement('div');+el.id='plb-dashboard-tooltip';+el.className='badge bg-dark text-white';+el.style.position='fixed';+el.style.zIndex='1200';+el.style.whiteSpace='nowrap';+el.style.padding='6px 8px';+el.style.pointerEvents='none';+document.body.appendChild(el);+}
++el.style.left=`${left}px`;+el.style.top=`${top}px`;+el.innerHTML=`<div style="font-weight:600;">${escapeHtml(title)}</div><div style="font-size:12px; opacity:0.95;">${this.formatCurrency(value)} (${Number(percent).toFixed(2)}%)</div>`;+el.style.display='block';+}catch(e){+console.error('PLB _showDomTooltip error',e);+}
++}
++
++_moveDomTooltip(left,top){+try{+const el=this._getDomTooltip();+if(el){+el.style.left=`${left}px`;+el.style.top=`${top}px`;+}
++}catch(e){console.error('PLB _moveDomTooltip error',e);}
++}
++
++_hideDomTooltip(){+try{+const el=this._getDomTooltip();+if(el){el.style.display='none';}
++}catch(e){console.error('PLB _hideDomTooltip error',e);}
++}}
+PLBDashboard.template=xml`
+<div class="container-fluid p-4" style="height:100%; overflow:auto;">
+    <h3 class="mb-3">PLB Dashboard</h3>
+
+    <!-- Loading state -->
+    <t t-if="state.loading">
+        <div class="text-center my-5">
+            <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div>
+            <p class="mt-2">Loading dashboard data...</p>
+        </div>
+    </t>
+
+    <t t-else="">
+        <!-- Revenue Summary Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3 col-lg-3">
+                <div class="card text-center" style="border-left: 4px solid #007bff;">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">Total Leads</h6>
+                        <h3 class="card-title"><t t-esc="state.revenueSummary.lead_count"/></h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-lg-3">
+                <div class="card text-center" style="border-left: 4px solid #28a745;">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">Expected Revenue</h6>
+                        <h3 class="card-title"><t t-esc="formatCurrency(state.revenueSummary.total_expected_revenue)"/></h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-lg-3">
+                <div class="card text-center" style="border-left: 4px solid #dc3545;">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">Realized FY2025</h6>
+                        <h3 class="card-title"><t t-esc="formatCurrency(state.revenueSummary.total_realized_revenue)"/></h3>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3 col-lg-3">
+                <div class="card text-center" style="border-left: 4px solid #6f42c1;">
+                    <div class="card-body">
+                        <h6 class="card-subtitle mb-2 text-muted">Carry Forward</h6>
+                        <h3 class="card-title"><t t-esc="formatCurrency(state.totalCarryForward)"/></h3>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stage Counts -->
+        <div class="mb-3">
+            <!-- Filters: Salesperson, Stage, Service -->
+            <div class="d-flex mb-2" style="gap:12px; align-items:center;">
+                <div>
+                    <label class="form-label mb-0 small">Salesperson</label>
+                    <select class="form-select form-select-sm" t-on-change="ev => this.setFilter('salesperson', ev.target.value)">
+                        <t t-foreach="state.salespersons" t-as="sp" t-key="sp">
+                            <option t-att-value="sp"><t t-esc="sp"/></option>
+                        </t>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label mb-0 small">Stage</label>
+                    <select class="form-select form-select-sm" t-on-change="ev => this.setFilter('stage', ev.target.value)">
+                        <t t-foreach="state.stages" t-as="st" t-key="st">
+                            <option t-att-value="st"><t t-esc="st"/></option>
+                        </t>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label mb-0 small">Service</label>
+                    <select class="form-select form-select-sm" t-on-change="ev => this.setFilter('service', ev.target.value)">
+                        <t t-foreach="state.services" t-as="sv" t-key="sv">
+                            <option t-att-value="sv"><t t-esc="sv"/></option>
+                        </t>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label mb-0 small">Year</label>
+                    <select class="form-select form-select-sm" t-on-change="ev => this.setFilter('year', ev.target.value)">
+                        <t t-foreach="state.years" t-as="yr" t-key="yr">
+                            <option t-att-value="yr" t-att-selected="yr === state.filters.year"><t t-esc="yr"/></option>
+                        </t>
+                    </select>
+                </div>
+            </div>
+
+            <h5>Pipeline Stages</h5>
+            <t t-if="Object.keys(state.stageCounts).length">
+                <div style="display:flex; flex-wrap:wrap; gap:12px;">
+                    <t t-foreach="Object.entries(state.stageCounts)" t-as="entry" t-key="entry[0]">
+                        <div style="padding:8px 16px; background:#e9ecef; border-radius:20px; font-size:14px;">
+                            <strong><t t-esc="entry[0]"/>:</strong> <t t-esc="entry[1]"/>
+                        </div>
+                    </t>
+                </div>
+            </t>
+            <t t-else="">
+                <div class="text-muted">No stage data available.</div>
+            </t>
+        </div>
+
+        <!-- Services Pie Chart -->
+        <div class="mb-4">
+            <h5>Services Breakdown</h5>
+            <t t-if="state.serviceSegments &amp;&amp; state.serviceSegments.length">
+                <div class="d-flex align-items-center position-relative">
+                    <svg width="200" height="200" viewBox="0 0 200 200" aria-label="Services pie chart">
+                        <g transform="translate(100,100)">
+                            <t t-foreach="state.serviceSegments" t-as="seg" t-key="seg.name">
+                                <path t-att-d="seg.path" t-att-fill="seg.color" stroke="#fff"
+                                      t-att-stroke-width="state.tooltip.key === seg.rawKey ? '3' : '0.6'"
+                                      t-att-opacity="state.tooltip.key ? (state.tooltip.key !== seg.rawKey ? '0.45' : '1') : '1'"
+                                      style="cursor:pointer; pointer-events:auto;"
+                                       t-on-mouseenter="ev => this.showTooltip(seg, ev)"
+                                       t-on-mousemove="ev => this.moveTooltip(seg, ev)"
+                                       t-on-mouseleave="this.hideTooltip"/>
+                            </t>
+                        </g>
+                    </svg>
+                    <div class="ms-3">
+                        <t t-foreach="state.serviceSegments" t-as="seg" t-key="seg.name">
+                            <div class="mb-1" t-on-mouseenter="ev => this.showTooltip(seg, ev)" t-on-mousemove="ev => this.moveTooltip(seg, ev)" t-on-mouseleave="this.hideTooltip">
+                                <span t-att-style="'display:inline-block;width:12px;height:12px;background:'+seg.color+';margin-right:8px;vertical-align:middle;'"></span>
+                                <strong><t t-esc="seg.name"/></strong> - <t t-esc="formatNumber(seg.value)"/> (<t t-esc="seg.percent.toFixed(2)"/>&#37;)
+                            </div>
+                        </t>
+                    </div>
+
+                    <!-- Tooltip (absolute) -->
+                    <t t-if="state.tooltip.visible">
+                        <div class="badge bg-dark text-white position-fixed" t-att-style="'left:'+state.tooltip.left+'px; top:'+state.tooltip.top+'px; z-index:1200; white-space:nowrap; padding:6px 8px; pointer-events:none;'">
+                            <div style="font-weight:600;"><t t-esc="state.tooltip.title"/></div>
+                            <div style="font-size:12px; opacity:0.95;"><t t-esc="formatCurrency(state.tooltip.value)"/> (<t t-esc="state.tooltip.percent.toFixed(2)"/>&#37;)</div>
+                        </div>
+                    </t>
+                </div>
+            </t>
+            <t t-else="">
+                <div class="text-muted">No service data available.</div>
+            </t>
+        </div>
+
+        <!-- Main Data Table -->
+        <div class="table-responsive">
+            <style>
+                /* Ensure table-bordered shows regular borders (Bootstrap may set these elsewhere) */
+                table.table-bordered th, table.table-bordered td { border: 1px solid #dee2e6 !important; }
+                /* Double border only on monthly subtotal cells (Jan..Dec) */
+                .plb-footer .plb-month-border { border-top: 3px double #333 !important; border-bottom: 3px double #333 !important; }
+                /* Remove the bottom border of subtotal's non-month cells so the double line doesn't continue across */
+                .plb-footer .plb-subtotal-no-bottom { border-bottom: none !important; }
+                /* Remove the top border of the cumulative row cells to avoid a full-width line between subtotal &amp; cumulative */
+                .plb-footer .plb-cumulative-no-top { border-top: none !important; }
+            </style>
+            <table class="table table-bordered table-hover table-sm sticky-head" style="border-collapse:collapse; border-spacing:0;">
+                <thead class="table-light">
+                    <tr>
+                        <th rowspan="2">Company</th>
+                        <th rowspan="2">Project Name</th>
+                        <th rowspan="2">Salesperson</th>
+                        <th rowspan="2">Stage</th>
+                        <th rowspan="2">Expected Revenue</th>
+                        <th rowspan="2">Services</th>
+                        <!-- Dept/Region column removed -->
+                        <th colspan="12" class="text-center">Realized Revenue (Months)</th>
+                        <th rowspan="2">Realized FY2025</th>
+                        <th rowspan="2">Carry Forward</th>
+                         <!-- Profit Margin column removed -->
+                     </tr>
+                    <tr>
+                        <th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th><th>Jun</th>
+                        <th>Jul</th><th>Aug</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <t t-if="getFilteredRows() &amp;&amp; getFilteredRows().length">
+                        <tr t-foreach="getFilteredRows()" t-as="row" t-key="row.id">
+                            <td><t t-esc="row.company || 'NULL'"/></td>
+                            <td><t t-esc="row.customer || 'NULL'"/></td>
+                            <td><t t-esc="formatText(row.salesperson)"/></td>
+                            <td><t t-esc="row.stage || 'NULL'"/></td>
+                            <td class="text-end"><t t-esc="formatCurrency(row.sales)"/></td>
+                            <td><t t-esc="formatText(row.services)"/></td>
+
+                            <!-- Loop for monthly revenue -->
+                            <t t-foreach="row.monthlyRevenue || []" t-as="month" t-key="month">
+                                <td class="text-end"><t t-esc="formatCurrency(month)"/></td>
+                            </t>
+                            <td class="text-end"><t t-esc="formatCurrency(row.realizedRevenue)"/></td>
+                            <td class="text-end"><t t-esc="formatCurrency(row.carryForward)"/></td>
+                         </tr>
+                     </t>
+                     <t t-else="">
+                         <tr>
+                            <td colspan="20" class="text-center text-muted">No data available</td>
+                         </tr>
+                     </t>
+                 </tbody>
+                 <tfoot class="plb-footer">
+                     <!-- Emphasized subtotal row: double top/bottom border only on monthly columns -->
+                     <tr style="font-weight:700; background:#f8f9fa;">
+                         <!-- remove bottom border on the leading label cell so the double line won't continue across -->
+                         <td colspan="6" class="text-end plb-subtotal-no-bottom"><strong>Monthly Subtotal</strong></td>
+                         <!-- Double top and bottom border only on monthly columns (Jan..Dec) -->
+                         <t t-foreach="state.monthlySubtotals" t-as="m" t-key="m">
+                             <td class="text-end plb-month-border" style="font-weight:700;"><t t-esc="formatCurrency(m)"/></td>
+                         </t>
+                     </tr>
+
+                     <!-- Cumulative row: slightly lighter styling, no full-width top border so the double line appears only under monthly columns -->
+                     <tr style="font-weight:600; background:#ffffff;">
+                         <td colspan="6" class="text-end plb-cumulative-no-top"><strong>Cumulative</strong></td>
+                         <t t-foreach="state.monthlyCumulative" t-as="c" t-key="c">
+                             <td class="text-end plb-cumulative-no-top" style="font-weight:600;"><t t-esc="formatCurrency(c)"/></td>
+                         </t>
+                     </tr>
+                 </tfoot>
+             </table>
+         </div>
+     </t>
+ </div>
+ `;registry.category("actions").add("PLB_dashboard_tag",PLBDashboard);return __exports;});;
+
 /* /snailmail/static/src/core/failure_model_patch.js */
 odoo.define('@snailmail/core/failure_model_patch',['@mail/core/common/failure_model','@web/core/l10n/translation','@web/core/utils/patch'],function(require){'use strict';let __exports={};const{Failure}=require("@mail/core/common/failure_model");const{_t}=require("@web/core/l10n/translation");const{patch}=require("@web/core/utils/patch");patch(Failure.prototype,{get iconSrc(){if(this.type==="snail"){return"/snailmail/static/img/snailmail_failure.png";}
 return super.iconSrc;},get body(){if(this.type==="snail"){return _t("An error occurred when sending a letter with Snailmail.");}
