@@ -186,18 +186,46 @@ class PLBDashboardController(http.Controller):
         }
 
     @http.route('/plb/stage_counts', type='json', auth='user')
-    def get_stage_counts(self):
+    def get_stage_counts(self, year=None):
         """
-        Get count of leads grouped by stage
+        Get count of leads grouped by stage, filtered by expected_start_date year
         """
+        from datetime import datetime
         Lead = request.env['crm.lead'].sudo()
 
-        # Get all stages
-        stages = Lead.search_read([], ['stage_id'])
+        try:
+            if year:
+                y = int(year)
+            else:
+                y = datetime.now().year
+        except Exception:
+            y = datetime.now().year
 
-        # Count by stage
+        # Get all leads with stage and expected_start_date
+        stages = Lead.search_read([], ['stage_id', 'expected_start_date'])
+
+        # Count by stage, filtering by expected_start_date year
         stage_counts = {}
         for lead in stages:
+            # Filter by expected_start_date year
+            expected_start = lead.get('expected_start_date')
+            start_year = None
+            if expected_start:
+                if isinstance(expected_start, str):
+                    try:
+                        start_year = int(expected_start.split('-')[0])
+                    except Exception:
+                        start_year = None
+                else:
+                    try:
+                        start_year = expected_start.year
+                    except Exception:
+                        start_year = None
+
+            # Only count leads with expected_start_date in the specified year
+            if start_year != y:
+                continue
+
             stage = lead.get('stage_id')
             if stage:
                 stage_name = stage[1] if isinstance(stage, (list, tuple)) and len(stage) > 1 else str(stage)
@@ -206,11 +234,20 @@ class PLBDashboardController(http.Controller):
         return stage_counts
 
     @http.route('/plb/revenue_summary', type='json', auth='user')
-    def get_revenue_summary(self):
+    def get_revenue_summary(self, year=None):
         """
-        Get aggregated revenue statistics
+        Get aggregated revenue statistics, filtered by expected_start_date year
         """
+        from datetime import datetime
         Lead = request.env['crm.lead'].sudo()
+
+        try:
+            if year:
+                y = int(year)
+            else:
+                y = datetime.now().year
+        except Exception:
+            y = datetime.now().year
 
         leads = Lead.search_read(
             domain=[],
@@ -222,9 +259,28 @@ class PLBDashboardController(http.Controller):
         total_leads = 0
 
         for l in leads:
+            expected_start = l.get('expected_start_date')
+
+            # Filter by expected_start_date year
+            start_year = None
+            if expected_start:
+                if isinstance(expected_start, str):
+                    try:
+                        start_year = int(expected_start.split('-')[0])
+                    except Exception:
+                        start_year = None
+                else:
+                    try:
+                        start_year = expected_start.year
+                    except Exception:
+                        start_year = None
+
+            # Only process leads with expected_start_date in the specified year
+            if start_year != y:
+                continue
+
             sales = l.get('expected_revenue', 0) or 0
             contract_months = l.get('contract_months', 0) or 0
-            expected_start = l.get('expected_start_date')
 
             # determine start month
             start_month = None
@@ -505,3 +561,341 @@ class PLBDashboardController(http.Controller):
             'months': months,
             'regions': regions,
         }
+
+    @http.route('/plb/pipeline_ytd_by_region', type='json', auth='user')
+    def get_pipeline_ytd_by_region(self, year=None):
+        """
+        Return monthly pipeline (YTD) series grouped by dept_region for a given year.
+        Similar to Total pipeline (YTD) but broken down by region.
+        Response format:
+        {
+            'year': y,
+            'months': [...],
+            'regions': {
+                'central': { 'label': 'Central', 'monthly': [...], 'ytd': [...] },
+                ...
+            }
+        }
+        """
+        from datetime import datetime
+        Lead = request.env['crm.lead'].sudo()
+
+        try:
+            if year:
+                y = int(year)
+            else:
+                y = datetime.now().year
+        except Exception:
+            y = datetime.now().year
+
+        # Prepare mapping of known selection keys to labels
+        mapping = {
+            'central': 'Central',
+            'northern': 'Northern',
+            'southern': 'Southern',
+        }
+
+        # Regions map: key -> {'label':..., 'monthly':[0]*12}
+        regions = {}
+
+        leads = Lead.search_read(
+            domain=[],
+            fields=['expected_revenue', 'expected_start_date', 'dept_region']
+        )
+
+        for l in leads:
+            sales = l.get('expected_revenue', 0) or 0
+            rkey = l.get('dept_region') or 'unknown'
+            if isinstance(rkey, (list, tuple)):
+                if len(rkey) > 0:
+                    rkey = rkey[0]
+                else:
+                    rkey = 'unknown'
+            rkey = rkey if rkey else 'unknown'
+
+            if rkey not in regions:
+                regions[rkey] = {
+                    'label': mapping.get(rkey, (str(rkey).title() if rkey != 'unknown' else 'Unknown')),
+                    'monthly': [0.0] * 12,
+                }
+
+            # expected_start_date -> attribute revenue to that month
+            es = l.get('expected_start_date')
+            if es:
+                try:
+                    if isinstance(es, str):
+                        dt = datetime.strptime(es.split('+')[0].split('Z')[0].strip(), '%Y-%m-%d %H:%M:%S') if ' ' in es else datetime.strptime(es, '%Y-%m-%d')
+                    else:
+                        dt = es
+                    if dt.year == y:
+                        m = dt.month
+                        regions[rkey]['monthly'][m-1] += float(sales)
+                except Exception:
+                    try:
+                        s = str(es)
+                        mm = int(s.split('-')[1])
+                        yy = int(s.split('-')[0])
+                        if yy == y:
+                            regions[rkey]['monthly'][mm-1] += float(sales)
+                    except Exception:
+                        pass
+
+        # compute YTD cumulative for each region (convert to millions)
+        months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+        for k, v in regions.items():
+            ytd = [0.0] * 12
+            running = 0.0
+            for i in range(12):
+                running += v['monthly'][i]
+                ytd[i] = running / 1e6  # convert to millions
+            v['ytd'] = ytd
+
+        return {
+            'year': y,
+            'months': months,
+            'regions': regions,
+        }
+
+    @http.route('/plb/avg_pipeline_per_person', type='json', auth='user')
+    def get_avg_pipeline_per_person(self, year=None):
+        """
+        Return average pipeline per person (YTD) for a given year.
+        Formula: For each month, calculate total pipeline / number of unique salespersons with leads in that month
+        Response format:
+        {
+            'year': y,
+            'months': [...],
+            'monthly': [...],  # monthly pipeline values
+            'ytd': [...],      # YTD cumulative pipeline values
+            'person_count': [...],  # number of people per month
+            'avg_per_person': [...]  # average pipeline per person (YTD / person count)
+        }
+        """
+        from datetime import datetime
+        Lead = request.env['crm.lead'].sudo()
+
+        try:
+            if year:
+                y = int(year)
+            else:
+                y = datetime.now().year
+        except Exception:
+            y = datetime.now().year
+
+        # Monthly aggregations
+        monthly_pipeline = [0.0] * 12
+        monthly_people = [set() for _ in range(12)]  # track unique user_ids per month
+
+        leads = Lead.search_read(
+            domain=[],
+            fields=['expected_revenue', 'expected_start_date', 'user_id']
+        )
+
+        for l in leads:
+            sales = l.get('expected_revenue', 0) or 0
+            user_id = l.get('user_id')
+
+            # Extract user_id (it's usually a tuple [id, name])
+            uid = None
+            if user_id:
+                if isinstance(user_id, (list, tuple)) and len(user_id) > 0:
+                    uid = user_id[0]
+                elif isinstance(user_id, int):
+                    uid = user_id
+
+            # expected_start_date -> attribute revenue to that month
+            es = l.get('expected_start_date')
+            if es:
+                try:
+                    if isinstance(es, str):
+                        dt = datetime.strptime(es.split('+')[0].split('Z')[0].strip(), '%Y-%m-%d %H:%M:%S') if ' ' in es else datetime.strptime(es, '%Y-%m-%d')
+                    else:
+                        dt = es
+                    if dt.year == y:
+                        m = dt.month
+                        monthly_pipeline[m-1] += float(sales)
+                        if uid:
+                            monthly_people[m-1].add(uid)
+                except Exception:
+                    try:
+                        s = str(es)
+                        mm = int(s.split('-')[1])
+                        yy = int(s.split('-')[0])
+                        if yy == y:
+                            monthly_pipeline[mm-1] += float(sales)
+                            if uid:
+                                monthly_people[mm-1].add(uid)
+                    except Exception:
+                        pass
+
+        # Compute YTD cumulative pipeline (in millions)
+        ytd = [0.0] * 12
+        running = 0.0
+        for i in range(12):
+            running += monthly_pipeline[i]
+            ytd[i] = running / 1e6  # convert to millions
+
+        # Count unique people cumulative (YTD)
+        cumulative_people = [set() for _ in range(12)]
+        all_people = set()
+        for i in range(12):
+            all_people = all_people.union(monthly_people[i])
+            cumulative_people[i] = all_people.copy()
+
+        # Calculate avg pipeline per person
+        person_count = [len(cumulative_people[i]) for i in range(12)]
+        avg_per_person = [0.0] * 12
+        for i in range(12):
+            if person_count[i] > 0:
+                avg_per_person[i] = ytd[i] / person_count[i]
+            else:
+                avg_per_person[i] = 0.0
+
+        months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+
+        return {
+            'year': y,
+            'months': months,
+            'monthly': monthly_pipeline,
+            'ytd': ytd,
+            'person_count': person_count,
+            'avg_per_person': avg_per_person,
+        }
+
+    @http.route('/plb/avg_pipeline_per_person_by_region', type='json', auth='user')
+    def get_avg_pipeline_per_person_by_region(self, year=None):
+        """
+        Return average pipeline per person (YTD) by region for a given year.
+        Similar to avg_pipeline_per_person but broken down by dept_region.
+        Response format:
+        {
+            'year': y,
+            'months': [...],
+            'regions': {
+                'central': { 'label': 'Central', 'avg_per_person': [...] },
+                ...
+            }
+        }
+        """
+        from datetime import datetime
+        Lead = request.env['crm.lead'].sudo()
+
+        try:
+            if year:
+                y = int(year)
+            else:
+                y = datetime.now().year
+        except Exception:
+            y = datetime.now().year
+
+        # Prepare mapping of known selection keys to labels
+        mapping = {
+            'central': 'Central',
+            'northern': 'Northern',
+            'southern': 'Southern',
+        }
+
+        # Regions map: key -> {'label':..., 'monthly_pipeline':[0]*12, 'monthly_people':[set()]*12}
+        regions = {}
+
+        leads = Lead.search_read(
+            domain=[],
+            fields=['expected_revenue', 'expected_start_date', 'user_id', 'dept_region']
+        )
+
+        for l in leads:
+            sales = l.get('expected_revenue', 0) or 0
+            user_id = l.get('user_id')
+            rkey = l.get('dept_region') or 'unknown'
+
+            if isinstance(rkey, (list, tuple)):
+                if len(rkey) > 0:
+                    rkey = rkey[0]
+                else:
+                    rkey = 'unknown'
+            rkey = rkey if rkey else 'unknown'
+
+            # Skip unknown region
+            if rkey == 'unknown':
+                continue
+
+            if rkey not in regions:
+                regions[rkey] = {
+                    'label': mapping.get(rkey, str(rkey).title()),
+                    'monthly_pipeline': [0.0] * 12,
+                    'monthly_people': [set() for _ in range(12)],
+                }
+
+            # Extract user_id (it's usually a tuple [id, name])
+            uid = None
+            if user_id:
+                if isinstance(user_id, (list, tuple)) and len(user_id) > 0:
+                    uid = user_id[0]
+                elif isinstance(user_id, int):
+                    uid = user_id
+
+            # expected_start_date -> attribute revenue to that month
+            es = l.get('expected_start_date')
+            if es:
+                try:
+                    if isinstance(es, str):
+                        dt = datetime.strptime(es.split('+')[0].split('Z')[0].strip(), '%Y-%m-%d %H:%M:%S') if ' ' in es else datetime.strptime(es, '%Y-%m-%d')
+                    else:
+                        dt = es
+                    if dt.year == y:
+                        m = dt.month
+                        regions[rkey]['monthly_pipeline'][m-1] += float(sales)
+                        if uid:
+                            regions[rkey]['monthly_people'][m-1].add(uid)
+                except Exception:
+                    try:
+                        s = str(es)
+                        mm = int(s.split('-')[1])
+                        yy = int(s.split('-')[0])
+                        if yy == y:
+                            regions[rkey]['monthly_pipeline'][mm-1] += float(sales)
+                            if uid:
+                                regions[rkey]['monthly_people'][mm-1].add(uid)
+                    except Exception:
+                        pass
+
+        # Compute YTD cumulative and avg per person for each region
+        months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+        for k, v in regions.items():
+            # Compute YTD cumulative pipeline (in millions)
+            ytd = [0.0] * 12
+            running = 0.0
+            for i in range(12):
+                running += v['monthly_pipeline'][i]
+                ytd[i] = running / 1e6  # convert to millions
+
+            # Count unique people cumulative (YTD)
+            cumulative_people = [set() for _ in range(12)]
+            all_people = set()
+            for i in range(12):
+                all_people = all_people.union(v['monthly_people'][i])
+                cumulative_people[i] = all_people.copy()
+
+            # Calculate avg pipeline per person
+            person_count = [len(cumulative_people[i]) for i in range(12)]
+            avg_per_person = [0.0] * 12
+            for i in range(12):
+                if person_count[i] > 0:
+                    avg_per_person[i] = ytd[i] / person_count[i]
+                else:
+                    avg_per_person[i] = 0.0
+
+            v['ytd'] = ytd
+            v['person_count'] = person_count
+            v['avg_per_person'] = avg_per_person
+            # Clean up temporary data
+            del v['monthly_pipeline']
+            del v['monthly_people']
+
+        return {
+            'year': y,
+            'months': months,
+            'regions': regions,
+        }
+
+

@@ -181193,7 +181193,7 @@ return __exports;
 
 /********************************************************
 *  Filepath: /plb_dashboard/static/src/js/dashboard.js  *
-*  Lines: 1524                                          *
+*  Lines: 2584                                          *
 ********************************************************/
 odoo.define('@plb_dashboard/js/dashboard', ['@web/core/registry', '@odoo/owl', '@web/core/utils/hooks'], function (require) {
 'use strict';
@@ -181218,6 +181218,15 @@ const PLBDashboard = __exports.PLBDashboard = class PLBDashboard extends Compone
             // Hit rate by region state
             hitRateByRegion: { year: null, months: [], regions: {} },
             hitRateRegionSeries: { regions: [] },
+            // Pipeline YTD by region state
+            pipelineByRegion: { year: null, months: [], regions: {} },
+            pipelineRegionSeries: { regions: [], months: [], ticks: [], maxVal: 1 },
+            // Avg pipeline per person state
+            avgPipelinePerPerson: { year: null, months: [], avg_per_person: [] },
+            avgPipelinePerPersonSeries: { pathSegments: [], points: [], months: [], ticks: [], maxVal: 1 },
+            // Avg pipeline per person by region state
+            avgPipelinePerPersonByRegion: { year: null, months: [], regions: {} },
+            avgPipelinePerPersonByRegionSeries: { regions: [], months: [], ticks: [], maxVal: 1 },
             // filter options and current selection
             salespersons: [],
             stages: [],
@@ -181272,14 +181281,17 @@ const PLBDashboard = __exports.PLBDashboard = class PLBDashboard extends Compone
                 this.state.customers = customersData.customers;
             }
 
-            // Fetch stage counts
-            const stageCounts = await this.rpc("/plb/stage_counts");
+            // Get the active year for filtering
+            const activeYear = (this.state.filters && this.state.filters.year && this.state.filters.year !== 'All') ? Number(this.state.filters.year) : (new Date()).getFullYear();
+
+            // Fetch stage counts (filtered by year)
+            const stageCounts = await this.rpc("/plb/stage_counts", { year: activeYear });
             if (stageCounts) {
                 this.state.stageCounts = stageCounts;
             }
 
-            // Fetch revenue summary
-            const revenueSummary = await this.rpc("/plb/revenue_summary");
+            // Fetch revenue summary (filtered by year)
+            const revenueSummary = await this.rpc("/plb/revenue_summary", { year: activeYear });
             if (revenueSummary) {
                 this.state.revenueSummary = revenueSummary;
             }
@@ -181289,7 +181301,6 @@ const PLBDashboard = __exports.PLBDashboard = class PLBDashboard extends Compone
             this.computeTotals();
             // Compute hit rate and pie for the active year. Prefer server aggregation (more reliable),
             // but fall back to client-side computation from loaded rows if the server returns no data.
-            const activeYear = (this.state.filters && this.state.filters.year && this.state.filters.year !== 'All') ? Number(this.state.filters.year) : (new Date()).getFullYear();
             try {
                 // Try server-side first
                 await this.loadHitRate(activeYear);
@@ -181307,6 +181318,12 @@ const PLBDashboard = __exports.PLBDashboard = class PLBDashboard extends Compone
              await this.loadHitRateByRegion(activeYear);
              // load total pipeline series (YTD)
              await this.loadPipelineSeries(activeYear);
+             // load pipeline YTD by region
+             await this.loadPipelineByRegion(activeYear);
+             // load avg pipeline per person
+             await this.loadAvgPipelinePerPerson(activeYear);
+             // load avg pipeline per person by region
+             await this.loadAvgPipelinePerPersonByRegion(activeYear);
 
             console.debug('PLB Dashboard loaded:', {
                 rows: this.state.rows.length,
@@ -181435,27 +181452,69 @@ const PLBDashboard = __exports.PLBDashboard = class PLBDashboard extends Compone
     }
 
     // Set a filter and recompute totals and charts (accept either event or direct value)
-    setFilter = (name, evOrValue) => {
+    setFilter = async (name, evOrValue) => {
         const value = (evOrValue && evOrValue.target && evOrValue.target.value !== undefined) ? evOrValue.target.value : evOrValue;
         this.state.filters[name] = value;
+
+        // Get the active year for filtering
+        const yearToLoad = (this.state.filters && this.state.filters.year && this.state.filters.year !== 'All') ? Number(this.state.filters.year) : (new Date()).getFullYear();
+
+        // If year filter changed, reload stage counts and revenue summary
+        if (name === 'year') {
+            try {
+                const stageCounts = await this.rpc("/plb/stage_counts", { year: yearToLoad });
+                if (stageCounts) {
+                    this.state.stageCounts = stageCounts;
+                }
+
+                const revenueSummary = await this.rpc("/plb/revenue_summary", { year: yearToLoad });
+                if (revenueSummary) {
+                    this.state.revenueSummary = revenueSummary;
+                }
+            } catch (err) {
+                console.error('Failed to reload stage counts or revenue summary:', err);
+            }
+        }
+
         // recompute monthly totals (table) based on filtered rows
         this.computeTotals();
         // reload hit rate and pie based on filters (use selected year or current year)
-        const yearToLoad = (this.state.filters && this.state.filters.year && this.state.filters.year !== 'All') ? Number(this.state.filters.year) : (new Date()).getFullYear();
         this.loadHitRateFromRows(yearToLoad);
         this.loadHitRateByRegion(yearToLoad);
         this.loadPipelineSeries(yearToLoad);
+        this.loadPipelineByRegion(yearToLoad);
+        this.loadAvgPipelinePerPerson(yearToLoad);
+        this.loadAvgPipelinePerPersonByRegion(yearToLoad);
     }
 
     // Reset all filters to 'All' (include year) and recompute totals
-    resetFilters = () => {
+    resetFilters = async () => {
         // Reset filters but default year to the current year (no 'All')
         this.state.filters = { salesperson: 'All', stage: 'All', service: 'All', year: String((new Date()).getFullYear()) };
-        this.computeTotals();
         const yearToLoad = Number(this.state.filters.year);
+
+        // Reload stage counts and revenue summary for the current year
+        try {
+            const stageCounts = await this.rpc("/plb/stage_counts", { year: yearToLoad });
+            if (stageCounts) {
+                this.state.stageCounts = stageCounts;
+            }
+
+            const revenueSummary = await this.rpc("/plb/revenue_summary", { year: yearToLoad });
+            if (revenueSummary) {
+                this.state.revenueSummary = revenueSummary;
+            }
+        } catch (err) {
+            console.error('Failed to reload stage counts or revenue summary:', err);
+        }
+
+        this.computeTotals();
         this.loadHitRateFromRows(yearToLoad);
         this.loadHitRateByRegion(yearToLoad);
         this.loadPipelineSeries(yearToLoad);
+        this.loadPipelineByRegion(yearToLoad);
+        this.loadAvgPipelinePerPerson(yearToLoad);
+        this.loadAvgPipelinePerPersonByRegion(yearToLoad);
     }
 
     // Helper: format a numeric value with 2 decimals, or return 'NULL' for missing/false values
@@ -182003,6 +182062,366 @@ const PLBDashboard = __exports.PLBDashboard = class PLBDashboard extends Compone
         } catch (e) { console.error('showPipelinePoint', e); }
     }
 
+    // Load Pipeline YTD by Region from server
+    loadPipelineByRegion = async (year) => {
+        try {
+            if (!year || year === 'All') year = (new Date()).getFullYear();
+            const resp = await this.rpc("/plb/pipeline_ytd_by_region", { year: Number(year) });
+            if (resp && resp.regions) {
+                this.state.pipelineByRegion = resp;
+                this.computePipelineRegionSeries(resp);
+            } else {
+                this.state.pipelineByRegion = { year: year, months: [], regions: {} };
+                this.state.pipelineRegionSeries = { regions: [], months: [], ticks: [], maxVal: 1 };
+            }
+        } catch (e) {
+            console.error('loadPipelineByRegion error', e);
+            this.state.pipelineByRegion = { year: year, months: [], regions: {} };
+            this.state.pipelineRegionSeries = { regions: [], months: [], ticks: [], maxVal: 1 };
+        }
+    }
+
+    // Compute bar chart series for pipeline YTD by region
+    computePipelineRegionSeries = (resp) => {
+        try {
+            const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            const w = 600, h = 320;
+            const marginLeft = 80, marginRight = 20, marginTop = 20, marginBottom = 60;
+            const plotW = w - marginLeft - marginRight;
+            const plotH = h - marginTop - marginBottom;
+
+            const regions = resp.regions || {};
+            // Filter out 'unknown' regions and sort in specific order: Central, Southern, Northern
+            const regionOrder = ['central', 'southern', 'northern'];
+            const regionKeys = regionOrder.filter(k => regions[k] && k !== 'unknown');
+
+            // Define specific colors for regions using brand palette
+            const colorMap = {
+                'southern': '#2E7D32',  // Professional green (complementary)
+                'northern': '#C62828',  // Primary Red (brand)
+                'central': '#0D47A1'    // Primary Blue (brand)
+            };
+
+            // Compute max value across all regions and months (excluding unknown)
+            let maxVal = 1;
+            regionKeys.forEach(key => {
+                const ytd = regions[key].ytd || [];
+                ytd.forEach(v => { if (v > maxVal) maxVal = v; });
+            });
+
+            // X positions for each month (center of bar group)
+            const monthWidth = plotW / 12;
+            const barGroupWidth = monthWidth * 0.9; // 90% of month space
+            const barWidth = regionKeys.length > 0 ? barGroupWidth / regionKeys.length : 20;
+
+            const monthPositions = [];
+            for (let i = 0; i < 12; i++) {
+                const x = marginLeft + (i * monthWidth) + (monthWidth / 2);
+                monthPositions.push({ x: x, label: months[i] });
+            }
+
+            // Build bar data for each region
+            const regionSeries = regionKeys.map((key, regionIdx) => {
+                const data = regions[key];
+                const ytd = data.ytd || [];
+                const bars = [];
+
+                for (let i = 0; i < 12; i++) {
+                    const val = ytd[i] || 0;
+                    if (val > 0) {
+                        // Calculate bar position and dimensions
+                        const barX = marginLeft + (i * monthWidth) + (regionIdx * barWidth);
+                        const barHeight = (val / maxVal) * plotH;
+                        const barY = marginTop + plotH - barHeight;
+
+                        bars.push({
+                            x: barX,
+                            y: barY,
+                            width: barWidth,
+                            height: barHeight,
+                            value: val,
+                            month: months[i],
+                            monthIdx: i,
+                        });
+                    }
+                }
+
+                return {
+                    key: key,
+                    label: data.label || key,
+                    color: colorMap[key] || '#6f42c1',  // fallback to purple for any other regions
+                    bars: bars,
+                };
+            });
+
+            // Y-axis ticks
+            const tickCount = 4;
+            const step = Math.ceil((maxVal) / tickCount * 10) / 10;
+            const ticks = [];
+            for (let i = 0; i <= tickCount; i++) {
+                const val = i * step;
+                const y = marginTop + plotH - ((val / maxVal) * plotH);
+                ticks.push({ y: y, label: `${val.toFixed(1)}` });
+            }
+
+            this.state.pipelineRegionSeries = {
+                regions: regionSeries,
+                months: monthPositions,
+                ticks: ticks,
+                maxVal: maxVal,
+            };
+        } catch (e) {
+            console.error('computePipelineRegionSeries error', e);
+            this.state.pipelineRegionSeries = { regions: [], months: [], ticks: [], maxVal: 1 };
+        }
+    }
+
+    // Tooltip for pipeline region bars
+    showPipelineRegionBar = (bar, region, ev) => {
+        try {
+            if (!bar || !region) return;
+            ev = ev || window.event || {};
+            const clientX = typeof ev.clientX === 'number' ? ev.clientX : (ev.pageX || 0) - (window.scrollX || 0);
+            const clientY = typeof ev.clientY === 'number' ? ev.clientY : (ev.pageY || 0) - (window.scrollY || 0);
+            const left = Math.max(4, Math.min(window.innerWidth - 240, clientX + 12));
+            const top = Math.max(4, Math.min(window.innerHeight - 40, clientY + 12));
+            const html = `${bar.month} - ${region.label}: <strong>${Number(bar.value).toFixed(2)} M</strong>`;
+            this._showTextTooltip('Pipeline YTD by Region', html, left, top);
+        } catch (e) { console.error('showPipelineRegionBar', e); }
+    }
+
+    // Load Avg Pipeline per Person from server
+    loadAvgPipelinePerPerson = async (year) => {
+        try {
+            if (!year || year === 'All') year = (new Date()).getFullYear();
+            const resp = await this.rpc("/plb/avg_pipeline_per_person", { year: Number(year) });
+            if (resp && resp.avg_per_person) {
+                this.state.avgPipelinePerPerson = resp;
+                this.computeAvgPipelinePerPersonSeries(resp);
+            } else {
+                this.state.avgPipelinePerPerson = { year: year, months: [], avg_per_person: [] };
+                this.state.avgPipelinePerPersonSeries = { pathSegments: [], points: [], months: [], ticks: [], maxVal: 1 };
+            }
+        } catch (e) {
+            console.error('loadAvgPipelinePerPerson error', e);
+            this.state.avgPipelinePerPerson = { year: year, months: [], avg_per_person: [] };
+            this.state.avgPipelinePerPersonSeries = { pathSegments: [], points: [], months: [], ticks: [], maxVal: 1 };
+        }
+    }
+
+    // Compute line chart series for avg pipeline per person
+    computeAvgPipelinePerPersonSeries = (resp) => {
+        try {
+            const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            const w = 600, h = 320;
+            const marginLeft = 80, marginRight = 20, marginTop = 20, marginBottom = 60;
+            const plotW = w - marginLeft - marginRight;
+            const plotH = h - marginTop - marginBottom;
+
+            const avgData = resp.avg_per_person || [];
+
+            // Compute max value for scaling
+            let maxVal = 1;
+            avgData.forEach(v => { if (v > maxVal) maxVal = v; });
+
+            // X positions for each month (evenly spaced)
+            const monthPositions = [];
+            for (let i = 0; i < 12; i++) {
+                const x = marginLeft + (i * (plotW / 11));
+                monthPositions.push({ x: x, label: months[i] });
+            }
+
+            // Build points and line segments
+            const points = [];
+            const segments = [];
+
+            for (let i = 0; i < 12; i++) {
+                const val = avgData[i] || 0;
+                if (val > 0) {
+                    const x = monthPositions[i].x;
+                    const y = marginTop + ((1 - Math.min(val / maxVal, 1)) * plotH);
+                    points.push({
+                        x: x,
+                        y: y,
+                        value: val,
+                        month: months[i],
+                        idx: i,
+                    });
+                }
+            }
+
+            // Create line segments connecting points
+            for (let i = 1; i < points.length; i++) {
+                const p0 = points[i-1];
+                const p1 = points[i];
+                segments.push({ d: `M ${p0.x} ${p0.y} L ${p1.x} ${p1.y}` });
+            }
+
+            // Compute Y-axis ticks
+            const tickCount = 4;
+            const step = Math.ceil((maxVal) / tickCount * 10) / 10;
+            const ticks = [];
+            for (let i = 0; i <= tickCount; i++) {
+                const val = i * step;
+                const y = marginTop + ((1 - Math.min(val / maxVal, 1)) * plotH);
+                ticks.push({ y: y, label: `${val.toFixed(1)}` });
+            }
+
+            this.state.avgPipelinePerPersonSeries = {
+                pathSegments: segments,
+                points: points,
+                months: monthPositions,
+                ticks: ticks,
+                maxVal: maxVal,
+            };
+        } catch (e) {
+            console.error('computeAvgPipelinePerPersonSeries error', e);
+            this.state.avgPipelinePerPersonSeries = { pathSegments: [], points: [], months: [], ticks: [], maxVal: 1 };
+        }
+    }
+
+    // Tooltip for avg pipeline per person points
+    showAvgPipelinePoint = (pt, ev) => {
+        try {
+            if (!pt) return;
+            ev = ev || window.event || {};
+            const clientX = typeof ev.clientX === 'number' ? ev.clientX : (ev.pageX || 0) - (window.scrollX || 0);
+            const clientY = typeof ev.clientY === 'number' ? ev.clientY : (ev.pageY || 0) - (window.scrollY || 0);
+            const left = Math.max(4, Math.min(window.innerWidth - 240, clientX + 12));
+            const top = Math.max(4, Math.min(window.innerHeight - 40, clientY + 12));
+            const html = `${pt.month}: <strong>${Number(pt.value).toFixed(2)} M</strong>`;
+            this._showTextTooltip('Avg Pipeline/Person', html, left, top);
+        } catch (e) { console.error('showAvgPipelinePoint', e); }
+    }
+
+    // Load Avg Pipeline per Person by Region from server
+    loadAvgPipelinePerPersonByRegion = async (year) => {
+        try {
+            if (!year || year === 'All') year = (new Date()).getFullYear();
+            const resp = await this.rpc("/plb/avg_pipeline_per_person_by_region", { year: Number(year) });
+            if (resp && resp.regions) {
+                this.state.avgPipelinePerPersonByRegion = resp;
+                this.computeAvgPipelinePerPersonByRegionSeries(resp);
+            } else {
+                this.state.avgPipelinePerPersonByRegion = { year: year, months: [], regions: {} };
+                this.state.avgPipelinePerPersonByRegionSeries = { regions: [], months: [], ticks: [], maxVal: 1 };
+            }
+        } catch (e) {
+            console.error('loadAvgPipelinePerPersonByRegion error', e);
+            this.state.avgPipelinePerPersonByRegion = { year: year, months: [], regions: {} };
+            this.state.avgPipelinePerPersonByRegionSeries = { regions: [], months: [], ticks: [], maxVal: 1 };
+        }
+    }
+
+    // Compute line chart series for avg pipeline per person by region
+    computeAvgPipelinePerPersonByRegionSeries = (resp) => {
+        try {
+            const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+            const w = 600, h = 320;
+            const marginLeft = 80, marginRight = 20, marginTop = 20, marginBottom = 60;
+            const plotW = w - marginLeft - marginRight;
+            const plotH = h - marginTop - marginBottom;
+
+            const regions = resp.regions || {};
+            // Filter out 'unknown' regions and sort in specific order: Central, Southern, Northern
+            const regionOrder = ['central', 'southern', 'northern'];
+            const regionKeys = regionOrder.filter(k => regions[k] && k !== 'unknown');
+
+            // Define specific colors for regions using brand palette
+            const colorMap = {
+                'southern': '#2E7D32',  // Professional green (complementary)
+                'northern': '#C62828',  // Primary Red (brand)
+                'central': '#0D47A1'    // Primary Blue (brand)
+            };
+
+            // Compute max value across all regions and months
+            let maxVal = 1;
+            regionKeys.forEach(key => {
+                const avgData = regions[key].avg_per_person || [];
+                avgData.forEach(v => { if (v > maxVal) maxVal = v; });
+            });
+
+            // X positions for each month (evenly spaced)
+            const monthPositions = [];
+            for (let i = 0; i < 12; i++) {
+                const x = marginLeft + (i * (plotW / 11));
+                monthPositions.push({ x: x, label: months[i] });
+            }
+
+            // Build line data for each region
+            const regionSeries = regionKeys.map((key) => {
+                const data = regions[key];
+                const avgData = data.avg_per_person || [];
+                const points = [];
+                const segments = [];
+
+                for (let i = 0; i < 12; i++) {
+                    const val = avgData[i] || 0;
+                    if (val > 0) {
+                        const x = monthPositions[i].x;
+                        const y = marginTop + ((1 - Math.min(val / maxVal, 1)) * plotH);
+                        points.push({
+                            x: x,
+                            y: y,
+                            value: val,
+                            month: months[i],
+                            idx: i,
+                        });
+                    }
+                }
+
+                // Create line segments connecting points
+                for (let i = 1; i < points.length; i++) {
+                    const p0 = points[i-1];
+                    const p1 = points[i];
+                    segments.push({ d: `M ${p0.x} ${p0.y} L ${p1.x} ${p1.y}` });
+                }
+
+                return {
+                    key: key,
+                    label: data.label || key,
+                    color: colorMap[key] || '#6f42c1',  // fallback to purple
+                    points: points,
+                    segments: segments,
+                };
+            });
+
+            // Compute Y-axis ticks
+            const tickCount = 4;
+            const step = Math.ceil((maxVal) / tickCount * 10) / 10;
+            const ticks = [];
+            for (let i = 0; i <= tickCount; i++) {
+                const val = i * step;
+                const y = marginTop + ((1 - Math.min(val / maxVal, 1)) * plotH);
+                ticks.push({ y: y, label: `${val.toFixed(1)}` });
+            }
+
+            this.state.avgPipelinePerPersonByRegionSeries = {
+                regions: regionSeries,
+                months: monthPositions,
+                ticks: ticks,
+                maxVal: maxVal,
+            };
+        } catch (e) {
+            console.error('computeAvgPipelinePerPersonByRegionSeries error', e);
+            this.state.avgPipelinePerPersonByRegionSeries = { regions: [], months: [], ticks: [], maxVal: 1 };
+        }
+    }
+
+    // Tooltip for avg pipeline per person by region points
+    showAvgPipelineRegionPoint = (pt, region, ev) => {
+        try {
+            if (!pt || !region) return;
+            ev = ev || window.event || {};
+            const clientX = typeof ev.clientX === 'number' ? ev.clientX : (ev.pageX || 0) - (window.scrollX || 0);
+            const clientY = typeof ev.clientY === 'number' ? ev.clientY : (ev.pageY || 0) - (window.scrollY || 0);
+            const left = Math.max(4, Math.min(window.innerWidth - 240, clientX + 12));
+            const top = Math.max(4, Math.min(window.innerHeight - 40, clientY + 12));
+            const html = `${pt.month} - ${region.label}: <strong>${Number(pt.value).toFixed(2)} M</strong>`;
+            this._showTextTooltip('Avg Pipeline/Person by Region', html, left, top);
+        } catch (e) { console.error('showAvgPipelineRegionPoint', e); }
+    }
+
     // Return service segments sorted ascending by percent (smallest first)
     getSortedSegments() {
         return (this.state.serviceSegments || []).slice().sort((a, b) => (a.percent || 0) - (b.percent || 0));
@@ -182186,12 +182605,18 @@ const PLBDashboard = __exports.PLBDashboard = class PLBDashboard extends Compone
                 monthPositions.push({ x: x, label: months[i] || '' });
             }
 
-            const palette = ["#0d6efd", "#198754", "#dc3545", "#6f42c1", "#fd7e14", "#20c997", "#6610f2", "#e83e8c", "#0dcaf0", "#adb5bd"];
+            // Use same color mapping as Pipeline by Region chart - brand palette
+            const colorMap = {
+                'southern': '#2E7D32',  // Professional green (complementary)
+                'northern': '#C62828',  // Primary Red (brand)
+                'central': '#0D47A1'    // Primary Blue (brand)
+            };
             const regionsArr = [];
-            const regionKeys = Object.keys(data.regions || {});
+            // Filter out 'unknown' regions
+            const regionKeys = Object.keys(data.regions || {}).filter(k => k !== 'unknown');
             regionKeys.forEach((k, idx) => {
                 const reg = data.regions[k];
-                const color = palette[idx % palette.length];
+                const color = colorMap[k] || '#4A4A4A';  // fallback to secondary text color for any other regions
                 const vals = Array.isArray(reg.hit_rate_percent) ? reg.hit_rate_percent : Array(12).fill(null);
                 const valsPrev = Array.isArray(reg.hit_rate_percent_prev) ? reg.hit_rate_percent_prev : Array(12).fill(null);
                 // build current series
@@ -182242,86 +182667,436 @@ const PLBDashboard = __exports.PLBDashboard = class PLBDashboard extends Compone
 }
 
 PLBDashboard.template = xml/* xml */ `
-<div class="container-fluid p-4" style="height:100%; overflow:auto;">
-    <h3 class="mb-3">PLB Dashboard</h3>
+<style>
+    /* ===== BRAND COLOR PALETTE ===== */
+    /* Core Brand Colors */
+    /* Primary Red: #C62828 - CTAs, alerts, highlights */
+    /* Primary Blue: #0D47A1 - Headers, navigation, links */
+    /* White: #FFFFFF - Backgrounds, cards */
+
+    /* Supporting Neutrals */
+    /* Primary Text: #1A1A1A - Main body text */
+    /* Secondary Text: #4A4A4A - Subtext, captions */
+    /* Light Gray: #F2F4F7 - Section backgrounds */
+    /* Border Gray: #D0D5DD - Borders, dividers */
+
+    /* Global Dashboard Styles */
+    .plb-dashboard-container {
+        background: #F2F4F7;
+        min-height: 100vh;
+        padding: 1.5rem;
+    }
+
+    /* Mobile optimizations */
+    @media (max-width: 768px) {
+        .plb-dashboard-container {
+            padding: 1rem;
+        }
+    }
+
+    /* Header styling */
+    .plb-dashboard-header {
+        background: #0D47A1;
+        color: #FFFFFF;
+        padding: 2rem;
+        border-radius: 8px;
+        margin-bottom: 2rem;
+        box-shadow: 0 2px 8px rgba(13, 71, 161, 0.2);
+        border: 1px solid #0D47A1;
+    }
+
+    @media (max-width: 768px) {
+        .plb-dashboard-header {
+            padding: 1.5rem 1rem;
+            margin-bottom: 1.5rem;
+        }
+        .plb-dashboard-header h3 {
+            font-size: 1.5rem !important;
+        }
+    }
+
+    /* Summary Cards */
+    .plb-summary-card {
+        border: 1px solid #D0D5DD;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        overflow: hidden;
+        margin-bottom: 1rem;
+        background: #FFFFFF;
+    }
+
+    .plb-summary-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        border-color: #0D47A1;
+    }
+
+    .plb-summary-card .card-body {
+        padding: 1.5rem;
+        border-left: 4px solid transparent;
+    }
+
+    .plb-summary-card.card-blue .card-body {
+        border-left-color: #0D47A1;
+    }
+
+    .plb-summary-card.card-red .card-body {
+        border-left-color: #C62828;
+    }
+
+    .plb-summary-card h6 {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+        color: #4A4A4A;
+        margin-bottom: 0.5rem;
+    }
+
+    .plb-summary-card h3 {
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin: 0;
+        color: #1A1A1A;
+    }
+
+    @media (max-width: 768px) {
+        .plb-summary-card h3 {
+            font-size: 1.5rem;
+        }
+    }
+
+    /* Filter Section */
+    .plb-filters-card {
+        background: #FFFFFF;
+        border-radius: 8px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        margin-bottom: 2rem;
+        border: 1px solid #D0D5DD;
+        border-top: 3px solid #0D47A1;
+    }
+
+    .plb-filters-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .plb-filter-item {
+        flex: 1;
+        min-width: 150px;
+    }
+
+    @media (max-width: 768px) {
+        .plb-filter-item {
+            flex: 1 1 100%;
+            min-width: 100%;
+        }
+    }
+
+    .plb-filter-item label {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-weight: 600;
+        color: #4A4A4A;
+        margin-bottom: 0.5rem;
+    }
+
+    .plb-filter-item select {
+        border-radius: 6px;
+        border: 1px solid #D0D5DD;
+        transition: all 0.2s ease;
+        color: #1A1A1A;
+    }
+
+    .plb-filter-item select:focus {
+        border-color: #0D47A1;
+        box-shadow: 0 0 0 3px rgba(13, 71, 161, 0.1);
+        outline: none;
+    }
+
+    /* Pipeline Stages Pills */
+    .plb-stages-header {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1A1A1A;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid #D0D5DD;
+    }
+
+    .plb-stages-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+    }
+
+    .plb-stage-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        border-radius: 50px;
+        font-size: 0.875rem;
+        font-weight: 500;
+        background: #0D47A1;
+        color: #FFFFFF;
+        box-shadow: 0 2px 4px rgba(13, 71, 161, 0.2);
+        transition: all 0.3s ease;
+        border: none;
+    }
+
+    .plb-stage-pill:hover {
+        background: #0B3A82;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(13, 71, 161, 0.3);
+    }
+
+    .plb-stage-pill .badge {
+        background: #C62828;
+        color: #FFFFFF;
+        padding: 0.25rem 0.5rem;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        min-width: 24px;
+        text-align: center;
+    }
+
+    /* Chart Cards */
+    .plb-chart-card {
+        border: 1px solid #D0D5DD;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        transition: all 0.3s ease;
+        background: #FFFFFF;
+    }
+
+    .plb-chart-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
+        border-top-color: #C62828;
+    }
+
+    .plb-chart-card .card-header {
+        background: #FFFFFF;
+        border-bottom: 2px solid #F2F4F7;
+        padding: 1.25rem 1.5rem;
+        border-radius: 8px 8px 0 0;
+    }
+
+    .plb-chart-card .card-header h5 {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #1A1A1A;
+        margin: 0;
+    }
+
+    .plb-chart-card .card-body {
+        padding: 1.5rem;
+    }
+
+    /* Responsive chart containers */
+    @media (max-width: 768px) {
+        .plb-chart-card .card-body {
+            padding: 1rem;
+        }
+        .plb-chart-card .position-relative {
+            height: 250px !important;
+        }
+        .plb-chart-card .card-header h5 {
+            font-size: 0.9rem;
+        }
+    }
+
+    /* Legend responsive styles */
+    .plb-legend {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 1rem;
+    }
+
+    .plb-legend-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .plb-legend-color {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 2px;
+    }
+
+    .plb-legend-label {
+        font-size: 0.875rem;
+        margin: 0;
+        color: #1A1A1A;
+    }
+
+    @media (max-width: 576px) {
+        .plb-legend {
+            gap: 0.5rem;
+        }
+        .plb-legend-label {
+            font-size: 0.75rem;
+        }
+    }
+
+    /* Table responsive improvements */
+    .plb-table-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    @media (max-width: 992px) {
+        .plb-data-table {
+            font-size: 11px;
+        }
+        .plb-data-table th,
+        .plb-data-table td {
+            padding: 6px 4px;
+            white-space: nowrap;
+        }
+    }
+
+    /* Loading state */
+    .plb-loading {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 400px;
+    }
+
+    .plb-loading .spinner-border {
+        width: 3rem;
+        height: 3rem;
+        border-width: 0.3rem;
+        color: #0D47A1;
+    }
+
+    .plb-loading p {
+        color: #4A4A4A;
+    }
+
+    /* Smooth transitions */
+    * {
+        transition: background-color 0.2s ease, border-color 0.2s ease;
+    }
+
+    /* Scrollbar styling */
+    .plb-table-container::-webkit-scrollbar {
+        height: 8px;
+    }
+
+    .plb-table-container::-webkit-scrollbar-track {
+        background: #F2F4F7;
+        border-radius: 10px;
+    }
+
+    .plb-table-container::-webkit-scrollbar-thumb {
+        background: #0D47A1;
+        border-radius: 10px;
+    }
+
+    .plb-table-container::-webkit-scrollbar-thumb:hover {
+        background: #0B3A82;
+    }
+</style>
+
+<div class="plb-dashboard-container" style="overflow: auto; height: 100%;">
+    <!-- Dashboard Header -->
+    <div class="plb-dashboard-header">
+        <h3 class="mb-0" style="font-size: 1.75rem; font-weight: 700; letter-spacing: 0.5px; color: #FFFFFF;">
+            PLB Dashboard
+        </h3>
+        <p class="mb-0 mt-2" style="font-size: 0.95rem; color: #FFFFFF; opacity: 0.9;">Comprehensive business analytics</p>
+    </div>
 
     <!-- Loading state -->
     <t t-if="state.loading">
-        <div class="text-center my-5">
+        <div class="plb-loading">
             <div class="spinner-border text-primary" role="status">
                 <span class="visually-hidden">Loading...</span>
             </div>
-            <p class="mt-2">Loading dashboard data...</p>
+            <p class="mt-3" style="color: #6c757d; font-weight: 500;">Loading dashboard data...</p>
         </div>
     </t>
 
     <t t-else="">
         <!-- Revenue Summary Cards -->
-        <div class="row mb-4">
-            <div class="col-md-3 col-lg-3">
-                <div class="card text-center" style="border-left: 4px solid #007bff;">
+        <div class="row g-3 mb-4">
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="card plb-summary-card card-blue text-center">
                     <div class="card-body">
-                        <h6 class="card-subtitle mb-2 text-muted">Total Leads</h6>
-                        <h3 class="card-title"><t t-esc="state.revenueSummary.lead_count"/></h3>
+                        <h6>Total Leads</h6>
+                        <h3 style="font-size: 1.25rem;"><t t-esc="state.revenueSummary.lead_count"/></h3>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3 col-lg-3">
-                <div class="card text-center" style="border-left: 4px solid #28a745;">
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="card plb-summary-card card-blue text-center">
                     <div class="card-body">
-                        <h6 class="card-subtitle mb-2 text-muted">Expected Revenue</h6>
-                        <h3 class="card-title"><t t-esc="formatCurrency(state.revenueSummary.total_expected_revenue)"/></h3>
+                        <h6>Expected Revenue</h6>
+                        <h3 style="font-size: 1.25rem;"><t t-esc="formatCurrency(state.revenueSummary.total_expected_revenue)"/></h3>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3 col-lg-3">
-                <div class="card text-center" style="border-left: 4px solid #dc3545;">
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="card plb-summary-card card-red text-center">
                     <div class="card-body">
-                        <h6 class="card-subtitle mb-2 text-muted">Realized FY2025</h6>
-                        <h3 class="card-title"><t t-esc="formatCurrency(state.revenueSummary.total_realized_revenue)"/></h3>
+                        <h6>Realized FY2025</h6>
+                        <h3 style="font-size: 1.25rem;"><t t-esc="formatCurrency(state.revenueSummary.total_realized_revenue)"/></h3>
                     </div>
                 </div>
             </div>
-            <div class="col-md-3 col-lg-3">
-                <div class="card text-center" style="border-left: 4px solid #6f42c1;">
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="card plb-summary-card card-red text-center">
                     <div class="card-body">
-                        <h6 class="card-subtitle mb-2 text-muted">Carry Forward</h6>
-                        <h3 class="card-title"><t t-esc="formatCurrency(state.totalCarryForward)"/></h3>
+                        <h6>Carry Forward</h6>
+                        <h3 style="font-size: 1.25rem;"><t t-esc="formatCurrency(state.totalCarryForward)"/></h3>
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Stage Counts -->
-        <div class="mb-3">
-            <!-- Filters: Salesperson, Stage, Service -->
-            <div class="d-flex mb-2" style="gap:12px; align-items:center;">
-                <div>
-                    <label class="form-label mb-0 small">Salesperson</label>
+        <!-- Filters and Stage Counts -->
+        <div class="plb-filters-card">
+            <!-- Filters Row -->
+            <div class="plb-filters-row">
+                <div class="plb-filter-item">
+                    <label class="form-label">Salesperson</label>
                     <select class="form-select form-select-sm" t-att-value="state.filters.salesperson" t-on-change="ev => this.setFilter('salesperson', ev.target.value)">
                         <t t-foreach="state.salespersons" t-as="sp" t-key="sp">
                             <option t-att-value="sp"><t t-esc="sp"/></option>
                         </t>
                     </select>
                 </div>
-                <div>
-                    <label class="form-label mb-0 small">Stage</label>
+                <div class="plb-filter-item">
+                    <label class="form-label">Stage</label>
                     <select class="form-select form-select-sm" t-att-value="state.filters.stage" t-on-change="ev => this.setFilter('stage', ev.target.value)">
                         <t t-foreach="state.stages" t-as="st" t-key="st">
                             <option t-att-value="st"><t t-esc="st"/></option>
                         </t>
                     </select>
                 </div>
-                <div>
-                    <label class="form-label mb-0 small">Service</label>
+                <div class="plb-filter-item">
+                    <label class="form-label">Service</label>
                     <select class="form-select form-select-sm" t-att-value="state.filters.service" t-on-change="ev => this.setFilter('service', ev.target.value)">
                         <t t-foreach="state.services" t-as="sv" t-key="sv">
                             <option t-att-value="sv"><t t-esc="sv"/></option>
                         </t>
                     </select>
                 </div>
-                <div>
-                    <label class="form-label mb-0 small">Year</label>
+                <div class="plb-filter-item">
+                    <label class="form-label">Year</label>
                     <select class="form-select form-select-sm" t-att-value="state.filters.year" t-on-change="ev => this.setFilter('year', ev.target.value)">
                         <t t-foreach="state.years" t-as="yr" t-key="yr">
                             <option t-att-value="yr"><t t-esc="yr"/></option>
@@ -182330,27 +183105,31 @@ PLBDashboard.template = xml/* xml */ `
                 </div>
             </div>
 
-            <h5>Pipeline Stages</h5>
+            <!-- Pipeline Stages as Pills -->
+            <div class="plb-stages-header">
+                Pipeline Stages
+            </div>
             <t t-if="Object.keys(state.stageCounts).length">
-                <div style="display:flex; flex-wrap:wrap; gap:12px;">
+                <div class="plb-stages-container">
                     <t t-foreach="Object.entries(state.stageCounts)" t-as="entry" t-key="entry[0]">
-                        <div style="padding:8px 16px; background:#e9ecef; border-radius:20px; font-size:14px;">
-                            <strong><t t-esc="entry[0]"/>:</strong> <t t-esc="entry[1]"/>
-                        </div>
+                        <span class="plb-stage-pill">
+                            <strong><t t-esc="entry[0]"/></strong>
+                            <span class="badge"><t t-esc="entry[1]"/></span>
+                        </span>
                     </t>
                 </div>
             </t>
             <t t-else="">
-                <div class="text-muted">No stage data available.</div>
+                <div class="text-muted" style="font-style: italic;">No stage data available.</div>
             </t>
         </div>
 
         <!-- Three-column layout: Services Pie | Hit Rate Trend | Hit Rate by Dept/Region -->
         <div class="row mb-4 g-3">
             <div class="col-12 col-lg-4">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-header bg-white">
-                        <h5 class="mb-0">New wins by Product</h5>
+                <div class="card plb-chart-card h-100">
+                    <div class="card-header">
+                        <h5>New wins by Product</h5>
                     </div>
                     <!-- Make the pie card the same height as the line charts so visuals match -->
                     <!-- Use a column flex layout: svg area grows, legend sits at the bottom inside the card -->
@@ -182395,9 +183174,9 @@ PLBDashboard.template = xml/* xml */ `
              </div>
 
             <div class="col-12 col-lg-4">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-header bg-white">
-                        <h5 class="mb-0">Hit Rate Trend</h5>
+                <div class="card plb-chart-card h-100">
+                    <div class="card-header">
+                        <h5>Hit Rate Trend</h5>
                     </div>
                     <div class="card-body">
                         <div class="position-relative" style="height:320px;">
@@ -182435,7 +183214,7 @@ PLBDashboard.template = xml/* xml */ `
                                     </g>
                                     <g class="data-points">
                                         <t t-foreach="state.hitRateSeries.points" t-as="pt" t-key="pt.idx">
-                                            <circle t-att-cx="pt.x" t-att-cy="pt.y" r="4" fill="#0d6efd"
+                                            <circle t-att-cx="pt.x" t-att-cy="pt.y" r="4" fill="#0D47A1"
                                                     style="cursor:pointer; pointer-events:auto;" t-on-mouseenter="ev => this.showPoint(pt, ev)"
                                                     t-on-mousemove="ev => this.movePoint(pt, ev)" t-on-mouseleave="this.hidePoint"/>
                                         </t>
@@ -182462,18 +183241,24 @@ PLBDashboard.template = xml/* xml */ `
                             </svg>
                         </div>
 
-                        <div class="mt-3 d-flex gap-3 justify-content-center">
-                            <div class="d-flex align-items-center gap-2"><span style="width:12px;height:12px;background:#0d6efd;border-radius:2px;display:inline-block;"></span><small class="mb-0">This Year</small></div>
-                            <div class="d-flex align-items-center gap-2"><span style="width:12px;height:12px;background:#6c757d;border-radius:2px;display:inline-block;"></span><small class="mb-0">Last Year</small></div>
+                        <div class="plb-legend">
+                            <div class="plb-legend-item">
+                                <span class="plb-legend-color" style="background:#0D47A1;"></span>
+                                <small class="plb-legend-label">This Year</small>
+                            </div>
+                            <div class="plb-legend-item">
+                                <span class="plb-legend-color" style="background:#4A4A4A;"></span>
+                                <small class="plb-legend-label">Last Year</small>
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
 
             <div class="col-12 col-lg-4">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-header bg-white">
-                        <h5 class="mb-0">Hit Rate by Dept/Region</h5>
+                <div class="card plb-chart-card h-100">
+                    <div class="card-header">
+                        <h5>Hit Rate by Dept/Region</h5>
                     </div>
                     <div class="card-body">
                         <div class="position-relative" style="height:320px;">
@@ -182544,12 +183329,11 @@ PLBDashboard.template = xml/* xml */ `
                             </svg>
                         </div>
                         <!-- Legend: placed after the chart container so it is visible inside the card body -->
-                        <div class="mt-3 d-flex gap-3 justify-content-center flex-wrap">
+                        <div class="plb-legend">
                             <t t-foreach="state.hitRateRegionSeries.regions || []" t-as="reg" t-key="reg.key">
-                                <div class="d-flex align-items-center gap-2" style="cursor:default;">
-                                    <span t-att-style="'display:inline-block;width:12px;height:12px;background:'+reg.color+';border-radius:2px;display:inline-block;'">
-                                    </span>
-                                    <small class="mb-0"><t t-esc="reg.label"/></small>
+                                <div class="plb-legend-item">
+                                    <span class="plb-legend-color" t-att-style="'background:'+reg.color+';'"></span>
+                                    <small class="plb-legend-label"><t t-esc="reg.label"/></small>
                                 </div>
                             </t>
                         </div>
@@ -182558,12 +183342,13 @@ PLBDashboard.template = xml/* xml */ `
             </div>
         </div>
 
-        <!-- Total pipeline (YTD) chart -->
-        <div class="row mb-4">
-            <div class="col-12">
-                <div class="card h-100 shadow-sm">
-                    <div class="card-header bg-white">
-                        <h5 class="mb-0">Total pipeline (YTD)</h5>
+        <!-- Second row: 4 columns for all pipeline charts -->
+        <div class="row mb-4 g-3">
+            <!-- Total pipeline (YTD) chart -->
+            <div class="col-12 col-lg-3">
+                <div class="card plb-chart-card h-100">
+                    <div class="card-header">
+                        <h5>Total pipeline (YTD)</h5>
                     </div>
                     <div class="card-body">
                         <div class="position-relative" style="height:320px;">
@@ -182598,12 +183383,12 @@ PLBDashboard.template = xml/* xml */ `
                                 <t t-if="state.pipelineSeries &amp;&amp; state.pipelineSeries.pathSegments &amp;&amp; state.pipelineSeries.pathSegments.length">
                                     <g class="data-line">
                                         <t t-foreach="state.pipelineSeries.pathSegments" t-as="seg" t-key="seg.d">
-                                            <path t-att-d="seg.d" fill="none" stroke="#0d6efd" stroke-width="2"/>
+                                            <path t-att-d="seg.d" fill="none" stroke="#0D47A1" stroke-width="2"/>
                                         </t>
                                     </g>
                                     <g class="data-points">
                                         <t t-foreach="state.pipelineSeries.points" t-as="pt" t-key="'pt-'+pt.idx">
-                                            <circle t-att-cx="pt.x" t-att-cy="pt.y" r="4" fill="#0d6efd" opacity="0.95"
+                                            <circle t-att-cx="pt.x" t-att-cy="pt.y" r="4" fill="#0D47A1" opacity="0.95"
                                                     style="cursor:pointer; pointer-events:auto;" t-on-mouseenter="ev => this.showPipelinePoint(pt, ev)" t-on-mousemove="ev => this.movePoint(pt, ev)" t-on-mouseleave="this.hidePoint"/>
                                         </t>
                                     </g>
@@ -182620,13 +183405,231 @@ PLBDashboard.template = xml/* xml */ `
                                 </t>
 
                                 <!-- axis label -->
-                                <text x="30" y="16" text-anchor="start" fill="#333" font-size="12px">Expected Revenue (MYR (mil))</text>
                             </svg>
                         </div>
 
-                        <div class="mt-3 d-flex gap-3 justify-content-center">
-                            <div class="d-flex align-items-center gap-2"><span style="width:12px;height:12px;background:#0d6efd;border-radius:2px;display:inline-block;"></span><small class="mb-0">Pipeline (Current year)</small></div>
-                            <div class="d-flex align-items-center gap-2"><span style="width:12px;height:12px;background:#6c757d;border-radius:2px;display:inline-block;"></span><small class="mb-0">Last year Pipeline</small></div>
+                        <div class="plb-legend">
+                            <div class="plb-legend-item">
+                                <span class="plb-legend-color" style="background:#0D47A1;"></span>
+                                <small class="plb-legend-label">Pipeline (Current year)</small>
+                            </div>
+                            <div class="plb-legend-item">
+                                <span class="plb-legend-color" style="background:#4A4A4A;"></span>
+                                <small class="plb-legend-label">Last year Pipeline</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total pipeline (YTD) by Dept/Region chart -->
+            <div class="col-12 col-lg-3">
+                <div class="card plb-chart-card h-100">
+                    <div class="card-header">
+                        <h5>Total pipeline (YTD) by Dept/Region</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="position-relative" style="height:320px;">
+                            <svg width="100%" height="100%" viewBox="0 0 600 320" aria-label="Total pipeline YTD by Dept/Region chart">
+                                <!-- Grid lines -->
+                                <g class="grid" stroke="#e9ecef" stroke-width="0.6">
+                                    <t t-foreach="state.pipelineRegionSeries &amp;&amp; state.pipelineRegionSeries.ticks || []" t-as="tk" t-key="'prtk-'+tk.y">
+                                        <line t-att-x1="80" t-att-y1="tk.y" t-att-x2="580" t-att-y2="tk.y"/>
+                                    </t>
+                                </g>
+
+                                <!-- Y axis -->
+                                <g class="axis" fill="none" stroke="#333" stroke-width="0.9">
+                                    <line x1="80" y1="20" x2="80" y2="260"/>
+                                </g>
+
+                                <!-- Bars for each region -->
+                                <t t-if="state.pipelineRegionSeries &amp;&amp; state.pipelineRegionSeries.regions &amp;&amp; state.pipelineRegionSeries.regions.length">
+                                    <t t-foreach="state.pipelineRegionSeries.regions" t-as="reg" t-key="'preg-'+reg.key">
+                                        <g class="region-bars">
+                                            <t t-foreach="reg.bars || []" t-as="bar" t-key="reg.key+'-bar-'+bar.monthIdx">
+                                                <rect t-att-x="bar.x" t-att-y="bar.y" t-att-width="bar.width" t-att-height="bar.height"
+                                                      t-att-fill="reg.color" opacity="0.85"
+                                                      style="cursor:pointer; pointer-events:auto;"
+                                                      t-on-mouseenter="ev => this.showPipelineRegionBar(bar, reg, ev)"
+                                                      t-on-mousemove="ev => this.movePoint(bar, ev)"
+                                                      t-on-mouseleave="this.hidePoint"/>
+                                            </t>
+                                        </g>
+                                    </t>
+                                </t>
+                                <t t-else="">
+                                    <g>
+                                        <text x="300" y="160" text-anchor="middle" fill="#888" font-size="14px">No region data to display</text>
+                                    </g>
+                                </t>
+
+                                <!-- Month labels on X axis -->
+                                <t t-foreach="state.pipelineRegionSeries &amp;&amp; state.pipelineRegionSeries.months || []" t-as="mpos" t-key="'prm-'+mpos.label">
+                                    <text t-att-x="mpos.x" t-att-y="275" text-anchor="middle" fill="#333" font-size="11px"><t t-esc="mpos.label"/></text>
+                                </t>
+
+                                <!-- Y-axis tick labels -->
+                                <t t-foreach="state.pipelineRegionSeries &amp;&amp; state.pipelineRegionSeries.ticks || []" t-as="tk" t-key="'prtk2-'+tk.y">
+                                    <text t-att-x="68" t-att-y="tk.y + 4" text-anchor="end" fill="#333" font-size="11px"><t t-esc="tk.label"/>M</text>
+                                </t>
+
+                                <!-- Axis labels -->
+                                <text x="330" y="295" text-anchor="middle" fill="#333" font-size="12px">Months</text>
+                                <text x="18" y="140" text-anchor="middle" fill="#333" font-size="12px" transform="rotate(-90,18,140)">Revenue (MYR Mil)</text>
+                            </svg>
+                        </div>
+
+                        <!-- Legend -->
+                        <div class="plb-legend">
+                            <t t-foreach="state.pipelineRegionSeries.regions || []" t-as="reg" t-key="'prleg-'+reg.key">
+                                <div class="plb-legend-item">
+                                    <span class="plb-legend-color" t-att-style="'background:'+reg.color+';'"></span>
+                                    <small class="plb-legend-label"><t t-esc="reg.label"/></small>
+                                </div>
+                            </t>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Avg pipeline/person Chart -->
+            <div class="col-12 col-lg-3">
+                <div class="card plb-chart-card h-100">
+                    <div class="card-header">
+                        <h5>Avg pipeline/person</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="position-relative" style="height:320px;">
+                            <svg width="100%" height="100%" viewBox="0 0 600 320" aria-label="Avg pipeline per person chart">
+                                <!-- Grid lines -->
+                                <g class="grid" stroke="#e9ecef" stroke-width="0.6">
+                                    <t t-foreach="state.avgPipelinePerPersonSeries &amp;&amp; state.avgPipelinePerPersonSeries.ticks || []" t-as="tk" t-key="'apptk-'+tk.y">
+                                        <line t-att-x1="80" t-att-y1="tk.y" t-att-x2="580" t-att-y2="tk.y"/>
+                                    </t>
+                                </g>
+
+                                <!-- Y axis -->
+                                <g class="axis" fill="none" stroke="#333" stroke-width="0.9">
+                                    <line x1="80" y1="20" x2="80" y2="260"/>
+                                </g>
+
+                                <!-- Line chart -->
+                                <t t-if="state.avgPipelinePerPersonSeries &amp;&amp; state.avgPipelinePerPersonSeries.pathSegments &amp;&amp; state.avgPipelinePerPersonSeries.pathSegments.length">
+                                    <g class="data-line">
+                                        <t t-foreach="state.avgPipelinePerPersonSeries.pathSegments" t-as="seg" t-key="seg.d">
+                                            <path t-att-d="seg.d" fill="none" stroke="#0D47A1" stroke-width="2"/>
+                                        </t>
+                                    </g>
+                                    <g class="data-points">
+                                        <t t-foreach="state.avgPipelinePerPersonSeries.points" t-as="pt" t-key="'appt-'+pt.idx">
+                                            <circle t-att-cx="pt.x" t-att-cy="pt.y" r="4" fill="#0D47A1" opacity="0.95"
+                                                    style="cursor:pointer; pointer-events:auto;"
+                                                    t-on-mouseenter="ev => this.showAvgPipelinePoint(pt, ev)"
+                                                    t-on-mousemove="ev => this.movePoint(pt, ev)"
+                                                    t-on-mouseleave="this.hidePoint"/>
+                                        </t>
+                                    </g>
+                                </t>
+                                <t t-else="">
+                                    <text x="300" y="160" text-anchor="middle" fill="#999" font-size="14px">No data available</text>
+                                </t>
+
+                                <!-- month labels on X axis -->
+                                <t t-foreach="state.avgPipelinePerPersonSeries &amp;&amp; state.avgPipelinePerPersonSeries.months || []" t-as="mpos" t-key="'appm-'+mpos.label">
+                                    <text t-att-x="mpos.x" t-att-y="280" text-anchor="middle" fill="#333" font-size="11px"><t t-esc="mpos.label"/></text>
+                                </t>
+
+                                <!-- y ticks labels -->
+                                <t t-foreach="state.avgPipelinePerPersonSeries &amp;&amp; state.avgPipelinePerPersonSeries.ticks || []" t-as="tk" t-key="'apptl-'+tk.y">
+                                    <text t-att-x="48" t-att-y="tk.y + 4" text-anchor="end" fill="#333" font-size="11px"><t t-esc="tk.label"/>M</text>
+                                </t>
+
+                                <!-- axis labels -->
+                                <text x="300" y="300" text-anchor="middle" fill="#333" font-size="12px" font-weight="600">Month</text>
+                                <text x="20" y="110" text-anchor="middle" fill="#333" font-size="12px" font-weight="600" transform="rotate(-90,20,140)">Avg Pipeline (MYR millions)</text>
+                            </svg>
+                        </div>
+
+                        <!-- Legend -->
+                        <div class="plb-legend">
+                            <div class="plb-legend-item">
+                                <span class="plb-legend-color" style="background:#0D47A1;"></span>
+                                <small class="plb-legend-label">Total</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Avg pipeline/person by Region Chart -->
+            <div class="col-12 col-lg-3">
+                <div class="card plb-chart-card h-100">
+                    <div class="card-header">
+                        <h5>Avg pipeline/person by Region</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="position-relative" style="height:320px;">
+                            <svg width="100%" height="100%" viewBox="0 0 600 320" aria-label="Avg pipeline per person by Region chart">
+                                <!-- Grid lines -->
+                                <g class="grid" stroke="#e9ecef" stroke-width="0.6">
+                                    <t t-foreach="state.avgPipelinePerPersonByRegionSeries &amp;&amp; state.avgPipelinePerPersonByRegionSeries.ticks || []" t-as="tk" t-key="'apprtk-'+tk.y">
+                                        <line t-att-x1="80" t-att-y1="tk.y" t-att-x2="580" t-att-y2="tk.y"/>
+                                    </t>
+                                </g>
+
+                                <!-- Y axis -->
+                                <g class="axis" fill="none" stroke="#333" stroke-width="0.9">
+                                    <line x1="80" y1="20" x2="80" y2="260"/>
+                                </g>
+
+                                <!-- Line charts for each region -->
+                                <t t-if="state.avgPipelinePerPersonByRegionSeries &amp;&amp; state.avgPipelinePerPersonByRegionSeries.regions &amp;&amp; state.avgPipelinePerPersonByRegionSeries.regions.length">
+                                    <t t-foreach="state.avgPipelinePerPersonByRegionSeries.regions" t-as="reg" t-key="'appreg-'+reg.key">
+                                        <g class="region-line">
+                                            <t t-foreach="reg.segments || []" t-as="seg" t-key="reg.key+'-seg-'+seg.d">
+                                                <path t-att-d="seg.d" fill="none" t-att-stroke="reg.color" stroke-width="2"/>
+                                            </t>
+                                        </g>
+                                        <g class="region-points">
+                                            <t t-foreach="reg.points || []" t-as="pt" t-key="reg.key+'-pt-'+pt.idx">
+                                                <circle t-att-cx="pt.x" t-att-cy="pt.y" r="4" t-att-fill="reg.color" opacity="0.95"
+                                                        style="cursor:pointer; pointer-events:auto;"
+                                                        t-on-mouseenter="ev => this.showAvgPipelineRegionPoint(pt, reg, ev)"
+                                                        t-on-mousemove="ev => this.movePoint(pt, ev)"
+                                                        t-on-mouseleave="this.hidePoint"/>
+                                            </t>
+                                        </g>
+                                    </t>
+                                </t>
+                                <t t-else="">
+                                    <text x="300" y="160" text-anchor="middle" fill="#999" font-size="14px">No data available</text>
+                                </t>
+
+                                <!-- month labels on X axis -->
+                                <t t-foreach="state.avgPipelinePerPersonByRegionSeries &amp;&amp; state.avgPipelinePerPersonByRegionSeries.months || []" t-as="mpos" t-key="'apprm-'+mpos.label">
+                                    <text t-att-x="mpos.x" t-att-y="280" text-anchor="middle" fill="#333" font-size="11px"><t t-esc="mpos.label"/></text>
+                                </t>
+
+                                <!-- y ticks labels -->
+                                <t t-foreach="state.avgPipelinePerPersonByRegionSeries &amp;&amp; state.avgPipelinePerPersonByRegionSeries.ticks || []" t-as="tk" t-key="'apprtl-'+tk.y">
+                                    <text t-att-x="48" t-att-y="tk.y + 4" text-anchor="end" fill="#333" font-size="11px"><t t-esc="tk.label"/>M</text>
+                                </t>
+
+                                <!-- axis labels -->
+                                <text x="300" y="300" text-anchor="middle" fill="#333" font-size="12px" font-weight="600">Month</text>
+                                <text x="20" y="110" text-anchor="middle" fill="#333" font-size="12px" font-weight="600" transform="rotate(-90,20,140)">Avg Pipeline (MYR millions)</text>
+                            </svg>
+                        </div>
+
+                        <!-- Legend -->
+                        <div class="plb-legend">
+                            <t t-foreach="state.avgPipelinePerPersonByRegionSeries.regions || []" t-as="reg" t-key="'apprleg-'+reg.key">
+                                <div class="plb-legend-item">
+                                    <span class="plb-legend-color" t-att-style="'background:'+reg.color+';'"></span>
+                                    <small class="plb-legend-label"><t t-esc="reg.label"/></small>
+                                </div>
+                            </t>
                         </div>
                     </div>
                 </div>
@@ -182634,37 +183637,92 @@ PLBDashboard.template = xml/* xml */ `
         </div>
 
         <!-- Main Data Table -->
-        <div class="table-responsive">
-            <style>
-                /* Ensure table-bordered shows regular borders (Bootstrap may set these elsewhere) */
-                table.table-bordered th, table.table-bordered td { border: 1px solid #dee2e6 !important; }
-                /* Double border only on monthly subtotal cells (Jan..Dec) */
-                .plb-footer .plb-month-border { border-top: 3px double #333 !important; border-bottom: 3px double #333 !important; }
-                /* Remove the bottom border of subtotal's non-month cells so the double line doesn't continue across */
-                .plb-footer .plb-subtotal-no-bottom { border-bottom: none !important; }
-                /* Remove the top border of the cumulative row cells to avoid a full-width line between subtotal &amp; cumulative */
-                .plb-footer .plb-cumulative-no-top { border-top: none !important; }
-            </style>
-            <table class="table table-bordered table-hover table-sm sticky-head" style="border-collapse:collapse; border-spacing:0;">
-                <thead class="table-light">
-                    <tr>
-                        <th rowspan="2">Company</th>
-                        <th rowspan="2">Project Name</th>
-                        <th rowspan="2">Salesperson</th>
-                        <th rowspan="2">Stage</th>
-                        <th rowspan="2">Expected Revenue</th>
-                        <th rowspan="2">Services</th>
-                        <!-- Dept/Region column removed -->
-                        <th colspan="12" class="text-center">Realized Revenue (Months)</th>
-                        <th rowspan="2">Realized FY2025</th>
-                        <th rowspan="2">Carry Forward</th>
-                         <!-- Profit Margin column removed -->
-                     </tr>
-                    <tr>
-                        <th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th><th>Jun</th>
-                        <th>Jul</th><th>Aug</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th>
-                    </tr>
-                </thead>
+        <div class="card plb-chart-card mb-5">
+            <div class="card-header" style="background: #C62828; border: none;">
+                <h4 class="mb-0" style="font-weight: 600; letter-spacing: 0.5px; color: #FFFFFF;">
+                    Current Year YTD Gain
+                </h4>
+            </div>
+            <div class="card-body p-0">
+                <style>
+                    /* Ensure table-bordered shows regular borders (Bootstrap may set these elsewhere) */
+                    table.table-bordered th, table.table-bordered td { border: 1px solid #D0D5DD !important; }
+                    /* Double border only on monthly subtotal cells (Jan..Dec) */
+                    .plb-footer .plb-month-border { border-top: 3px double #1A1A1A !important; border-bottom: 3px double #1A1A1A !important; }
+                    /* Remove the bottom border of subtotal's non-month cells so the double line doesn't continue across */
+                    .plb-footer .plb-subtotal-no-bottom { border-bottom: none !important; }
+                    /* Remove the top border of the cumulative row cells to avoid a full-width line between subtotal &amp; cumulative */
+                    .plb-footer .plb-cumulative-no-top { border-top: none !important; }
+                    /* Enhanced table styling */
+                    .plb-data-table {
+                        margin-bottom: 0;
+                        border-radius: 0 0 8px 8px;
+                    }
+                    .plb-data-table thead th {
+                        background: #F2F4F7;
+                        font-weight: 700;
+                        color: #1A1A1A;
+                        text-transform: uppercase;
+                        font-size: 11px;
+                        letter-spacing: 0.5px;
+                        padding: 12px 8px;
+                        border-color: #D0D5DD;
+                        position: sticky;
+                        top: 0;
+                        z-index: 10;
+                        text-align: center;
+                        vertical-align: middle;
+                    }
+                    .plb-data-table tbody tr {
+                        transition: all 0.2s ease;
+                    }
+                    .plb-data-table tbody tr:hover {
+                        background-color: rgba(13, 71, 161, 0.05);
+                        box-shadow: 0 2px 4px rgba(13, 71, 161, 0.1);
+                    }
+                    .plb-data-table tbody td {
+                        padding: 10px 8px;
+                        vertical-align: middle;
+                        font-size: 13px;
+                        color: #1A1A1A;
+                    }
+                    .plb-footer tr {
+                        background: #F2F4F7;
+                    }
+                    .plb-footer td {
+                        font-weight: 600;
+                        font-size: 13px;
+                        color: #1A1A1A;
+                    }
+                    /* Alternating row colors for better readability */
+                    .plb-data-table tbody tr:nth-child(even) {
+                        background-color: #FFFFFF;
+                    }
+                    .plb-data-table tbody tr:nth-child(odd) {
+                        background-color: #F2F4F7;
+                    }
+                </style>
+                <div class="plb-table-container">
+                    <table class="table table-bordered table-hover table-sm sticky-head plb-data-table mb-3" style="border-collapse:collapse; border-spacing:0;">
+                        <thead class="table-light">
+                            <tr>
+                                <th rowspan="2">Company</th>
+                                <th rowspan="2">Project Name</th>
+                                <th rowspan="2">Salesperson</th>
+                                <th rowspan="2">Stage</th>
+                                <th rowspan="2">Expected Revenue</th>
+                                <th rowspan="2">Services</th>
+                                <!-- Dept/Region column removed -->
+                                <th colspan="12" class="text-center">Realized Revenue (Months)</th>
+                                <th rowspan="2">Realized FY2025</th>
+                                <th rowspan="2">Carry Forward</th>
+                                 <!-- Profit Margin column removed -->
+                             </tr>
+                            <tr>
+                                <th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th><th>Jun</th>
+                                <th>Jul</th><th>Aug</th><th>Sep</th><th>Oct</th><th>Nov</th><th>Dec</th>
+                            </tr>
+                        </thead>
                 <tbody>
                     <t t-if="getFilteredTableRows() &amp;&amp; getFilteredTableRows().length">
                         <tr t-foreach="getFilteredTableRows()" t-as="row" t-key="row.id">
@@ -182709,7 +183767,9 @@ PLBDashboard.template = xml/* xml */ `
                      </tr>
                  </tfoot>
              </table>
-         </div>
+                </div>
+            </div>
+        </div>
      </t>
  </div>
  `;
@@ -199264,4 +200324,4 @@ return __exports;
 </templates>`);
                     });
 
-//# sourceMappingURL=/web/assets/85319f4/web.assets_web.js.map
+//# sourceMappingURL=/web/assets/964a32f/web.assets_web.js.map
