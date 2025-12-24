@@ -8,15 +8,18 @@ class LeadSnapshot(models.Model):
 
     lead_id = fields.Many2one("crm.lead", required=True, ondelete="cascade")
     name = fields.Char(related="lead_id.name", store=True)
+    partner_id = fields.Many2one('res.partner', related='lead_id.partner_id', string='Customer', store=True)
     stage_id = fields.Many2one("crm.stage")
     expected_revenue = fields.Float()
     probability = fields.Float()
+    priority = fields.Selection(related='lead_id.priority', string='Priority', store=True)
     snapshot_date = fields.Date(default=fields.Date.today, required=True)
     # New snapshot fields requested
     user_id = fields.Many2one('res.users', string='Salesperson')
     # Use create_date (related from lead) so column aligns with CRM's create_date "Date Funnel"
     create_date = fields.Datetime(related='lead_id.create_date', string='Date Funnel', store=True)
     expected_start_date = fields.Date(string='Expected Start Date')
+    date_secured = fields.Date(related='lead_id.date_secured', string='Date Secured', store=True)
     date_go_live = fields.Date(string='Date Go Live')
     # Latest activity snapshot fields (only date + activity type as requested)
     last_activity_date = fields.Datetime(string='Last Activity Date')
@@ -114,32 +117,39 @@ class CrmLead(models.Model):
 
     @api.model
     def cron_create_weekly_snapshot(self):
-        """Cron entry point: create snapshots for all CRM leads created within the current week.
-        If no leads are found in the week range, fall back to snapshotting all leads. Skip leads
-        that already have a snapshot for the same snapshot_date to avoid duplicates.
+        """Cron entry point: create snapshots for all CRM leads.
+        When run manually (via button/wizard), snapshots all existing leads.
+        When run via cron, snapshots leads created in the current week.
         Returns the number of snapshot records created.
         """
         Snapshot = self.env['crm.lead.snapshot']
         Lead = self.env['crm.lead']
         today = date.today()
-        # Compute week start (Monday) and end (Sunday)
-        week_start = today - timedelta(days=today.weekday())
-        week_end = week_start + timedelta(days=6)
-        # domain expects datetime strings; use full-day bounds
-        start_dt = week_start.strftime('%Y-%m-%d 00:00:00')
-        end_dt = week_end.strftime('%Y-%m-%d 23:59:59')
-        leads = Lead.search([('create_date', '>=', start_dt), ('create_date', '<=', end_dt)])
-        fallback_to_all = False
-        if not leads:
-            # nothing in the weekly range — fallback to snapshotting all leads so the "Run Now"
-            # button is useful during testing/initial runs.
+
+        # Check if being called from context (manual run vs cron)
+        # For manual runs, snapshot all leads
+        # For cron runs, snapshot leads created this week
+        context_manual = self.env.context.get('snapshot_manual', False)
+
+        if context_manual:
+            # Manual run: snapshot all leads
             leads = Lead.search([])
-            fallback_to_all = True
+        else:
+            # Cron run: snapshot leads created this week
+            week_start = today - timedelta(days=today.weekday())
+            week_end = week_start + timedelta(days=6)
+            start_dt = week_start.strftime('%Y-%m-%d 00:00:00')
+            end_dt = week_end.strftime('%Y-%m-%d 23:59:59')
+            leads = Lead.search([('create_date', '>=', start_dt), ('create_date', '<=', end_dt)])
+
+            # If no leads this week, snapshot all leads
+            if not leads:
+                leads = Lead.search([])
 
         if not leads:
             return 0
 
-        # Create snapshot records for every lead in scope (do not check for existing snapshots)
+        # Create snapshot records for every lead
         vals_list = []
         for lead in leads:
              # fetch latest activity for the lead (by create_date desc)
@@ -182,7 +192,11 @@ class CrmLead(models.Model):
             created_count = len(created)
             return created_count
         except Exception as e:
-            return 0
+            # Log the error for debugging
+            import logging
+            _logger = logging.getLogger(__name__)
+            _logger.error('Snapshot creation failed: %s', str(e))
+            raise
 
 
 class PlbSnapshotWizard(models.TransientModel):
@@ -209,10 +223,26 @@ class PlbSnapshotWizard(models.TransientModel):
         existing_today_count = len(existing_today)
         existing_today_lead_ids = existing_today.mapped('lead_id').ids[:10]
 
-        created_count = self.env['crm.lead'].cron_create_weekly_snapshot()
+        # Call snapshot with manual context flag to snapshot all leads
+        try:
+            created_count = self.env['crm.lead'].with_context(snapshot_manual=True).cron_create_weekly_snapshot()
+        except Exception as e:
+            import logging
+            _logger = logging.getLogger(__name__)
+            _logger.error('Snapshot failed with error: %s', str(e))
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': 'Snapshot Error',
+                    'message': 'Snapshot failed: %s' % str(e),
+                    'type': 'danger',
+                    'sticky': True,
+                }
+            }
 
         if created_count > 0:
-            message = 'Created %s snapshot record(s).' % (created_count,)
+            message = 'Created %s snapshot record(s) for %s leads.' % (created_count, total_leads_count)
             mtype = 'success'
         else:
             # created_count == 0 -> provide diagnostics for debugging

@@ -7,23 +7,24 @@
         <field name="arch" type="xml">
             <tree>
                 <!-- User requested sequence -->
-                <field name="create_date" string="Date Funnel"/>
-                <field name="name" string="Opportunity"/>
+                <field name="partner_id" string="Customer"/>
+                <field name="name" string="Project Name"/>
+                <field name="expected_revenue" string="Value Per Annum"/>
+                <field name="priority" string="Chance" widget="priority"/>
+                <field name="stage_id" string="Stage"/>
                 <field name="description" string="Remarks"/>
-                <field name="user_id" string="PIC"/>
+                <field name="user_id" string="Salesperson"/>
+                <field name="create_date" string="Date Funnel"/>
+
                 <field name="expected_start_date" string="Expected Start Date"/>
+                <field name="date_secured" string="Date Secured"/>
                 <field name="date_go_live" string="Date Go Live"/>
                 <field name="scope_of_service" string="Scope of service"/>
                 <field name="product" string="Product"/>
                 <field name="dept_region" string="Dept/region"/>
                 <field name="realized_revenue_fy2025" string="Realized Revenue FY2025"/>
-                <field name="contact_name" string="Contact Name"/>
-                <field name="email_from" string="Email"/>
-                <field name="tag_list" string="Other Emails"/>
-                <field name="user_id" string="Salesperson"/>
-                <field name="expected_revenue" string="Expected Revenue"/>
-                <field name="stage_id" string="Stage"/>
-                <field name="probability" string="Probability"/>
+<!--                <field name="contact_name" string="Contact Name"/>-->
+<!--                <field name="email_from" string="Email"/>-->
             </tree>
         </field>
     </record>

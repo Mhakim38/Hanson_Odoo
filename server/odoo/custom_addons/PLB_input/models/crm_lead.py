@@ -35,8 +35,6 @@ class CrmLead(models.Model):
         ('warehousing', 'Warehousing'),
         ('depot_yard', 'Depot / Yard'),
         ('distribution', 'Distribution'),
-        ('customs_clearance', 'Customs Clearance'),
-        ('others', 'Others'),
     ], string='Scope of Service')
 
     freight_type = fields.Selection([

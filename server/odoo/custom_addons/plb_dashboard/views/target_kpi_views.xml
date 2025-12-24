@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Tree View for Employee Target Lines (embedded in form) -->
+    <record id="view_employee_target_line_tree" model="ir.ui.view">
+        <field name="name">employee.target.line.tree</field>
+        <field name="model">employee.target.line</field>
+        <field name="arch" type="xml">
+            <tree string="Employee Targets" editable="bottom" create="false" delete="false">
+                <field name="employee_id" string="Employee" readonly="1" width="50%"/>
+                <field name="personal_target" string="Personal Target" width="50%"/>
+            </tree>
+        </field>
+    </record>
+
+    <!-- Form View for Target KPI Settings -->
+    <record id="view_target_kpi_settings_form" model="ir.ui.view">
+        <field name="name">target.kpi.settings.form</field>
+        <field name="model">target.kpi.settings</field>
+        <field name="arch" type="xml">
+            <form string="Target KPI Settings" create="false" delete="false">
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name" invisible="1"/>
+                            <field name="yearly_target" string="Company Yearly Target"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Employee Personal Targets">
+                            <field name="employee_target_ids" widget="one2many" mode="tree">
+                                <tree editable="bottom" create="false" delete="false">
+                                    <field name="employee_id" string="Employee" readonly="1" width="50%"/>
+                                    <field name="personal_target" string="Personal Target" width="50%"/>
+                                </tree>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action for Target KPI - Opens directly to the form -->
+    <record id="action_employee_target_kpi" model="ir.actions.act_window">
+        <field name="name">Target KPI</field>
+        <field name="res_model">target.kpi.settings</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_target_kpi_settings_form"/>
+        <field name="target">current</field>
+        <field name="context">{'form_view_initial_mode': 'edit'}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Set yearly targets for the company and employees
+            </p>
+        </field>
+    </record>
+
+    <!-- Server Action to open the singleton settings record -->
+    <record id="action_open_target_kpi_settings" model="ir.actions.server">
+        <field name="name">Open Target KPI Settings</field>
+        <field name="model_id" ref="model_target_kpi_settings"/>
+        <field name="state">code</field>
+        <field name="code">
+settings = model.get_settings()
+action = {
+    'type': 'ir.actions.act_window',
+    'res_model': 'target.kpi.settings',
+    'res_id': settings.id,
+    'view_mode': 'form',
+    'target': 'current',
+    'context': {'form_view_initial_mode': 'edit'},
+}
+        </field>
+    </record>
+</odoo>
+

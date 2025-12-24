@@ -1,0 +1,6 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_target_kpi_settings_user,access.target.kpi.settings.user,model_target_kpi_settings,base.group_user,1,0,0,0
+access_target_kpi_settings_admin,access.target.kpi.settings.admin,model_target_kpi_settings,base.group_system,1,1,1,1
+access_employee_target_line_user,access.employee.target.line.user,model_employee_target_line,base.group_user,1,0,0,0
+access_employee_target_line_admin,access.employee.target.line.admin,model_employee_target_line,base.group_system,1,1,1,1
+

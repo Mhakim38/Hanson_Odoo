@@ -5,7 +5,7 @@
         <field name="res_model">mail.activity.schedule</field>
         <field name="view_mode">form</field>
         <field name="target">new</field>
-        <field name="context">{'default_res_model': 'crm.lead', 'default_res_id': active_id}</field>
+                <field name="context">{'default_res_model': 'crm.lead', 'default_res_id': active_id}</field>
     </record>
 
     <!-- Custom Form View -->
