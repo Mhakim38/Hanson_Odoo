@@ -1,11 +1,18 @@
 from odoo import models, fields, api
+from datetime import datetime
 
 
 class TargetKPISettings(models.Model):
     _name = 'target.kpi.settings'
     _description = 'Target KPI Settings'
 
-    name = fields.Char(string='Settings', default='Target KPI Settings', readonly=True)
+    name = fields.Char(string='Settings', compute='_compute_name', store=True)
+    year = fields.Integer(
+        string='Year',
+        required=True,
+        default=lambda self: datetime.now().year,
+        help='Target year'
+    )
     yearly_target = fields.Integer(
         string='Company Yearly Target',
         default=0,
@@ -17,12 +24,24 @@ class TargetKPISettings(models.Model):
         string='Employee Targets'
     )
 
+    _sql_constraints = [
+        ('unique_year', 'UNIQUE(year)', 'Target settings for this year already exists!')
+    ]
+
+    @api.depends('year')
+    def _compute_name(self):
+        for record in self:
+            record.name = f'Target KPI Settings - {record.year}'
+
     @api.model
-    def get_settings(self):
-        """Get or create the singleton settings record"""
-        settings = self.search([], limit=1)
+    def get_settings_for_year(self, year):
+        """Get or create settings record for specific year"""
+        settings = self.search([('year', '=', year)], limit=1)
         if not settings:
-            settings = self.create({'name': 'Target KPI Settings'})
+            settings = self.create({
+                'year': year,
+                'yearly_target': 0
+            })
 
         # Auto-populate employees if not already added
         existing_employee_ids = settings.employee_target_ids.mapped('employee_id.id')
