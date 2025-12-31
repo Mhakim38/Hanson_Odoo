@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_proposal_required_fields_wizard_form" model="ir.ui.view">
+        <field name="name">proposal.required.fields.wizard.form</field>
+        <field name="model">proposal.required.fields.wizard</field>
+        <field name="priority">1</field>
+        <field name="arch" type="xml">
+            <form string="Missing Required Information">
+                <sheet>
+                    <group>
+                        <field name="message" nolabel="1" readonly="1"/>
+                    </group>
+
+                    <group string="Required Fields">
+                        <field name="scope_of_service" invisible="1"/>
+                        <field name="show_freight_fields" invisible="1"/>
+                        <field name="currency_id" invisible="1"/>
+                        <field name="lead_id" invisible="1"/>
+                        <field name="target_stage_id" invisible="1"/>
+
+                        <field name="operating_profit_margin"/>
+                        <field name="expected_revenue_annum"/>
+                        <field name="quotation_attachment" filename="quotation_attachment_filename"/>
+                        <field name="quotation_attachment_filename" invisible="1"/>
+                    </group>
+
+                    <group string="Freight Forwarding Details" invisible="not show_freight_fields">
+                        <field name="freight_type"/>
+                        <field name="origin_country_id"/>
+                        <field name="destination_country_id"/>
+                        <field name="port_of_loading_id"/>
+                        <field name="port_of_destination_id"/>
+                        <field name="product"/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button string="Save and Continue" class="btn-primary" type="object" name="action_save_and_continue"/>
+                    <button string="Cancel" class="btn-secondary" type="object" name="action_cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>
+

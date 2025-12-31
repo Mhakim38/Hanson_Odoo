@@ -377,6 +377,9 @@ class CrmLead(models.Model):
         return super(CrmLead, self).create(vals_list)
 
     def write(self, vals):
+        # Skip proposal check if context flag is set (used by wizard)
+        skip_check = self.env.context.get('skip_proposal_check', False)
+
         # Check if record is in Contract or Loss stage and prevent editing (except stage_id changes)
         for rec in self:
             if rec.is_readonly_stage:
@@ -386,81 +389,112 @@ class CrmLead(models.Model):
                     raise ValidationError('Cannot edit leads in Contract or Loss stage. The data is locked.')
 
         # For each record, check if user is attempting to move it to a Proposal stage without required fields
-        for rec in self:
-            # determine effective stage after write
-            new_stage_id = vals.get('stage_id', False)
-            effective_stage = new_stage_id if new_stage_id else rec.stage_id.id
-            if effective_stage:
-                stage = self.env['crm.stage'].browse(effective_stage)
-                name = (getattr(stage, 'name', '') or '').strip().lower()
-                if 'proposal' in name:
-                    missing = []
-                    # Check operating_profit_margin: if it's being changed in vals, consider that; otherwise use rec
-                    opm = vals.get('operating_profit_margin') if 'operating_profit_margin' in vals else rec.operating_profit_margin
-                    if opm in (None, False):
-                        missing.append('Operating Profit Margin')
-                    # expected_revenue_annum
-                    exp_rev = vals.get('expected_revenue_annum') if 'expected_revenue_annum' in vals else rec.expected_revenue_annum
-                    if not exp_rev:
-                        missing.append('Expected Revenue (Annum)')
-                    # quotation attachment: check vals, existing dedicated field, or ir.attachment
-                    att_ok = False
-                    if 'quotation_attachment' in vals and vals.get('quotation_attachment'):
-                        att_ok = True
-                    elif 'attachment_file' in vals and vals.get('attachment_file'):
-                        # allow existing attachment_file too
-                        att_ok = True
-                    elif rec.quotation_attachment:
-                        att_ok = True
-                    else:
-                        Attachment = self.env['ir.attachment']
-                        if rec.id and Attachment.search_count([('res_model', '=', 'crm.lead'), ('res_id', '=', rec.id)]):
+        if not skip_check:
+            for rec in self:
+                # determine effective stage after write
+                new_stage_id = vals.get('stage_id', False)
+                effective_stage = new_stage_id if new_stage_id else rec.stage_id.id
+                if effective_stage:
+                    stage = self.env['crm.stage'].browse(effective_stage)
+                    name = (getattr(stage, 'name', '') or '').strip().lower()
+                    if 'proposal' in name:
+                        missing = []
+                        # Check operating_profit_margin: if it's being changed in vals, consider that; otherwise use rec
+                        opm = vals.get('operating_profit_margin') if 'operating_profit_margin' in vals else rec.operating_profit_margin
+                        if opm in (None, False):
+                            missing.append('Operating Profit Margin')
+                        # expected_revenue_annum
+                        exp_rev = vals.get('expected_revenue_annum') if 'expected_revenue_annum' in vals else rec.expected_revenue_annum
+                        if not exp_rev:
+                            missing.append('Expected Revenue (Annum)')
+                        # quotation attachment: check vals, existing dedicated field, or ir.attachment
+                        att_ok = False
+                        if 'quotation_attachment' in vals and vals.get('quotation_attachment'):
                             att_ok = True
-                    if not att_ok:
-                        missing.append('Quotation Attachment')
+                        elif 'attachment_file' in vals and vals.get('attachment_file'):
+                            # allow existing attachment_file too
+                            att_ok = True
+                        elif rec.quotation_attachment:
+                            att_ok = True
+                        else:
+                            Attachment = self.env['ir.attachment']
+                            if rec.id and Attachment.search_count([('res_model', '=', 'crm.lead'), ('res_id', '=', rec.id)]):
+                                att_ok = True
+                        if not att_ok:
+                            missing.append('Quotation Attachment')
 
-                    # Additional check for Proposal Submitted with Freight Forwarding
-                    if 'proposal' in name and 'submitted' in name:
-                        # Check scope of service (from vals or existing record)
-                        scope = vals.get('scope_of_service') if 'scope_of_service' in vals else rec.scope_of_service
-                        if scope == 'freight_forwarding':
-                            # Check freight_type
-                            freight = vals.get('freight_type') if 'freight_type' in vals else rec.freight_type
-                            if not freight:
-                                missing.append('Freight Type')
-                            # Check origin_country_id
-                            origin = vals.get('origin_country_id') if 'origin_country_id' in vals else rec.origin_country_id
-                            if not origin:
-                                missing.append('Origin Country')
-                            # Check destination_country_id
-                            dest = vals.get('destination_country_id') if 'destination_country_id' in vals else rec.destination_country_id
-                            if not dest:
-                                missing.append('Destination Country')
-                            # Check port_of_loading_id
-                            pol = vals.get('port_of_loading_id') if 'port_of_loading_id' in vals else rec.port_of_loading_id
-                            if not pol:
-                                missing.append('Port of Loading')
-                            # Check port_of_destination_id
-                            pod = vals.get('port_of_destination_id') if 'port_of_destination_id' in vals else rec.port_of_destination_id
-                            if not pod:
-                                missing.append('Port of Destination')
-                            # Check product
-                            prod = vals.get('product') if 'product' in vals else rec.product
-                            if not prod:
-                                missing.append('Customer Product')
+                        # Additional check for Proposal Submitted with Freight Forwarding
+                        if 'proposal' in name and 'submitted' in name:
+                            # Check scope of service (from vals or existing record)
+                            scope = vals.get('scope_of_service') if 'scope_of_service' in vals else rec.scope_of_service
+                            if scope == 'freight_forwarding':
+                                # Check freight_type
+                                freight = vals.get('freight_type') if 'freight_type' in vals else rec.freight_type
+                                if not freight:
+                                    missing.append('Freight Type')
+                                # Check origin_country_id
+                                origin = vals.get('origin_country_id') if 'origin_country_id' in vals else rec.origin_country_id
+                                if not origin:
+                                    missing.append('Origin Country')
+                                # Check destination_country_id
+                                dest = vals.get('destination_country_id') if 'destination_country_id' in vals else rec.destination_country_id
+                                if not dest:
+                                    missing.append('Destination Country')
+                                # Check port_of_loading_id
+                                pol = vals.get('port_of_loading_id') if 'port_of_loading_id' in vals else rec.port_of_loading_id
+                                if not pol:
+                                    missing.append('Port of Loading')
+                                # Check port_of_destination_id
+                                pod = vals.get('port_of_destination_id') if 'port_of_destination_id' in vals else rec.port_of_destination_id
+                                if not pod:
+                                    missing.append('Port of Destination')
+                                # Check product
+                                prod = vals.get('product') if 'product' in vals else rec.product
+                                if not prod:
+                                    missing.append('Customer Product')
 
-                    if missing:
-                        # Friendly server-side error to prevent stage move (covers mass writes / automated transitions)
-                        raise ValidationError('Cannot move lead to Proposal: missing %s. Please fill them while in Qualify stage.' % (', '.join(missing)))
+                        if missing:
+                            # Revert to qualify stage first
+                            qualify_stage = rec._find_qualify_stage(team_id=(rec.team_id.id if rec.team_id else False))
+                            if qualify_stage:
+                                # Temporarily bypass check to revert stage
+                                super(CrmLead, rec.with_context(skip_proposal_check=True)).write({'stage_id': qualify_stage.id})
 
-            # Existing checks for date_secured and attachment_file constraints
-            # If date_secured included in vals, ensure effective stage is contract
-            if 'date_secured' in vals:
-                if not self._stage_is_contract(effective_stage):
-                    raise ValidationError('Date Secured can only be set when the lead stage is Shortlisted or Verbal.')
-            if 'attachment_file' in vals:
-                if vals.get('attachment_file') and not self._stage_is_contract(effective_stage):
-                    raise ValidationError('Attachment can only be added when the lead stage is Shortlisted or Verbal.')
+                            # Show wizard with input fields
+                            wizard = self.env['proposal.required.fields.wizard'].create({
+                                'lead_id': rec.id,
+                                'target_stage_id': effective_stage,
+                                'message': 'You must fill the following fields before moving to Proposal: %s.\nThe stage has been reverted to Qualify.' % (', '.join(missing)),
+                                'operating_profit_margin': rec.operating_profit_margin,
+                                'expected_revenue_annum': rec.expected_revenue_annum,
+                                'currency_id': rec.company_currency_id.id,
+                                'freight_type': rec.freight_type,
+                                'origin_country_id': rec.origin_country_id.id if rec.origin_country_id else False,
+                                'destination_country_id': rec.destination_country_id.id if rec.destination_country_id else False,
+                                'port_of_loading_id': rec.port_of_loading_id.id if rec.port_of_loading_id else False,
+                                'port_of_destination_id': rec.port_of_destination_id.id if rec.port_of_destination_id else False,
+                                'product': rec.product,
+                            })
+
+                            return {
+                                'type': 'ir.actions.act_window',
+                                'name': 'Missing Required Information',
+                                'res_model': 'proposal.required.fields.wizard',
+                                'view_mode': 'form',
+                                'res_id': wizard.id,
+                                'views': [(self.env.ref('PLB_input.view_proposal_required_fields_wizard_form').id, 'form')],
+                                'target': 'new',
+                                'context': self.env.context,
+                            }
+
+                # Existing checks for date_secured and attachment_file constraints
+                # If date_secured included in vals, ensure effective stage is contract
+                if 'date_secured' in vals:
+                    if not self._stage_is_contract(effective_stage):
+                        raise ValidationError('Date Secured can only be set when the lead stage is Shortlisted or Verbal.')
+                if 'attachment_file' in vals:
+                    if vals.get('attachment_file') and not self._stage_is_contract(effective_stage):
+                        raise ValidationError('Attachment can only be added when the lead stage is Shortlisted or Verbal.')
 
         return super(CrmLead, self).write(vals)
 

@@ -1,3 +1,4 @@
 id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
 access_crm_lead_tag,access_crm_lead_tag,model_crm_lead_tag,base.group_user,1,1,1,1
-
+access_plb_stage_block_wizard,access_plb_stage_block_wizard,model_plb_stage_block_wizard,base.group_user,1,1,1,1
+access_proposal_required_fields_wizard,access_proposal_required_fields_wizard,model_proposal_required_fields_wizard,base.group_user,1,1,1,1

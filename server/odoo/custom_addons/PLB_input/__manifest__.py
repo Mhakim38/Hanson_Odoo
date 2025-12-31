@@ -6,6 +6,8 @@
     'data': [
         'security/crm_lead_security.xml',
         'security/ir.model.access.csv',
+        'views/stage_block_wizard_views.xml',
+        'views/proposal_required_fields_wizard_views.xml',
         'views/crm_lead_views.xml',
         'views/mail_activity_schedule_views.xml',
         'views/hr_employee_behavior_views.xml',
