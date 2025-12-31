@@ -145,6 +145,26 @@ class CrmLead(models.Model):
         for rec in self:
             rec.is_qualify_stage = bool(rec.stage_id and ('qualify' in (getattr(rec.stage_id, 'name', '') or '').strip().lower()))
 
+    # New helper boolean for views: True when stage is "Proposal Submitted" or later (for freight forwarding mandatory fields)
+    is_proposal_submitted_stage = fields.Boolean(string='Is Proposal Submitted Stage', compute='_compute_is_proposal_submitted_stage', store=True)
+
+    @api.depends('stage_id')
+    def _compute_is_proposal_submitted_stage(self):
+        """Return True if stage name contains 'proposal' and 'submitted' (case-insensitive)"""
+        for rec in self:
+            name = (getattr(rec.stage_id, 'name', '') or '').strip().lower()
+            rec.is_proposal_submitted_stage = bool(name and 'proposal' in name and 'submitted' in name)
+
+    # New helper boolean for views: True when stage is "Contract" or "Loss" (read-only stage)
+    is_readonly_stage = fields.Boolean(string='Is Read-Only Stage', compute='_compute_is_readonly_stage', store=True)
+
+    @api.depends('stage_id')
+    def _compute_is_readonly_stage(self):
+        """Return True if stage name contains 'contract' or 'loss' (case-insensitive)"""
+        for rec in self:
+            name = (getattr(rec.stage_id, 'name', '') or '').strip().lower()
+            rec.is_readonly_stage = bool(name and ('contract' in name or 'loss' in name))
+
     # === COMPUTE METHODS ===
     # Note: contract_months is user-editable. Validation is handled by _check_contract_months.
 
@@ -260,10 +280,17 @@ class CrmLead(models.Model):
         """When user selects a Proposal stage, ensure required fields (operating_profit_margin,
         expected_revenue_annum and quotation_attachment) have been filled. If not, revert to a Qualify stage
         and show a friendly warning.
+
+        Additionally, when moving to Proposal Submitted stage with Freight Forwarding scope,
+        ensure all freight forwarding fields are filled.
         """
         for rec in self:
             if not rec.stage_id:
                 continue
+
+            stage_name = (getattr(rec.stage_id, 'name', '') or '').strip().lower()
+
+            # Check for Proposal stage requirements
             if self._stage_name_contains(rec.stage_id, 'proposal'):
                 missing = []
                 if rec.operating_profit_margin in (False, None):
@@ -282,6 +309,22 @@ class CrmLead(models.Model):
                             att_ok = True
                 if not att_ok:
                     missing.append('Quotation Attachment')
+
+                # Additional check for Proposal Submitted with Freight Forwarding
+                if 'proposal' in stage_name and 'submitted' in stage_name:
+                    if rec.scope_of_service == 'freight_forwarding':
+                        if not rec.freight_type:
+                            missing.append('Freight Type')
+                        if not rec.origin_country_id:
+                            missing.append('Origin Country')
+                        if not rec.destination_country_id:
+                            missing.append('Destination Country')
+                        if not rec.port_of_loading_id:
+                            missing.append('Port of Loading')
+                        if not rec.port_of_destination_id:
+                            missing.append('Port of Destination')
+                        if not rec.product:
+                            missing.append('Customer Product')
 
                 if missing:
                     # revert to a qualify stage (if possible) and show a warning
@@ -312,11 +355,36 @@ class CrmLead(models.Model):
                     # check attachment either in vals or existing attachments (none on create)
                     if not vals.get('quotation_attachment') and not vals.get('attachment_file'):
                         missing.append('Quotation Attachment')
+
+                    # Additional check for Proposal Submitted with Freight Forwarding
+                    if 'proposal' in name and 'submitted' in name:
+                        if vals.get('scope_of_service') == 'freight_forwarding':
+                            if not vals.get('freight_type'):
+                                missing.append('Freight Type')
+                            if not vals.get('origin_country_id'):
+                                missing.append('Origin Country')
+                            if not vals.get('destination_country_id'):
+                                missing.append('Destination Country')
+                            if not vals.get('port_of_loading_id'):
+                                missing.append('Port of Loading')
+                            if not vals.get('port_of_destination_id'):
+                                missing.append('Port of Destination')
+                            if not vals.get('product'):
+                                missing.append('Customer Product')
+
                     if missing:
                         raise ValidationError('Cannot create lead in Proposal stage: missing %s. Please fill them while in Qualify stage.' % (', '.join(missing)))
         return super(CrmLead, self).create(vals_list)
 
     def write(self, vals):
+        # Check if record is in Contract or Loss stage and prevent editing (except stage_id changes)
+        for rec in self:
+            if rec.is_readonly_stage:
+                # Allow stage changes but prevent other field modifications
+                non_stage_keys = [k for k in vals.keys() if k != 'stage_id']
+                if non_stage_keys:
+                    raise ValidationError('Cannot edit leads in Contract or Loss stage. The data is locked.')
+
         # For each record, check if user is attempting to move it to a Proposal stage without required fields
         for rec in self:
             # determine effective stage after write
@@ -350,6 +418,36 @@ class CrmLead(models.Model):
                             att_ok = True
                     if not att_ok:
                         missing.append('Quotation Attachment')
+
+                    # Additional check for Proposal Submitted with Freight Forwarding
+                    if 'proposal' in name and 'submitted' in name:
+                        # Check scope of service (from vals or existing record)
+                        scope = vals.get('scope_of_service') if 'scope_of_service' in vals else rec.scope_of_service
+                        if scope == 'freight_forwarding':
+                            # Check freight_type
+                            freight = vals.get('freight_type') if 'freight_type' in vals else rec.freight_type
+                            if not freight:
+                                missing.append('Freight Type')
+                            # Check origin_country_id
+                            origin = vals.get('origin_country_id') if 'origin_country_id' in vals else rec.origin_country_id
+                            if not origin:
+                                missing.append('Origin Country')
+                            # Check destination_country_id
+                            dest = vals.get('destination_country_id') if 'destination_country_id' in vals else rec.destination_country_id
+                            if not dest:
+                                missing.append('Destination Country')
+                            # Check port_of_loading_id
+                            pol = vals.get('port_of_loading_id') if 'port_of_loading_id' in vals else rec.port_of_loading_id
+                            if not pol:
+                                missing.append('Port of Loading')
+                            # Check port_of_destination_id
+                            pod = vals.get('port_of_destination_id') if 'port_of_destination_id' in vals else rec.port_of_destination_id
+                            if not pod:
+                                missing.append('Port of Destination')
+                            # Check product
+                            prod = vals.get('product') if 'product' in vals else rec.product
+                            if not prod:
+                                missing.append('Customer Product')
 
                     if missing:
                         # Friendly server-side error to prevent stage move (covers mass writes / automated transitions)
