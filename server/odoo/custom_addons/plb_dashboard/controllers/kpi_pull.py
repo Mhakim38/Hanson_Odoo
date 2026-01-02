@@ -50,10 +50,15 @@ class PLBKPIController(http.Controller):
                     monthly_target = (line.personal_target or 0) / 12.0
                     employee_targets[user_id] = monthly_target
 
-        # Get all salespersons (users who have leads assigned)
+        # Get all salespersons (users who have leads in contract stage)
+        # Filter leads where stage name contains 'contract' (case-insensitive)
+        Stage = request.env['crm.stage'].sudo()
+        contract_stages = Stage.search([('name', 'ilike', 'contract')])
+        contract_stage_ids = [s.id for s in contract_stages]
+
         leads = Lead.search_read(
-            domain=[],
-            fields=['user_id', 'expected_revenue', 'expected_start_date', 'contract_months', 'realized_revenue_fy2025']
+            domain=[('stage_id', 'in', contract_stage_ids)] if contract_stage_ids else [('id', '=', False)],
+            fields=['user_id', 'expected_revenue', 'expected_start_date', 'contract_months', 'realized_revenue_fy2025', 'stage_id']
         )
 
         # Build salesperson map: {user_id: {name: ..., monthly_ytd: [0]*12, target: [0]*12}}

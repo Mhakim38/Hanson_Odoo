@@ -152,6 +152,28 @@ class PLBDashboardController(http.Controller):
                         amount = mar
                 monthly_revenue.append(amount)
 
+            # Calculate week, month, quarter from expected_start_date
+            week_of_year = None
+            month_name = None
+            quarter = None
+            if expected_start:
+                if isinstance(expected_start, str):
+                    try:
+                        from datetime import datetime
+                        dt = datetime.strptime(expected_start, '%Y-%m-%d')
+                        week_of_year = dt.isocalendar()[1]  # ISO week number
+                        month_name = dt.strftime('%B')  # Full month name (e.g., 'January')
+                        quarter = f"Q{(dt.month - 1) // 3 + 1}"  # Q1, Q2, Q3, Q4
+                    except Exception:
+                        pass
+                else:
+                    try:
+                        week_of_year = expected_start.isocalendar()[1]
+                        month_name = expected_start.strftime('%B')
+                        quarter = f"Q{(expected_start.month - 1) // 3 + 1}"
+                    except Exception:
+                        pass
+
             # Build row data
             row = {
                 'id': lead.get('id'),
@@ -177,6 +199,10 @@ class PLBDashboardController(http.Controller):
                 # Dept/Region
                 'deptRegion': dept_label,
                 'deptRegionKey': dept_key,
+                # New fields: week, month, quarter
+                'week': week_of_year,
+                'month': month_name,
+                'quarter': quarter,
             }
             rows.append(row)
 
@@ -898,4 +924,110 @@ class PLBDashboardController(http.Controller):
             'regions': regions,
         }
 
+    @http.route('/plb/gauge_data', type='json', auth='user')
+    def get_gauge_data(self, year=None):
+        """
+        Fetch gauge meter data for dashboard (YTD Rev Target and Realized Rev Target)
+        Returns percentage and values for both gauges
+        """
+        from datetime import datetime
+        Lead = request.env['crm.lead'].sudo()
+        TargetKPISettings = request.env['target.kpi.settings'].sudo()
+
+        try:
+            if year:
+                y = int(year)
+            else:
+                y = datetime.now().year
+        except Exception:
+            y = datetime.now().year
+
+        # Get company yearly target
+        company_yearly_target = 0
+        settings = TargetKPISettings.search([('year', '=', y)], limit=1)
+        if settings:
+            company_yearly_target = settings.yearly_target or 0
+        else:
+            # If no settings for this year, create with auto-populated employees
+            settings = request.env['target.kpi.settings'].get_settings_for_year(y)
+            company_yearly_target = settings.yearly_target or 0
+
+        # Get all leads for contract stage
+        Stage = request.env['crm.stage'].sudo()
+        contract_stages = Stage.search([('name', 'ilike', 'contract')])
+        contract_stage_ids = [s.id for s in contract_stages]
+
+        leads = Lead.search_read(
+            domain=[('stage_id', 'in', contract_stage_ids)] if contract_stage_ids else [('id', '=', False)],
+            fields=['expected_revenue', 'expected_start_date', 'contract_months', 'realized_revenue_fy2025']
+        )
+
+        total_expected_revenue = 0.0  # Direct sum of expected_revenue
+        total_realized_revenue_ytd = 0.0  # Sum of MAR (Monthly Annualized Revenue)
+
+        for lead in leads:
+            sales = lead.get('expected_revenue', 0) or 0
+            contract_months = lead.get('contract_months', 0) or 0
+            expected_start = lead.get('expected_start_date')
+
+            # Parse start date
+            start_year = None
+            start_month = None
+            if expected_start:
+                if isinstance(expected_start, str):
+                    try:
+                        parts = expected_start.split('-')
+                        start_year = int(parts[0])
+                        start_month = int(parts[1])
+                    except Exception:
+                        start_year = None
+                        start_month = None
+                else:
+                    try:
+                        start_year = expected_start.year
+                        start_month = expected_start.month
+                    except Exception:
+                        start_year = None
+                        start_month = None
+
+            # Only process leads with expected_start_date in the specified year
+            if start_year != y:
+                continue
+
+            # Accumulate expected revenue for YTD gauge (direct sum)
+            total_expected_revenue += sales
+
+            # Calculate MAR for realized revenue gauge
+            mar = 0.0
+            if contract_months and contract_months > 0:
+                try:
+                    mar = float(sales) / float(contract_months)
+                except Exception:
+                    mar = 0.0
+
+            # Calculate total MAR for months in the year
+            if start_month and 1 <= start_month <= 12:
+                for month_idx in range(12):
+                    actual_month = month_idx + 1
+                    if actual_month >= start_month:
+                        months_from_start = actual_month - start_month
+                        if months_from_start < contract_months:
+                            total_realized_revenue_ytd += mar
+
+        # Calculate percentages
+        ytd_percentage = 0.0
+        realized_percentage = 0.0
+
+        if company_yearly_target > 0:
+            ytd_percentage = (total_expected_revenue / company_yearly_target) * 100
+            realized_percentage = (total_realized_revenue_ytd / company_yearly_target) * 100
+
+        return {
+            'year': y,
+            'company_yearly_target': company_yearly_target / 1000000,  # In millions
+            'total_ytd_revenue': total_expected_revenue / 1000000,  # Expected Revenue in millions
+            'total_realized_revenue': total_realized_revenue_ytd / 1000000,  # Realized revenue in millions
+            'ytd_percentage': ytd_percentage,
+            'realized_percentage': realized_percentage,
+        }
 
