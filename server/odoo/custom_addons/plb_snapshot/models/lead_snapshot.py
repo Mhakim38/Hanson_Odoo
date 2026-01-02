@@ -54,7 +54,7 @@ class LeadSnapshot(models.Model):
     # Currency helper - match crm.lead.company_currency_id so Monetary related field type matches
     company_currency_id = fields.Many2one('res.currency', related='lead_id.company_currency_id', string='Currency', readonly=True, store=True)
     # Realized revenue must be Monetary and use the currency_field to match the crm.lead definition
-    realized_revenue_fy2025 = fields.Monetary(related='lead_id.realized_revenue_fy2025', currency_field='company_currency_id', string='Realized Revenue FY2025', store=True)
+    realized_revenue = fields.Monetary(related='lead_id.realized_revenue', currency_field='company_currency_id', string='Realized Revenue', store=True)
 
     @api.depends('lead_id.tag_ids')
     def _compute_tag_list(self):

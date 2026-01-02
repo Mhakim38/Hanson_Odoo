@@ -1,6 +1,6 @@
 {
     "name": "CRM Lead Weekly Snapshot",
-    "version": "1.0",
+    "version": "1.1",
     "summary": "Automatically create weekly snapshots of CRM Leads",
     "depends": ["crm"],
     "data": [

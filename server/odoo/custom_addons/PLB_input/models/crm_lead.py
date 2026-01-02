@@ -78,10 +78,59 @@ class CrmLead(models.Model):
         ('southern', 'Southern'),
     ], string='Dept/Region')
 
-    realized_revenue_fy2025 = fields.Monetary(
-        string='Realized Revenue FY2025 (MYR)',
-        currency_field='company_currency_id'
+    realized_revenue = fields.Monetary(
+        string='Realized Revenue (MYR)',
+        currency_field='company_currency_id',
+        compute='_compute_realized_revenue',
+        store=True,
+        readonly=False
     )
+
+    @api.depends('expected_revenue', 'contract_months', 'expected_start_date')
+    def _compute_realized_revenue(self):
+        """
+        Calculate realized revenue based on:
+        - MAR (Monthly Annualized Revenue) = Expected Revenue / Contract Months
+        - RR = MAR * (12 - Current Month(Expected Start Date) + 1)
+        """
+        for rec in self:
+            realized_revenue = 0.0
+
+            sales = rec.expected_revenue or 0.0
+            contract_months = rec.contract_months or 0
+            expected_start = rec.expected_start_date
+
+            # Only calculate if we have all required fields
+            if not expected_start or not contract_months or contract_months <= 0:
+                rec.realized_revenue = 0.0
+                continue
+
+            # Parse start month from expected_start_date
+            start_month = None
+            if isinstance(expected_start, str):
+                try:
+                    start_month = int(expected_start.split('-')[1])
+                except Exception:
+                    start_month = None
+            else:
+                try:
+                    start_month = expected_start.month
+                except Exception:
+                    start_month = None
+
+            # Validate start_month
+            if not start_month or start_month < 1 or start_month > 12:
+                rec.realized_revenue = 0.0
+                continue
+
+            # Calculate MAR (Monthly Annualized Revenue)
+            mar = float(sales) / float(contract_months)
+
+            # Calculate RR = MAR * (12 - start_month + 1)
+            months_in_year = 12 - start_month + 1
+            realized_revenue = mar * months_in_year
+
+            rec.realized_revenue = realized_revenue
 
     # Hidden per request: category_type is intentionally left on the model (if needed elsewhere)
     category_type = fields.Selection([

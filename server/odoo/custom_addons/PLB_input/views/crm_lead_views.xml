@@ -84,7 +84,7 @@
                 <group colspan="2">
                     <group string="Additional Info">
                         <field name="dept_region"/>
-                        <field name="realized_revenue_fy2025"/>
+                        <field name="realized_revenue"/>
                         <!-- moved fields: remark, operating_profit_margin, expected_revenue_annum -->
                         <field name="remark"/>
                         <field name="operating_profit_margin" widget="percent" modifiers='{"required":[["is_qualify_stage","=", true]]}'/>
@@ -144,7 +144,7 @@
                 <field name="scope_of_service" string="Scope of service" optional="show"/>
                 <field name="product" string="Product" optional="show"/>
                 <field name="dept_region" string="Dept/region" optional="show"/>
-                <field name="realized_revenue_fy2025" optional="show"/>
+                <field name="realized_revenue" optional="show"/>
             </xpath>
 <!--            <xpath expr="//field[@name='create_date']" position="after">-->
 <!--                <field name="priority" widget="priority"/>-->

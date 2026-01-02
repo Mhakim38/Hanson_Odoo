@@ -22,7 +22,7 @@
                 <field name="scope_of_service" string="Scope of service"/>
                 <field name="product" string="Product"/>
                 <field name="dept_region" string="Dept/region"/>
-                <field name="realized_revenue_fy2025" string="Realized Revenue FY2025"/>
+                <field name="realized_revenue" string="Realized Revenue"/>
 <!--                <field name="contact_name" string="Contact Name"/>-->
 <!--                <field name="email_from" string="Email"/>-->
             </tree>

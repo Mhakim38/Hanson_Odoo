@@ -58,7 +58,7 @@ class PLBKPIController(http.Controller):
 
         leads = Lead.search_read(
             domain=[('stage_id', 'in', contract_stage_ids)] if contract_stage_ids else [('id', '=', False)],
-            fields=['user_id', 'expected_revenue', 'expected_start_date', 'contract_months', 'realized_revenue_fy2025', 'stage_id']
+            fields=['user_id', 'expected_revenue', 'expected_start_date', 'contract_months', 'realized_revenue', 'stage_id']
         )
 
         # Build salesperson map: {user_id: {name: ..., monthly_ytd: [0]*12, target: [0]*12}}
@@ -97,8 +97,8 @@ class PLBKPIController(http.Controller):
             sales = lead.get('expected_revenue', 0) or 0
             contract_months = lead.get('contract_months', 0) or 0
             expected_start = lead.get('expected_start_date')
-            # Realized uses realized_revenue_fy2025 (actual received revenue for current year)
-            realized_rev = lead.get('realized_revenue_fy2025', 0) or 0
+            # Realized uses realized_revenue (actual received revenue for current year)
+            realized_rev = lead.get('realized_revenue', 0) or 0
 
             # Parse start date
             start_year = None
