@@ -85,10 +85,9 @@
                     <group string="Additional Info">
                         <field name="dept_region"/>
                         <field name="realized_revenue"/>
-                        <!-- moved fields: remark, operating_profit_margin, expected_revenue_annum -->
+                        <!-- moved fields: remark, operating_profit_margin -->
                         <field name="remark"/>
                         <field name="operating_profit_margin" widget="percent" modifiers='{"required":[["is_qualify_stage","=", true]]}'/>
-                        <field name="expected_revenue_annum" modifiers='{"required":[["is_qualify_stage","=", true]]}'/>
                         <!-- Quotation attachment required in Qualify and editable in Qualify stage -->
                         <field name="quotation_attachment" filename="quotation_attachment_filename" modifiers='{"required":[["is_qualify_stage","=", true]], "readonly":[["is_qualify_stage","=", false]]}'/>
                         <field name="quotation_attachment_filename" readonly="1"/>

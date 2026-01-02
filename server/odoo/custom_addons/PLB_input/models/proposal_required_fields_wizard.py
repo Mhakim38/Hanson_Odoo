@@ -14,10 +14,6 @@ class ProposalRequiredFieldsWizard(models.TransientModel):
         string='Operating Profit Margin (%)',
         digits=(5, 2),
     )
-    expected_revenue_annum = fields.Monetary(
-        string='Expected Revenue (Annum)',
-        currency_field='currency_id'
-    )
     currency_id = fields.Many2one('res.currency', string='Currency')
 
     # Freight forwarding fields (only shown when scope_of_service is freight_forwarding)
@@ -54,8 +50,6 @@ class ProposalRequiredFieldsWizard(models.TransientModel):
         vals = {}
         if self.operating_profit_margin:
             vals['operating_profit_margin'] = self.operating_profit_margin
-        if self.expected_revenue_annum:
-            vals['expected_revenue_annum'] = self.expected_revenue_annum
         if self.quotation_attachment:
             vals['quotation_attachment'] = self.quotation_attachment
             vals['quotation_attachment_filename'] = self.quotation_attachment_filename

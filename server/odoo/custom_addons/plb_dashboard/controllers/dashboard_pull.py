@@ -21,7 +21,6 @@ class PLBDashboardController(http.Controller):
                 'user_id',
                 'stage_id',
                 'expected_revenue',
-                'expected_revenue_annum',
                 'realized_revenue',
                 'scope_of_service',
                 'contract_type',
@@ -277,7 +276,7 @@ class PLBDashboardController(http.Controller):
 
         leads = Lead.search_read(
             domain=[],
-            fields=['expected_revenue', 'expected_revenue_annum', 'realized_revenue', 'contract_months', 'expected_start_date']
+            fields=['expected_revenue', 'realized_revenue', 'contract_months', 'expected_start_date']
         )
 
         total_expected = 0.0

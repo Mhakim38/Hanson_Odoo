@@ -14,13 +14,7 @@ export class PLBKPI extends Component {
             monthly_subtotals_ytd: Array(12).fill(0),
             monthly_subtotals_target: Array(12).fill(0),
             monthly_percentage: Array(12).fill(0),
-            // Gauge meter data
             company_yearly_target: 0,
-            total_ytd_revenue: 0,
-            total_realized_revenue: 0,
-            total_target_revenue: 0,
-            ytd_percentage: 0,
-            realized_percentage: 0,
             loading: true,
         });
 
@@ -58,14 +52,7 @@ export class PLBKPI extends Component {
                 this.state.salespersons = kpiData.salespersons || [];
                 this.state.monthly_subtotals_ytd = kpiData.monthly_subtotals_ytd || Array(12).fill(0);
                 this.state.monthly_subtotals_target = kpiData.monthly_subtotals_target || Array(12).fill(0);
-
-                // Gauge meter data
                 this.state.company_yearly_target = kpiData.company_yearly_target || 0;
-                this.state.total_ytd_revenue = kpiData.total_ytd_revenue || 0;
-                this.state.total_realized_revenue = kpiData.total_realized_revenue || 0;
-                this.state.total_target_revenue = kpiData.total_target_revenue || 0;
-                this.state.ytd_percentage = kpiData.ytd_percentage || 0;
-                this.state.realized_percentage = kpiData.realized_percentage || 0;
 
                 // Calculate monthly percentage (YTD / Target * 100)
                 this.state.monthly_percentage = Array(12).fill(0).map((_, idx) => {
@@ -112,68 +99,6 @@ export class PLBKPI extends Component {
     // Helper: format currency
     formatCurrency(value) {
         return this.formatNumber(value);
-    }
-
-    // Helper: get color based on percentage zones
-    getGaugeColor(percentage) {
-        if (percentage < 50) {
-            return '#C62828'; // Red - Fail
-        } else if (percentage >= 50 && percentage < 70) {
-            return '#F57C00'; // Orange - Entry
-        } else if (percentage >= 70 && percentage <= 100) {
-            return '#0D47A1'; // Blue - Target (70-100%)
-        } else {
-            return '#2E7D32'; // Green - Exceeded (>100%)
-        }
-    }
-
-    // Helper: get status label based on percentage
-    getGaugeStatus(percentage) {
-        if (percentage < 50) {
-            return 'FAIL';
-        } else if (percentage >= 50 && percentage < 70) {
-            return 'ENTRY';
-        } else if (percentage >= 70 && percentage <= 100) {
-            return 'TARGET';
-        } else {
-            return 'EXCEEDED';
-        }
-    }
-
-    // Helper: generate gauge arc path
-    getGaugeArcPath(percentage) {
-        // Semi-circle gauge with flat side at Y=100 (bottom)
-        // Arc goes from left (180°) to right (0° or 360°)
-        // Support up to 120% to show exceeded performance
-        const maxPercentage = 120; // Extended to 120% to show exceeded
-        const clampedPercentage = Math.min(maxPercentage, Math.max(0, percentage));
-
-        // If percentage is 0, return empty path
-        if (clampedPercentage === 0) {
-            return '';
-        }
-
-        // Convert percentage to angle (180° to 360°, or equivalently 180° to 0°)
-        // At 0%: angle = 180° (left side)
-        // At 60%: angle = 270° (bottom/center) - maps 50% of 120% range
-        // At 100%: angle = 330° (83.33% of arc)
-        // At 120%: angle = 360° (0°, right side - full arc)
-        const startAngle = 180; // degrees
-        const endAngle = 180 + (clampedPercentage / maxPercentage) * 180; // 180° to 360° for 0-120%
-        const endAngleRad = (endAngle * Math.PI) / 180;
-
-        const cx = 100; // center x
-        const cy = 100; // center y
-        const radius = 80;
-
-        const startX = cx - radius; // Start at 180° (left side) = 20
-        const startY = cy; // Y = 100
-        const endX = cx + radius * Math.cos(endAngleRad);
-        const endY = cy + radius * Math.sin(endAngleRad);
-
-        // For half-circle, largeArcFlag should always be 0 (since we never go more than 180°)
-        // sweepFlag should be 1 (clockwise)
-        return `M ${startX} ${startY} A ${radius} ${radius} 0 0 1 ${endX} ${endY}`;
     }
 
     static template = xml`
@@ -520,116 +445,6 @@ export class PLBKPI extends Component {
     * {
         transition: background-color 0.2s ease, border-color 0.2s ease;
     }
-
-    /* Gauge Meter Styling */
-    .plb-gauge-container {
-        display: flex;
-        gap: 24px;
-        margin-bottom: 24px;
-        flex-wrap: wrap;
-    }
-
-    .plb-gauge-card {
-        flex: 1;
-        min-width: 300px;
-        background: #FFFFFF;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .plb-gauge-title {
-        font-size: 1rem;
-        font-weight: 600;
-        color: #1A1A1A;
-        margin-bottom: 16px;
-        text-align: center;
-    }
-
-    .plb-gauge-svg {
-        width: 200px;
-        height: 130px;
-        margin-bottom: 12px;
-    }
-
-    .plb-gauge-background {
-        fill: none;
-        stroke: #E0E0E0;
-        stroke-width: 12;
-        stroke-linecap: round;
-    }
-
-    .plb-gauge-arc {
-        fill: none;
-        stroke-width: 12;
-        stroke-linecap: round;
-        transition: stroke 0.3s ease;
-    }
-
-    .plb-gauge-value {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #1A1A1A;
-        margin-bottom: 4px;
-    }
-
-    .plb-gauge-label {
-        font-size: 0.85rem;
-        color: #4A4A4A;
-        margin-bottom: 8px;
-    }
-
-    .plb-gauge-status {
-        display: inline-block;
-        padding: 4px 12px;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: #FFFFFF;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .plb-gauge-status.fail {
-        background: #C62828;
-    }
-
-    .plb-gauge-status.entry {
-        background: #F57C00;
-    }
-
-    .plb-gauge-status.target {
-        background: #0D47A1;
-    }
-
-    .plb-gauge-status.exceeded {
-        background: #2E7D32;
-    }
-
-    .plb-gauge-zones {
-        display: flex;
-        justify-content: center;
-        gap: 12px;
-        margin-top: 12px;
-        flex-wrap: wrap;
-    }
-
-    .plb-gauge-zone {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        font-size: 0.75rem;
-        color: #4A4A4A;
-    }
-
-    .plb-gauge-zone-color {
-        width: 12px;
-        height: 12px;
-        border-radius: 2px;
-    }
 </style>
 
 <div class="plb-kpi-container" style="overflow: auto; height: 100%;">
@@ -680,98 +495,6 @@ export class PLBKPI extends Component {
             <div class="plb-header-decoration plb-header-decoration-2"></div>
         </div>
 
-        <!-- Gauge Meters -->
-        <div class="plb-gauge-container">
-            <!-- YTD Revenue Target Gauge -->
-            <div class="plb-gauge-card">
-                <h5 class="plb-gauge-title">YTD Rev Target (MYR mil)</h5>
-                <svg class="plb-gauge-svg" viewBox="0 0 200 130">
-                    <!-- Background arc (gray) -->
-                    <path class="plb-gauge-background" d="M 20 100 A 80 80 0 0 1 180 100"/>
-
-                    <!-- Progress arc (colored based on percentage) -->
-                    <path class="plb-gauge-arc"
-                          t-att-d="getGaugeArcPath(state.ytd_percentage)"
-                          t-att-stroke="getGaugeColor(state.ytd_percentage)"/>
-
-
-                    <!-- Percentage text -->
-                    <text x="100" y="115" text-anchor="middle" font-size="20" font-weight="bold" fill="#1A1A1A">
-                        <t t-esc="formatNumber(state.ytd_percentage)"/>%
-                    </text>
-                </svg>
-                <div class="plb-gauge-value">
-                    <t t-esc="formatNumber(state.total_ytd_revenue)"/> M
-                </div>
-                <div class="plb-gauge-label">Expected Revenue (Millions)</div>
-                <span class="plb-gauge-status" t-att-class="getGaugeStatus(state.ytd_percentage).toLowerCase()">
-                    <t t-esc="getGaugeStatus(state.ytd_percentage)"/>
-                </span>
-                <div class="plb-gauge-zones">
-                    <div class="plb-gauge-zone">
-                        <span class="plb-gauge-zone-color" style="background: #C62828;"></span>
-                        <span>Fail</span>
-                    </div>
-                    <div class="plb-gauge-zone">
-                        <span class="plb-gauge-zone-color" style="background: #F57C00;"></span>
-                        <span>Entry</span>
-                    </div>
-                    <div class="plb-gauge-zone">
-                        <span class="plb-gauge-zone-color" style="background: #0D47A1;"></span>
-                        <span>Target</span>
-                    </div>
-                    <div class="plb-gauge-zone">
-                        <span class="plb-gauge-zone-color" style="background: #2E7D32;"></span>
-                        <span>Exceeded</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Realized Revenue Target Gauge -->
-            <div class="plb-gauge-card">
-                <h5 class="plb-gauge-title">Realized Rev Target (MYR mil)</h5>
-                <svg class="plb-gauge-svg" viewBox="0 0 200 130">
-                    <!-- Background arc (gray) -->
-                    <path class="plb-gauge-background" d="M 20 100 A 80 80 0 0 1 180 100"/>
-
-                    <!-- Progress arc (colored based on percentage) -->
-                    <path class="plb-gauge-arc"
-                          t-att-d="getGaugeArcPath(state.realized_percentage)"
-                          t-att-stroke="getGaugeColor(state.realized_percentage)"/>
-
-
-                    <!-- Percentage text -->
-                    <text x="100" y="115" text-anchor="middle" font-size="20" font-weight="bold" fill="#1A1A1A">
-                        <t t-esc="formatNumber(state.realized_percentage)"/>%
-                    </text>
-                </svg>
-                <div class="plb-gauge-value">
-                    <t t-esc="formatNumber(state.total_realized_revenue)"/> M
-                </div>
-                <div class="plb-gauge-label">Monthly Subtotal YTD (Millions)</div>
-                <span class="plb-gauge-status" t-att-class="getGaugeStatus(state.realized_percentage).toLowerCase()">
-                    <t t-esc="getGaugeStatus(state.realized_percentage)"/>
-                </span>
-                <div class="plb-gauge-zones">
-                    <div class="plb-gauge-zone">
-                        <span class="plb-gauge-zone-color" style="background: #C62828;"></span>
-                        <span>Fail</span>
-                    </div>
-                    <div class="plb-gauge-zone">
-                        <span class="plb-gauge-zone-color" style="background: #F57C00;"></span>
-                        <span>Entry</span>
-                    </div>
-                    <div class="plb-gauge-zone">
-                        <span class="plb-gauge-zone-color" style="background: #0D47A1;"></span>
-                        <span>Target</span>
-                    </div>
-                    <div class="plb-gauge-zone">
-                        <span class="plb-gauge-zone-color" style="background: #2E7D32;"></span>
-                        <span>Exceeded</span>
-                    </div>
-                </div>
-            </div>
-        </div>
 
         <!-- KPI Table -->
         <div class="plb-kpi-card mb-5">

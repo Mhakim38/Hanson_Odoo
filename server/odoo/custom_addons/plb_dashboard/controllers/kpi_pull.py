@@ -52,13 +52,32 @@ class PLBKPIController(http.Controller):
 
         # Get all salespersons (users who have leads in contract stage)
         # Filter leads where stage name contains 'contract' (case-insensitive)
+        # AND filter by sales team "Central Region"
         Stage = request.env['crm.stage'].sudo()
+        CrmTeam = request.env['crm.team'].sudo()
+
         contract_stages = Stage.search([('name', 'ilike', 'contract')])
         contract_stage_ids = [s.id for s in contract_stages]
 
+        # Get Central Region team
+        central_team = CrmTeam.search([('name', '=', 'Central Region')], limit=1)
+        central_team_member_ids = []
+
+        if central_team:
+            # Get all user IDs who are members of Central Region team
+            central_team_member_ids = central_team.member_ids.ids if central_team.member_ids else []
+
+        # Build domain to filter by contract stage and Central Region team
+        domain = [('stage_id', 'in', contract_stage_ids)] if contract_stage_ids else [('id', '=', False)]
+        if central_team:
+            domain.append(('team_id', '=', central_team.id))
+        else:
+            # If team not found, return empty results
+            domain = [('id', '=', False)]
+
         leads = Lead.search_read(
-            domain=[('stage_id', 'in', contract_stage_ids)] if contract_stage_ids else [('id', '=', False)],
-            fields=['user_id', 'expected_revenue', 'expected_start_date', 'contract_months', 'realized_revenue', 'stage_id']
+            domain=domain,
+            fields=['user_id', 'expected_revenue', 'expected_start_date', 'contract_months', 'realized_revenue', 'stage_id', 'team_id']
         )
 
         # Build salesperson map: {user_id: {name: ..., monthly_ytd: [0]*12, target: [0]*12}}
@@ -77,6 +96,11 @@ class PLBKPIController(http.Controller):
                     salesperson_name = lead['user_id'].get('name', '')
 
             if not user_id:
+                continue
+
+            # IMPORTANT: Only include salespersons who are actual members of Central Region team
+            # This ensures we only show data for people in the Central Region team
+            if central_team and user_id not in central_team_member_ids:
                 continue
 
             # Initialize salesperson if not exists
@@ -149,11 +173,18 @@ class PLBKPIController(http.Controller):
                         if months_from_start < contract_months:
                             salesperson_map[user_id]['monthly_ytd'][month_idx] += mar
 
-        # Add employees with targets but no leads yet
+        # Add employees with targets but no leads yet (only from Central Region)
         for user_id, monthly_target_value in employee_targets.items():
             if user_id not in salesperson_map:
+                # Only include users who are members of Central Region team
+                if not central_team or user_id not in central_team_member_ids:
+                    continue
+
                 # Get user name
                 user = User.browse(user_id)
+                if not user:
+                    continue
+
                 salesperson_name = user.name if user else 'Unknown'
                 salesperson_map[user_id] = {
                     'id': user_id,

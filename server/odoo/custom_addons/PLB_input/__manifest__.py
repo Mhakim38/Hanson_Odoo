@@ -1,6 +1,6 @@
 {
     'name': 'PLB (CRM) Lead Extension Custom',
-    'version': '17.0.1.6',
+    'version': '17.0.1.7',
     'summary': 'Extends CRM Lead with additional business fields and logic',
     'depends': ['crm', 'base', 'crm_port', 'mail', 'hr'],
     'data': [

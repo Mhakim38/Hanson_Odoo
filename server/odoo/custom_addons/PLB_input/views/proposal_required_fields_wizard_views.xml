@@ -19,7 +19,6 @@
                         <field name="target_stage_id" invisible="1"/>
 
                         <field name="operating_profit_margin"/>
-                        <field name="expected_revenue_annum"/>
                         <field name="quotation_attachment" filename="quotation_attachment_filename"/>
                         <field name="quotation_attachment_filename" invisible="1"/>
                     </group>

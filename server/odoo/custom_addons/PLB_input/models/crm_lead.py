@@ -159,10 +159,6 @@ class CrmLead(models.Model):
         digits=(5, 2),
     )
 
-    expected_revenue_annum = fields.Monetary(
-        string='Expected Revenue (Annum)',
-        currency_field='company_currency_id'
-    )
 
     # New helper boolean for views: True when the current stage is the 'contract' stage
     # Note: historically this was 'contract'; updated to reflect new business rule:
@@ -326,8 +322,8 @@ class CrmLead(models.Model):
 
     @api.onchange('stage_id')
     def _onchange_stage_require_qualify_fields(self):
-        """When user selects a Proposal stage, ensure required fields (operating_profit_margin,
-        expected_revenue_annum and quotation_attachment) have been filled. If not, revert to a Qualify stage
+        """When user selects a Proposal stage, ensure required fields (operating_profit_margin
+        and quotation_attachment) have been filled. If not, revert to a Qualify stage
         and show a friendly warning.
 
         Additionally, when moving to Proposal Submitted stage with Freight Forwarding scope,
@@ -344,8 +340,6 @@ class CrmLead(models.Model):
                 missing = []
                 if rec.operating_profit_margin in (False, None):
                     missing.append('Operating Profit Margin')
-                if not rec.expected_revenue_annum:
-                    missing.append('Expected Revenue (Annum)')
                 # Accept either the dedicated quotation_attachment binary OR any existing ir.attachment for this lead
                 att_ok = False
                 if rec.quotation_attachment:
@@ -399,8 +393,6 @@ class CrmLead(models.Model):
                     missing = []
                     if vals.get('operating_profit_margin') in (None, False):
                         missing.append('Operating Profit Margin')
-                    if not vals.get('expected_revenue_annum'):
-                        missing.append('Expected Revenue (Annum)')
                     # check attachment either in vals or existing attachments (none on create)
                     if not vals.get('quotation_attachment') and not vals.get('attachment_file'):
                         missing.append('Quotation Attachment')
@@ -452,10 +444,6 @@ class CrmLead(models.Model):
                         opm = vals.get('operating_profit_margin') if 'operating_profit_margin' in vals else rec.operating_profit_margin
                         if opm in (None, False):
                             missing.append('Operating Profit Margin')
-                        # expected_revenue_annum
-                        exp_rev = vals.get('expected_revenue_annum') if 'expected_revenue_annum' in vals else rec.expected_revenue_annum
-                        if not exp_rev:
-                            missing.append('Expected Revenue (Annum)')
                         # quotation attachment: check vals, existing dedicated field, or ir.attachment
                         att_ok = False
                         if 'quotation_attachment' in vals and vals.get('quotation_attachment'):
@@ -515,7 +503,6 @@ class CrmLead(models.Model):
                                 'target_stage_id': effective_stage,
                                 'message': 'You must fill the following fields before moving to Proposal: %s.\nThe stage has been reverted to Qualify.' % (', '.join(missing)),
                                 'operating_profit_margin': rec.operating_profit_margin,
-                                'expected_revenue_annum': rec.expected_revenue_annum,
                                 'currency_id': rec.company_currency_id.id,
                                 'freight_type': rec.freight_type,
                                 'origin_country_id': rec.origin_country_id.id if rec.origin_country_id else False,
