@@ -50,9 +50,8 @@ class PLBKPIController(http.Controller):
                     monthly_target = (line.personal_target or 0) / 12.0
                     employee_targets[user_id] = monthly_target
 
-        # Get all salespersons (users who have leads in contract stage)
-        # Filter leads where stage name contains 'contract' (case-insensitive)
-        # AND filter by sales team "Central Region"
+        # Get all salespersons from Central Region team
+        # We will show ALL Central Region members, but only calculate YTD from contract stage leads
         Stage = request.env['crm.stage'].sudo()
         CrmTeam = request.env['crm.team'].sudo()
 
@@ -67,10 +66,35 @@ class PLBKPIController(http.Controller):
             # Get all user IDs who are members of Central Region team
             central_team_member_ids = central_team.member_ids.ids if central_team.member_ids else []
 
-        # Build domain to filter by contract stage and Central Region team
-        domain = [('stage_id', 'in', contract_stage_ids)] if contract_stage_ids else [('id', '=', False)]
-        if central_team:
+        # Build salesperson map ONLY from Central Region team members
+        # Initialize ALL team members first with 0 values
+        salesperson_map = {}
+
+        if central_team and central_team_member_ids:
+            for member_user_id in central_team_member_ids:
+                # Get user name
+                user = User.browse(member_user_id)
+                if not user or not user.exists():
+                    continue
+
+                salesperson_name = user.name if user else 'Unknown'
+                monthly_target_value = employee_targets.get(member_user_id, 0.0)
+
+                salesperson_map[member_user_id] = {
+                    'id': member_user_id,
+                    'name': salesperson_name,
+                    'monthly_ytd': [0.0] * 12,
+                    'monthly_target': [monthly_target_value] * 12,
+                    'realized_revenue': 0.0,
+                    'expected_revenue_total': 0.0,
+                }
+
+        # Now fetch leads from Central Region team (contract stage only) to calculate YTD
+        # Build domain to filter by Central Region team AND contract stage
+        domain = []
+        if central_team and contract_stage_ids:
             domain.append(('team_id', '=', central_team.id))
+            domain.append(('stage_id', 'in', contract_stage_ids))
         else:
             # If team not found, return empty results
             domain = [('id', '=', False)]
@@ -80,41 +104,22 @@ class PLBKPIController(http.Controller):
             fields=['user_id', 'expected_revenue', 'expected_start_date', 'contract_months', 'realized_revenue', 'stage_id', 'team_id']
         )
 
-        # Build salesperson map: {user_id: {name: ..., monthly_ytd: [0]*12, target: [0]*12}}
-        salesperson_map = {}
-
+        # Process leads to calculate YTD for team members
         for lead in leads:
             # Extract salesperson (user_id)
             user_id = None
-            salesperson_name = ''
             if lead.get('user_id'):
                 if isinstance(lead['user_id'], (list, tuple)):
                     user_id = lead['user_id'][0] if len(lead['user_id']) > 0 else None
-                    salesperson_name = lead['user_id'][1] if len(lead['user_id']) > 1 else ''
                 elif isinstance(lead['user_id'], dict):
                     user_id = lead['user_id'].get('id')
-                    salesperson_name = lead['user_id'].get('name', '')
 
             if not user_id:
                 continue
 
-            # IMPORTANT: Only include salespersons who are actual members of Central Region team
-            # This ensures we only show data for people in the Central Region team
-            if central_team and user_id not in central_team_member_ids:
-                continue
-
-            # Initialize salesperson if not exists
+            # Only process if this user is a team member
             if user_id not in salesperson_map:
-                # Get monthly target from employee_targets (yearly target / 12)
-                monthly_target_value = employee_targets.get(user_id, 0.0)
-                salesperson_map[user_id] = {
-                    'id': user_id,
-                    'name': salesperson_name,
-                    'monthly_ytd': [0.0] * 12,
-                    'monthly_target': [monthly_target_value] * 12,  # Same target for all 12 months
-                    'realized_revenue': 0.0,  # Track realized revenue separately
-                    'expected_revenue_total': 0.0,  # Track total expected revenue (not annualized)
-                }
+                continue
 
             # Calculate YTD (Year-to-Date) and Realized Revenue
             # YTD uses expected_revenue (projected/potential revenue)
@@ -173,29 +178,7 @@ class PLBKPIController(http.Controller):
                         if months_from_start < contract_months:
                             salesperson_map[user_id]['monthly_ytd'][month_idx] += mar
 
-        # Add employees with targets but no leads yet (only from Central Region)
-        for user_id, monthly_target_value in employee_targets.items():
-            if user_id not in salesperson_map:
-                # Only include users who are members of Central Region team
-                if not central_team or user_id not in central_team_member_ids:
-                    continue
-
-                # Get user name
-                user = User.browse(user_id)
-                if not user:
-                    continue
-
-                salesperson_name = user.name if user else 'Unknown'
-                salesperson_map[user_id] = {
-                    'id': user_id,
-                    'name': salesperson_name,
-                    'monthly_ytd': [0.0] * 12,
-                    'monthly_target': [monthly_target_value] * 12,
-                    'realized_revenue': 0.0,
-                    'expected_revenue_total': 0.0,
-                }
-
-        # Convert to list and sort by name
+        # Convert to list and sort by name (salesperson_map now contains ONLY Central Region team members)
         salesperson_list = sorted(salesperson_map.values(), key=lambda x: x['name'])
 
         # Calculate monthly subtotals

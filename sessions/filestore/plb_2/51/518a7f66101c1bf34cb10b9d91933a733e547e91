@@ -17583,14 +17583,14 @@ const partnerAutoCompleteMany2one=__exports.partnerAutoCompleteMany2one={...many
 odoo.define('@partner_autocomplete/js/web_company_autocomplete',['@web/core/registry','@web/session'],function(require){'use strict';let __exports={};const{registry}=require("@web/core/registry");const{session}=require("@web/session");const companyAutocompleteService=__exports.companyAutocompleteService={dependencies:["orm","company"],start(env,{orm,company}){if(session.iap_company_enrich){const currentCompanyId=company.currentCompany.id;orm.silent.call("res.company","iap_enrich_auto",[currentCompanyId],{});}},};registry.category("services").add("partner_autocomplete.companyAutocomplete",companyAutocompleteService);return __exports;});;
 
 /* /plb_dashboard/static/src/js/dashboard.js */
-odoo.define('@plb_dashboard/js/dashboard',['@web/core/registry','@odoo/owl','@web/core/utils/hooks'],function(require){'use strict';let __exports={};const{registry}=require("@web/core/registry");const{Component,xml,useState,onMounted}=require("@odoo/owl");const{useService}=require("@web/core/utils/hooks");const PLBDashboard=__exports.PLBDashboard=class PLBDashboard extends Component{setup(){this.state=useState({rows:[],years:[],pipelineSeries:{pathSegments:[],prevPathSegments:[],points:[],prevPoints:[],months:[],ticks:[],maxVal:1},hitRate:{year:null,months:[],hit_rate_percent:[],numerator:[],denominator:[]},hitRateSeries:{pathSegments:[],points:[]},hitRateByRegion:{year:null,months:[],regions:{}},hitRateRegionSeries:{regions:[]},pipelineByRegion:{year:null,months:[],regions:{}},pipelineRegionSeries:{regions:[],months:[],ticks:[],maxVal:1},avgPipelinePerPerson:{year:null,months:[],avg_per_person:[]},avgPipelinePerPersonSeries:{pathSegments:[],points:[],months:[],ticks:[],maxVal:1},avgPipelinePerPersonByRegion:{year:null,months:[],regions:{}},avgPipelinePerPersonByRegionSeries:{regions:[],months:[],ticks:[],maxVal:1},salespersons:[],stages:[],services:[],filters:{salesperson:'All',stage:'All',service:'All',year:String((new Date()).getFullYear())},customers:[],stageCounts:{},revenueSummary:{total_expected_revenue:0,total_annual_revenue:0,total_realized_revenue:0,lead_count:0,},monthlySubtotals:Array(12).fill(0),monthlyCumulative:Array(12).fill(0),totalCarryForward:null,serviceSegments:[],tooltip:{visible:false,left:0,top:0,title:'',value:0,percent:0,key:null},loading:true,});this.rpc=useService("rpc");onMounted(async()=>{if(!this.state.filters.year||this.state.filters.year==='All'){this.state.filters.year=String((new Date()).getFullYear());}
+odoo.define('@plb_dashboard/js/dashboard',['@web/core/registry','@odoo/owl','@web/core/utils/hooks'],function(require){'use strict';let __exports={};const{registry}=require("@web/core/registry");const{Component,xml,useState,onMounted}=require("@odoo/owl");const{useService}=require("@web/core/utils/hooks");const PLBDashboard=__exports.PLBDashboard=class PLBDashboard extends Component{setup(){this.state=useState({rows:[],years:[],pipelineSeries:{pathSegments:[],prevPathSegments:[],points:[],prevPoints:[],months:[],ticks:[],maxVal:1},hitRate:{year:null,months:[],hit_rate_percent:[],numerator:[],denominator:[]},hitRateSeries:{pathSegments:[],points:[]},hitRateByRegion:{year:null,months:[],regions:{}},hitRateRegionSeries:{regions:[]},pipelineByRegion:{year:null,months:[],regions:{}},pipelineRegionSeries:{regions:[],months:[],ticks:[],maxVal:1},avgPipelinePerPerson:{year:null,months:[],avg_per_person:[]},avgPipelinePerPersonSeries:{pathSegments:[],points:[],months:[],ticks:[],maxVal:1},avgPipelinePerPersonByRegion:{year:null,months:[],regions:{}},avgPipelinePerPersonByRegionSeries:{regions:[],months:[],ticks:[],maxVal:1},salespersons:[],stages:[],services:[],filters:{salesperson:'All',stage:'All',service:'All',year:String((new Date()).getFullYear())},customers:[],stageCounts:{},revenueSummary:{total_expected_revenue:0,total_annual_revenue:0,total_realized_revenue:0,lead_count:0,},monthlySubtotals:Array(12).fill(0),monthlyCumulative:Array(12).fill(0),totalCarryForward:null,serviceSegments:[],tooltip:{visible:false,left:0,top:0,title:'',value:0,percent:0,key:null},company_yearly_target:0,total_ytd_revenue:0,total_realized_revenue:0,ytd_percentage:0,realized_percentage:0,loading:true,});this.rpc=useService("rpc");onMounted(async()=>{if(!this.state.filters.year||this.state.filters.year==='All'){this.state.filters.year=String((new Date()).getFullYear());}
 await this.loadDashboardData();});}
 async loadDashboardData(){try{this.state.loading=true;const dashboardData=await this.rpc("/plb/dashboard_data");if(dashboardData&&dashboardData.rows){this.state.rows=dashboardData.rows;}
 const customersData=await this.rpc("/plb/customers");if(customersData&&customersData.customers){this.state.customers=customersData.customers;}
 const activeYear=(this.state.filters&&this.state.filters.year&&this.state.filters.year!=='All')?Number(this.state.filters.year):(new Date()).getFullYear();const stageCounts=await this.rpc("/plb/stage_counts",{year:activeYear});if(stageCounts){this.state.stageCounts=stageCounts;}
 const revenueSummary=await this.rpc("/plb/revenue_summary",{year:activeYear});if(revenueSummary){this.state.revenueSummary=revenueSummary;}
 this.computeFilterOptions();this.computeTotals();try{await this.loadHitRate(activeYear);const s=this.state.hitRateSeries||{};if((!s.pathSegments||s.pathSegments.length===0)&&(!s.prevPathSegments||s.prevPathSegments.length===0)){console.debug('Server hit rate empty, falling back to client computation');await this.loadHitRateFromRows(activeYear);}}catch(err){console.warn('Server hit rate RPC failed, falling back to client-side computation',err);await this.loadHitRateFromRows(activeYear);}
-await this.loadHitRateByRegion(activeYear);await this.loadPipelineSeries(activeYear);await this.loadPipelineByRegion(activeYear);await this.loadAvgPipelinePerPerson(activeYear);await this.loadAvgPipelinePerPersonByRegion(activeYear);console.debug('PLB Dashboard loaded:',{rows:this.state.rows.length,customers:this.state.customers.length,stageCounts:this.state.stageCounts,revenueSummary:this.state.revenueSummary,});console.debug('PLB Dashboard state after load:',{filters:this.state.filters,hitRateExists:!!this.state.hitRate,hitRateByRegionExists:!!this.state.hitRateByRegion});}catch(err){console.error('Failed to load PLB dashboard data:',err);}finally{this.state.loading=false;}}
+await this.loadHitRateByRegion(activeYear);await this.loadPipelineSeries(activeYear);await this.loadPipelineByRegion(activeYear);await this.loadAvgPipelinePerPerson(activeYear);await this.loadAvgPipelinePerPersonByRegion(activeYear);await this.loadGaugeData(activeYear);console.debug('PLB Dashboard loaded:',{rows:this.state.rows.length,customers:this.state.customers.length,stageCounts:this.state.stageCounts,revenueSummary:this.state.revenueSummary,});console.debug('PLB Dashboard state after load:',{filters:this.state.filters,hitRateExists:!!this.state.hitRate,hitRateByRegionExists:!!this.state.hitRateByRegion});}catch(err){console.error('Failed to load PLB dashboard data:',err);}finally{this.state.loading=false;}}
 computeFilterOptions(){const salesSet=new Set();const stageSet=new Set();const serviceSet=new Set();(this.state.rows||[]).forEach(r=>{if(r.salesperson){salesSet.add(r.salesperson);}
 if(r.stage){stageSet.add(r.stage);}
 if(r.services){serviceSet.add(r.services);}});this.state.salespersons=['All',...Array.from(salesSet).sort()];this.state.stages=['All',...Array.from(stageSet).sort()];this.state.services=['All',...Array.from(serviceSet).sort()];this.computeYearOptions();}
@@ -17614,16 +17614,20 @@ if(f.service&&f.service!=='All'){if((r.services||'')!==f.service)return false;}
 return true;});}
 setFilter=async(name,evOrValue)=>{const value=(evOrValue&&evOrValue.target&&evOrValue.target.value!==undefined)?evOrValue.target.value:evOrValue;this.state.filters[name]=value;const yearToLoad=(this.state.filters&&this.state.filters.year&&this.state.filters.year!=='All')?Number(this.state.filters.year):(new Date()).getFullYear();if(name==='year'){try{const stageCounts=await this.rpc("/plb/stage_counts",{year:yearToLoad});if(stageCounts){this.state.stageCounts=stageCounts;}
 const revenueSummary=await this.rpc("/plb/revenue_summary",{year:yearToLoad});if(revenueSummary){this.state.revenueSummary=revenueSummary;}}catch(err){console.error('Failed to reload stage counts or revenue summary:',err);}}
-this.computeTotals();this.loadHitRateFromRows(yearToLoad);this.loadHitRateByRegion(yearToLoad);this.loadPipelineSeries(yearToLoad);this.loadPipelineByRegion(yearToLoad);this.loadAvgPipelinePerPerson(yearToLoad);this.loadAvgPipelinePerPersonByRegion(yearToLoad);}
+this.computeTotals();this.loadHitRateFromRows(yearToLoad);this.loadHitRateByRegion(yearToLoad);this.loadPipelineSeries(yearToLoad);this.loadPipelineByRegion(yearToLoad);this.loadAvgPipelinePerPerson(yearToLoad);this.loadAvgPipelinePerPersonByRegion(yearToLoad);this.loadGaugeData(yearToLoad);}
 resetFilters=async()=>{this.state.filters={salesperson:'All',stage:'All',service:'All',year:String((new Date()).getFullYear())};const yearToLoad=Number(this.state.filters.year);try{const stageCounts=await this.rpc("/plb/stage_counts",{year:yearToLoad});if(stageCounts){this.state.stageCounts=stageCounts;}
 const revenueSummary=await this.rpc("/plb/revenue_summary",{year:yearToLoad});if(revenueSummary){this.state.revenueSummary=revenueSummary;}}catch(err){console.error('Failed to reload stage counts or revenue summary:',err);}
-this.computeTotals();this.loadHitRateFromRows(yearToLoad);this.loadHitRateByRegion(yearToLoad);this.loadPipelineSeries(yearToLoad);this.loadPipelineByRegion(yearToLoad);this.loadAvgPipelinePerPerson(yearToLoad);this.loadAvgPipelinePerPersonByRegion(yearToLoad);}
+this.computeTotals();this.loadHitRateFromRows(yearToLoad);this.loadHitRateByRegion(yearToLoad);this.loadPipelineSeries(yearToLoad);this.loadPipelineByRegion(yearToLoad);this.loadAvgPipelinePerPerson(yearToLoad);this.loadAvgPipelinePerPersonByRegion(yearToLoad);this.loadGaugeData(yearToLoad);}
 formatNumber(value){if(value===false||value===null||value===undefined||value===''){return'NULL';}
 const n=Number(value);if(Number.isNaN(n)){return'NULL';}
 return n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});}
 formatCurrency(value){const formatted=this.formatNumber(value);return formatted==='NULL'?'NULL':`${formatted}`;}
 formatText(value){if(value===false||value===null||value===undefined||value===''){return'NULL';}
 return value;}
+getGaugeColor(percentage){if(percentage<50){return'#C62828';}else if(percentage>=50&&percentage<70){return'#F57C00';}else if(percentage>=70&&percentage<=100){return'#0D47A1';}else{return'#2E7D32';}}
+getGaugeStatus(percentage){if(percentage<50){return'FAIL';}else if(percentage>=50&&percentage<70){return'ENTRY';}else if(percentage>=70&&percentage<=100){return'TARGET';}else{return'EXCEEDED';}}
+getGaugeArcPath(percentage){const maxPercentage=120;const clampedPercentage=Math.min(maxPercentage,Math.max(0,percentage));if(clampedPercentage===0){return'';}
+const startAngle=180;const endAngle=180+(clampedPercentage/maxPercentage)*180;const endAngleRad=(endAngle*Math.PI)/180;const cx=100;const cy=100;const radius=80;const startX=cx-radius;const startY=cy;const endX=cx+radius*Math.cos(endAngleRad);const endY=cy+radius*Math.sin(endAngleRad);return`M ${startX} ${startY} A ${radius} ${radius} 0 0 1 ${endX} ${endY}`;}
 formatServiceName(key){if(!key&&key!==0)return'NULL';const s=String(key);return s.replace(/[_-]+/g,' ').replace(/\b\w/g,ch=>ch.toUpperCase());}
 buildArcPath(cx,cy,r,startAngle,endAngle){const startX=cx+r*Math.cos(startAngle);const startY=cy+r*Math.sin(startAngle);const endX=cx+r*Math.cos(endAngle);const endY=cy+r*Math.sin(endAngle);const largeArcFlag=(endAngle-startAngle)>Math.PI?1:0;return`M ${cx} ${cy} L ${startX} ${startY} A ${r} ${r} 0 ${largeArcFlag} 1 ${endX} ${endY} Z`;}
 computeTotals(){const subtotals=Array(12).fill(0);let totalCarry=0;let carryCount=0;const rows=this.getFilteredTableRows();(rows||[]).forEach(row=>{const months=Array.isArray(row.monthlyRevenue)?row.monthlyRevenue:[];for(let i=0;i<12;i++){const v=months[i]!=null?Number(months[i]):0;subtotals[i]+=Number.isFinite(v)?v:0;}
@@ -17669,6 +17673,8 @@ computePipelineRegionSeries=(resp)=>{try{const months=['Jan','Feb','Mar','Apr','
 const regionSeries=regionKeys.map((key,regionIdx)=>{const data=regions[key];const ytd=data.ytd||[];const bars=[];for(let i=0;i<12;i++){const val=ytd[i]||0;if(val>0){const barX=marginLeft+(i*monthWidth)+(regionIdx*barWidth);const barHeight=(val/maxVal)*plotH;const barY=marginTop+plotH-barHeight;bars.push({x:barX,y:barY,width:barWidth,height:barHeight,value:val,month:months[i],monthIdx:i,});}}
 return{key:key,label:data.label||key,color:colorMap[key]||'#6f42c1',bars:bars,};});const tickCount=4;const step=Math.ceil((maxVal)/tickCount*10)/10;const ticks=[];for(let i=0;i<=tickCount;i++){const val=i*step;const y=marginTop+plotH-((val/maxVal)*plotH);ticks.push({y:y,label:`${val.toFixed(1)}`});}
 this.state.pipelineRegionSeries={regions:regionSeries,months:monthPositions,ticks:ticks,maxVal:maxVal,};}catch(e){console.error('computePipelineRegionSeries error',e);this.state.pipelineRegionSeries={regions:[],months:[],ticks:[],maxVal:1};}}
+loadGaugeData=async(year)=>{try{if(!year||year==='All')year=(new Date()).getFullYear();const gaugeData=await this.rpc('/plb/gauge_data',{year:Number(year)});if(gaugeData){this.state.company_yearly_target=gaugeData.company_yearly_target||0;this.state.total_ytd_revenue=gaugeData.total_ytd_revenue||0;this.state.total_realized_revenue=gaugeData.total_realized_revenue||0;this.state.ytd_percentage=gaugeData.ytd_percentage||0;this.state.realized_percentage=gaugeData.realized_percentage||0;}
+console.debug('loadGaugeData: loaded gauge data',gaugeData);}catch(e){console.error('loadGaugeData error',e);this.state.company_yearly_target=0;this.state.total_ytd_revenue=0;this.state.total_realized_revenue=0;this.state.ytd_percentage=0;this.state.realized_percentage=0;}}
 showPipelineRegionBar=(bar,region,ev)=>{try{if(!bar||!region)return;ev=ev||window.event||{};const clientX=typeof ev.clientX==='number'?ev.clientX:(ev.pageX||0)-(window.scrollX||0);const clientY=typeof ev.clientY==='number'?ev.clientY:(ev.pageY||0)-(window.scrollY||0);const left=Math.max(4,Math.min(window.innerWidth-240,clientX+12));const top=Math.max(4,Math.min(window.innerHeight-40,clientY+12));const html=`${bar.month} - ${region.label}: <strong>${Number(bar.value).toFixed(2)} M</strong>`;this._showTextTooltip('Pipeline YTD by Region',html,left,top);}catch(e){console.error('showPipelineRegionBar',e);}}
 loadAvgPipelinePerPerson=async(year)=>{try{if(!year||year==='All')year=(new Date()).getFullYear();const resp=await this.rpc("/plb/avg_pipeline_per_person",{year:Number(year)});if(resp&&resp.avg_per_person){this.state.avgPipelinePerPerson=resp;this.computeAvgPipelinePerPersonSeries(resp);}else{this.state.avgPipelinePerPerson={year:year,months:[],avg_per_person:[]};this.state.avgPipelinePerPersonSeries={pathSegments:[],points:[],months:[],ticks:[],maxVal:1};}}catch(e){console.error('loadAvgPipelinePerPerson error',e);this.state.avgPipelinePerPerson={year:year,months:[],avg_per_person:[]};this.state.avgPipelinePerPersonSeries={pathSegments:[],points:[],months:[],ticks:[],maxVal:1};}}
 computeAvgPipelinePerPersonSeries=(resp)=>{try{const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];const w=600,h=320;const marginLeft=80,marginRight=20,marginTop=20,marginBottom=60;const plotW=w-marginLeft-marginRight;const plotH=h-marginTop-marginBottom;const avgData=resp.avg_per_person||[];let maxVal=1;avgData.forEach(v=>{if(v>maxVal)maxVal=v;});const monthPositions=[];for(let i=0;i<12;i++){const x=marginLeft+(i*(plotW/11));monthPositions.push({x:x,label:months[i]});}
@@ -17700,9 +17706,9 @@ movePoint=(pt,ev)=>{try{ev=ev||window.event||{};const clientX=typeof ev.clientX=
 hidePoint=()=>{this._hideDomTooltip();}
 showRegionPoint=(pt,reg,ev)=>{try{if(!pt||!reg)return;ev=ev||window.event||{};const clientX=typeof ev.clientX==='number'?ev.clientX:(ev.pageX||0)-(window.scrollX||0);const clientY=typeof ev.clientY==='number'?ev.clientY:(ev.pageY||0)-(window.scrollY||0);const left=Math.max(4,Math.min(window.innerWidth-240,clientX+12));const top=Math.max(4,Math.min(window.innerHeight-40,clientY+12));const title=`Hit Rate — ${reg.label || reg.key}`;const html=`${pt.month}: <strong>${Number(pt.value).toFixed(2)}%</strong><br/>Win: ${this.formatNumber(pt.numer)} / Expected: ${this.formatNumber(pt.denom)}`;this._showTextTooltip(title,html,left,top);}catch(e){console.error('showRegionPoint',e);}}
 computeHitRateRegionSeries=()=>{try{const data=this.state.hitRateByRegion||{months:[],regions:{}};const months=data.months&&data.months.length?data.months:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];const marginLeft=60,marginTop=20,marginRight=20,marginBottom=60;const plotW=600-marginLeft-marginRight;const plotH=320-marginTop-marginBottom;const monthPositions=[];for(let i=0;i<12;i++){const x=marginLeft+(i*(plotW/11));monthPositions.push({x:x,label:months[i]||''});}
-const colorMap={'southern':'#2E7D32','northern':'#C62828','central':'#0D47A1'};const regionsArr=[];const regionKeys=Object.keys(data.regions||{}).filter(k=>k!=='unknown');regionKeys.forEach((k,idx)=>{const reg=data.regions[k];const color=colorMap[k]||'#4A4A4A';const vals=Array.isArray(reg.hit_rate_percent)?reg.hit_rate_percent:Array(12).fill(null);const valsPrev=Array.isArray(reg.hit_rate_percent_prev)?reg.hit_rate_percent_prev:Array(12).fill(null);const sCur={segments:[],points:[]};const flatCur=[];for(let i=0;i<12;i++){const v=vals[i];if(v===null||v===undefined){flatCur.push(null);continue;}
+const colorMap={'southern':'#2E7D32','northern':'#C62828','central':'#0D47A1'};const regionsArr=[];const regionKeys=Object.keys(data.regions||{}).filter(k=>k!=='unknown');regionKeys.forEach((k,idx)=>{const reg=data.regions[k];const color=colorMap[k]||'#4A4A4A';const vals=Array.isArray(reg.hit_rate_percent)?reg.hit_rate_percent:Array(12).fill(null);const valsPrev=Array.isArray(reg.hit_rate_percent_prev)?reg.hit_rate_percent_prev:Array(12).fill(null);const sCur={segments:[],flatPoints:[]};const flatCur=[];for(let i=0;i<12;i++){const v=vals[i];if(v===null||v===undefined){flatCur.push(null);continue;}
 const percent=Number(v);const clamped=Number.isFinite(percent)?Math.max(0,Math.min(100,percent)):0;const x=monthPositions[i].x;const y=marginTop+((100-clamped)/100)*plotH;flatCur.push({x:x,y:y,value:clamped,month:months[i],idx:i,numer:reg.numerator?reg.numerator[i]:0,denom:reg.denominator?reg.denominator[i]:0});if(i>0){const p0=flatCur[i-1];const p1=flatCur[i];if(p0&&p1)sCur.segments.push({d:`M ${p0.x} ${p0.y} L ${p1.x} ${p1.y}`});}}
-sCur.points=flatCur.filter(p=>p);const sPrev={segments:[],points:[]};const flatPrev=[];for(let i=0;i<12;i++){const v=valsPrev[i];if(v===null||v===undefined){flatPrev.push(null);continue;}
+sCur.points=flatCur.filter(p=>p);const sPrev={segments:[],flatPoints:[]};const flatPrev=[];for(let i=0;i<12;i++){const v=valsPrev[i];if(v===null||v===undefined){flatPrev.push(null);continue;}
 const percent=Number(v);const clamped=Number.isFinite(percent)?Math.max(0,Math.min(100,percent)):0;const x=monthPositions[i].x;const y=marginTop+((100-clamped)/100)*plotH;flatPrev.push({x:x,y:y,value:clamped,month:months[i],idx:i,numer:reg.numeratorPrev?reg.numeratorPrev[i]:0,denom:reg.denominatorPrev?reg.denominatorPrev[i]:0});if(i>0){const p0=flatPrev[i-1];const p1=flatPrev[i];if(p0&&p1)sPrev.segments.push({d:`M ${p0.x} ${p0.y} L ${p1.x} ${p1.y}`});}}
 sPrev.points=flatPrev.filter(p=>p);regionsArr.push({key:k,label:reg.label||k,color:color,segments:sCur.segments,points:sCur.points,prevSegments:sPrev.segments,prevPoints:sPrev.points});});this.state.hitRateRegionSeries={regions:regionsArr,months:monthPositions};}catch(e){console.error('computeHitRateRegionSeries error',e);this.state.hitRateRegionSeries={regions:[],months:[]};}}}
 PLBDashboard.template=xml`
@@ -18048,6 +18054,135 @@ PLBDashboard.template=xml`
     .plb-table-container::-webkit-scrollbar-thumb:hover {
         background: #0B3A82;
     }
+
+    /* Gauge Meter Styles */
+    .plb-gauge-container {
+        display: flex;
+        gap: 2rem;
+        justify-content: center;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+    }
+
+    .plb-gauge-card {
+        background: #FFFFFF;
+        border: 1px solid #D0D5DD;
+        border-radius: 8px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        text-align: center;
+        min-width: 280px;
+        flex: 1;
+        max-width: 400px;
+    }
+
+    .plb-gauge-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #1A1A1A;
+        margin-bottom: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .plb-gauge-svg {
+        width: 100%;
+        height: auto;
+        max-width: 200px;
+        margin: 0 auto;
+        display: block;
+        overflow: hidden;
+    }
+
+    .plb-gauge-background {
+        fill: none;
+        stroke: #F2F4F7;
+        stroke-width: 12;
+        stroke-linecap: round;
+    }
+
+    .plb-gauge-arc {
+        fill: none;
+        stroke-width: 12;
+        stroke-linecap: round;
+        transition: stroke 0.3s ease;
+    }
+
+    .plb-gauge-value {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: #1A1A1A;
+        margin-top: 0.5rem;
+    }
+
+    .plb-gauge-label {
+        font-size: 0.85rem;
+        color: #4A4A4A;
+        margin-top: 0.25rem;
+        margin-bottom: 0.75rem;
+    }
+
+    .plb-gauge-status {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 50px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-top: 0.5rem;
+    }
+
+    .plb-gauge-status.fail {
+        background: rgba(198, 40, 40, 0.1);
+        color: #C62828;
+    }
+
+    .plb-gauge-status.entry {
+        background: rgba(245, 124, 0, 0.1);
+        color: #F57C00;
+    }
+
+    .plb-gauge-status.target {
+        background: rgba(13, 71, 161, 0.1);
+        color: #0D47A1;
+    }
+
+    .plb-gauge-status.exceeded {
+        background: rgba(46, 125, 50, 0.1);
+        color: #2E7D32;
+    }
+
+    .plb-gauge-zones {
+        display: flex;
+        gap: 0.75rem;
+        justify-content: center;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .plb-gauge-zone {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        font-size: 0.75rem;
+        color: #4A4A4A;
+    }
+
+    .plb-gauge-zone-color {
+        width: 10px;
+        height: 10px;
+        border-radius: 2px;
+    }
+
+    @media (max-width: 768px) {
+        .plb-gauge-container {
+            gap: 1rem;
+        }
+        .plb-gauge-card {
+            min-width: 100%;
+        }
+    }
 </style>
 
 <div class="plb-dashboard-container" style="overflow: auto; height: 100%;">
@@ -18163,56 +18298,100 @@ PLBDashboard.template=xml`
             </t>
         </div>
 
-        <!-- Three-column layout: Services Pie | Hit Rate Trend | Hit Rate by Dept/Region -->
-        <div class="row mb-4 g-3">
-            <div class="col-12 col-lg-4">
-                <div class="card plb-chart-card h-100">
-                    <div class="card-header">
-                        <h5>New wins by Product</h5>
+        <!-- Gauge Meters -->
+        <div class="plb-gauge-container">
+            <!-- YTD Revenue Target Gauge -->
+            <div class="plb-gauge-card">
+                <h5 class="plb-gauge-title">YTD Rev Target (MYR mil)</h5>
+                <svg class="plb-gauge-svg" viewBox="0 0 200 130">
+                    <!-- Background arc (gray) -->
+                    <path class="plb-gauge-background" d="M 20 100 A 80 80 0 0 1 180 100"/>
+
+                    <!-- Progress arc (colored based on percentage) -->
+                    <path class="plb-gauge-arc"
+                          t-att-d="getGaugeArcPath(state.ytd_percentage)"
+                          t-att-stroke="getGaugeColor(state.ytd_percentage)"/>
+
+                    <!-- Percentage text -->
+                    <text x="100" y="115" text-anchor="middle" font-size="20" font-weight="bold" fill="#1A1A1A">
+                        <t t-esc="formatNumber(state.ytd_percentage)"/>%
+                    </text>
+                </svg>
+                <div class="plb-gauge-value">
+                    <t t-esc="formatNumber(state.total_ytd_revenue)"/> M
+                </div>
+                <div class="plb-gauge-label">Expected Revenue (Millions)</div>
+                <span class="plb-gauge-status" t-att-class="getGaugeStatus(state.ytd_percentage).toLowerCase()">
+                    <t t-esc="getGaugeStatus(state.ytd_percentage)"/>
+                </span>
+                <div class="plb-gauge-zones">
+                    <div class="plb-gauge-zone">
+                        <span class="plb-gauge-zone-color" style="background: #C62828;"></span>
+                        <span>Fail</span>
                     </div>
-                    <!-- Make the pie card the same height as the line charts so visuals match -->
-                    <!-- Use a column flex layout: svg area grows, legend sits at the bottom inside the card -->
-                    <div class="card-body d-flex flex-column" style="height:320px; padding:12px;">
-                        <t t-if="state.serviceSegments &amp;&amp; state.serviceSegments.length">
-                            <div class="d-flex flex-column" style="width:100%; height:100%;">
-                                <!-- SVG container grows to fill available space -->
-                                <div class="d-flex align-items-center justify-content-center" style="flex:1 1 auto; width:100%; overflow:hidden; max-height:100%;">
-                                    <!-- Larger SVG: use 320x320 viewBox centered at 160,160
-                                         preserveAspectRatio and width:auto keep the pie from stretching beyond the card -->
-                                    <svg preserveAspectRatio="xMidYMid meet" style="height:100%; width:auto; display:block; margin:0 auto;" viewBox="0 0 320 320" aria-label="Services pie chart">
-                                        <g transform="translate(160,160)">
-                                            <t t-foreach="state.serviceSegments" t-as="seg" t-key="seg.name">
-                                                <path t-att-d="seg.path" t-att-fill="seg.color" stroke="#fff"
-                                                      t-att-stroke-width="state.tooltip.key === seg.rawKey ? '3' : '1'"
-                                                      t-att-opacity="state.tooltip.key ? (state.tooltip.key !== seg.rawKey ? '0.45' : '1') : '1'"
-                                                      style="cursor:pointer; pointer-events:auto; vector-effect:non-scaling-stroke;" t-on-mouseenter="ev => this.showTooltip(seg, ev)"
-                                                      t-on-mousemove="ev => this.moveTooltip(seg, ev)" t-on-mouseleave="this.hideTooltip"/>
-                                            </t>
-                                        </g>
-                                    </svg>
-                                </div>
+                    <div class="plb-gauge-zone">
+                        <span class="plb-gauge-zone-color" style="background: #F57C00;"></span>
+                        <span>Entry</span>
+                    </div>
+                    <div class="plb-gauge-zone">
+                        <span class="plb-gauge-zone-color" style="background: #0D47A1;"></span>
+                        <span>Target</span>
+                    </div>
+                    <div class="plb-gauge-zone">
+                        <span class="plb-gauge-zone-color" style="background: #2E7D32;"></span>
+                        <span>Exceeded</span>
+                    </div>
+                </div>
+            </div>
 
-                                <!-- Legend/footer area: does not grow beyond its content and stays inside the card -->
-                                <div class="pt-2" style="flex:0 0 auto; width:100%;">
-                                    <div class="w-100 d-flex flex-wrap justify-content-center" style="gap:8px;">
-                                        <t t-foreach="this.getSortedSegments()" t-as="seg" t-key="seg.rawKey">
-                                            <span class="badge bg-light text-dark d-inline-flex align-items-center" style="gap:6px; cursor:default; font-size:11px; padding:4px 6px;" t-on-mouseenter="ev => this.showTooltip(seg, ev)" t-on-mouseleave="this.hideTooltip">
-                                                 <span t-att-style="'display:inline-block;width:12px;height:12px;background:'+seg.color+';border-radius:2px;box-shadow:0 0 0 1px rgba(0,0,0,0.05) inset;' "></span>
-                                                 <strong style="font-weight:600; font-size:12px;"><t t-esc="seg.percent.toFixed(2)"/>%</strong>
-                                             </span>
-                                         </t>
-                                     </div>
-                                 </div>
-                             </div>
-                         </t>
-                         <t t-else="">
-                             <div class="text-muted">No service data available.</div>
-                         </t>
-                     </div>
-                 </div>
-             </div>
+            <!-- Realized Revenue Target Gauge -->
+            <div class="plb-gauge-card">
+                <h5 class="plb-gauge-title">Realized Rev Target (MYR mil)</h5>
+                <svg class="plb-gauge-svg" viewBox="0 0 200 130">
+                    <!-- Background arc (gray) -->
+                    <path class="plb-gauge-background" d="M 20 100 A 80 80 0 0 1 180 100"/>
 
-            <div class="col-12 col-lg-4">
+                    <!-- Progress arc (colored based on percentage) -->
+                    <path class="plb-gauge-arc"
+                          t-att-d="getGaugeArcPath(state.realized_percentage)"
+                          t-att-stroke="getGaugeColor(state.realized_percentage)"/>
+
+                    <!-- Percentage text -->
+                    <text x="100" y="115" text-anchor="middle" font-size="20" font-weight="bold" fill="#1A1A1A">
+                        <t t-esc="formatNumber(state.realized_percentage)"/>%
+                    </text>
+                </svg>
+                <div class="plb-gauge-value">
+                    <t t-esc="formatNumber(state.total_realized_revenue)"/> M
+                </div>
+                <div class="plb-gauge-label">Monthly Subtotal YTD (Millions)</div>
+                <span class="plb-gauge-status" t-att-class="getGaugeStatus(state.realized_percentage).toLowerCase()">
+                    <t t-esc="getGaugeStatus(state.realized_percentage)"/>
+                </span>
+                <div class="plb-gauge-zones">
+                    <div class="plb-gauge-zone">
+                        <span class="plb-gauge-zone-color" style="background: #C62828;"></span>
+                        <span>Fail</span>
+                    </div>
+                    <div class="plb-gauge-zone">
+                        <span class="plb-gauge-zone-color" style="background: #F57C00;"></span>
+                        <span>Entry</span>
+                    </div>
+                    <div class="plb-gauge-zone">
+                        <span class="plb-gauge-zone-color" style="background: #0D47A1;"></span>
+                        <span>Target</span>
+                    </div>
+                    <div class="plb-gauge-zone">
+                        <span class="plb-gauge-zone-color" style="background: #2E7D32;"></span>
+                        <span>Exceeded</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Two-column layout: Hit Rate Trend | Hit Rate by Dept/Region -->
+        <div class="row mb-4 g-3">
+            <div class="col-12 col-lg-6">
                 <div class="card plb-chart-card h-100">
                     <div class="card-header">
                         <h5>Hit Rate Trend</h5>
@@ -18294,7 +18473,7 @@ PLBDashboard.template=xml`
                 </div>
             </div>
 
-            <div class="col-12 col-lg-4">
+            <div class="col-12 col-lg-6">
                 <div class="card plb-chart-card h-100">
                     <div class="card-header">
                         <h5>Hit Rate by Dept/Region</h5>
@@ -18513,7 +18692,7 @@ PLBDashboard.template=xml`
                                     <text t-att-x="68" t-att-y="tk.y + 4" text-anchor="end" fill="#333" font-size="11px"><t t-esc="tk.label"/>M</text>
                                 </t>
 
-                                <!-- Axis labels -->
+                                <!-- axis labels -->
                                 <text x="330" y="295" text-anchor="middle" fill="#333" font-size="12px">Months</text>
                                 <text x="18" y="140" text-anchor="middle" fill="#333" font-size="12px" transform="rotate(-90,18,140)">Revenue (MYR Mil)</text>
                             </svg>
@@ -18748,8 +18927,11 @@ PLBDashboard.template=xml`
                                 <th rowspan="2">Company</th>
                                 <th rowspan="2">Project Name</th>
                                 <th rowspan="2">Salesperson</th>
+                                <th rowspan="2">Week</th>
+                                <th rowspan="2">Month</th>
+                                <th rowspan="2">Quarter</th>
                                 <th rowspan="2">Stage</th>
-                                <th rowspan="2">Expected Revenue</th>
+                                <th rowspan="2">Annualized Revenue</th>
                                 <th rowspan="2">Services</th>
                                 <!-- Dept/Region column removed -->
                                 <th colspan="12" class="text-center">Realized Revenue (Months)</th>
@@ -18764,25 +18946,36 @@ PLBDashboard.template=xml`
                         </thead>
                 <tbody>
                     <t t-if="getFilteredTableRows() &amp;&amp; getFilteredTableRows().length">
-                        <tr t-foreach="getFilteredTableRows()" t-as="row" t-key="row.id">
-                            <td><t t-esc="row.company || 'NULL'"/></td>
-                            <td><t t-esc="row.customer || 'NULL'"/></td>
-                            <td><t t-esc="formatText(row.salesperson)"/></td>
-                            <td><t t-esc="row.stage || 'NULL'"/></td>
-                            <td class="text-end"><t t-esc="formatCurrency(row.sales)"/></td>
-                            <td><t t-esc="formatText(row.services)"/></td>
+                        <t t-set="contractRows" t-value="getFilteredTableRows().filter(r => r.stage &amp;&amp; r.stage.toLowerCase().includes('contract'))"/>
+                        <t t-if="contractRows &amp;&amp; contractRows.length">
+                            <tr t-foreach="contractRows" t-as="row" t-key="row.id">
+                                <td><t t-esc="row.company || 'NULL'"/></td>
+                                <td><t t-esc="row.customer || 'NULL'"/></td>
+                                <td><t t-esc="formatText(row.salesperson)"/></td>
+                                <td><t t-esc="row.week || '-'"/></td>
+                                <td><t t-esc="row.month || '-'"/></td>
+                                <td><t t-esc="row.quarter || '-'"/></td>
+                                <td><t t-esc="row.stage || 'NULL'"/></td>
+                                <td class="text-end"><t t-esc="formatCurrency(row.sales)"/></td>
+                                <td><t t-esc="formatText(row.services)"/></td>
 
-                            <!-- Loop for monthly revenue -->
-                            <t t-foreach="row.monthlyRevenue || []" t-as="month" t-key="month">
-                                <td class="text-end"><t t-esc="formatCurrency(month)"/></td>
-                            </t>
-                            <td class="text-end"><t t-esc="formatCurrency(row.realizedRevenue)"/></td>
-                            <td class="text-end"><t t-esc="formatCurrency(row.carryForward)"/></td>
-                         </tr>
+                                <!-- Loop for monthly revenue -->
+                                <t t-foreach="row.monthlyRevenue || []" t-as="month" t-key="month">
+                                    <td class="text-end"><t t-esc="formatCurrency(month)"/></td>
+                                </t>
+                                <td class="text-end"><t t-esc="formatCurrency(row.realizedRevenue)"/></td>
+                                <td class="text-end"><t t-esc="formatCurrency(row.carryForward)"/></td>
+                            </tr>
+                        </t>
+                        <t t-else="">
+                            <tr>
+                                <td colspan="23" class="text-center text-muted">No contract stage data available</td>
+                            </tr>
+                        </t>
                      </t>
                      <t t-else="">
                          <tr>
-                            <td colspan="20" class="text-center text-muted">No data available</td>
+                            <td colspan="23" class="text-center text-muted">No data available</td>
                          </tr>
                      </t>
                  </tbody>
@@ -18790,7 +18983,7 @@ PLBDashboard.template=xml`
                      <!-- Emphasized subtotal row: double top/bottom border only on monthly columns -->
                      <tr style="font-weight:700; background:#f8f9fa;">
                          <!-- remove bottom border on the leading label cell so the double line won't continue across -->
-                         <td colspan="6" class="text-end plb-subtotal-no-bottom"><strong>Monthly Subtotal</strong></td>
+                         <td colspan="9" class="text-end plb-subtotal-no-bottom"><strong>Monthly Subtotal</strong></td>
                          <!-- Double top and bottom border only on monthly columns (Jan..Dec) -->
                          <t t-foreach="state.monthlySubtotals" t-as="m" t-key="m">
                              <td class="text-end plb-month-border" style="font-weight:700;"><t t-esc="formatCurrency(m)"/></td>
@@ -18799,7 +18992,7 @@ PLBDashboard.template=xml`
 
                      <!-- Cumulative row: slightly lighter styling, no full-width top border so the double line appears only under monthly columns -->
                      <tr style="font-weight:600; background:#ffffff;">
-                         <td colspan="6" class="text-end plb-cumulative-no-top"><strong>Cumulative</strong></td>
+                         <td colspan="9" class="text-end plb-cumulative-no-top"><strong>Cumulative</strong></td>
                          <t t-foreach="state.monthlyCumulative" t-as="c" t-key="c">
                              <td class="text-end plb-cumulative-no-top" style="font-weight:600;"><t t-esc="formatCurrency(c)"/></td>
                          </t>
@@ -18814,10 +19007,10 @@ PLBDashboard.template=xml`
  `;registry.category("actions").add("PLB_dashboard_tag",PLBDashboard);return __exports;});;
 
 /* /plb_dashboard/static/src/js/kpi.js */
-odoo.define('@plb_dashboard/js/kpi',['@web/core/registry','@odoo/owl','@web/core/utils/hooks'],function(require){'use strict';let __exports={};const{registry}=require("@web/core/registry");const{Component,xml,useState,onMounted}=require("@odoo/owl");const{useService}=require("@web/core/utils/hooks");const PLBKPI=__exports.PLBKPI=class PLBKPI extends Component{setup(){this.state=useState({year:String((new Date()).getFullYear()),years:[],salespersons:[],monthly_subtotals_ytd:Array(12).fill(0),monthly_subtotals_target:Array(12).fill(0),monthly_percentage:Array(12).fill(0),company_yearly_target:0,total_ytd_revenue:0,total_realized_revenue:0,total_target_revenue:0,ytd_percentage:0,realized_percentage:0,loading:true,});this.rpc=useService("rpc");onMounted(async()=>{this.computeYearOptions();await this.loadKPIData();});}
+odoo.define('@plb_dashboard/js/kpi',['@web/core/registry','@odoo/owl','@web/core/utils/hooks'],function(require){'use strict';let __exports={};const{registry}=require("@web/core/registry");const{Component,xml,useState,onMounted}=require("@odoo/owl");const{useService}=require("@web/core/utils/hooks");const PLBKPI=__exports.PLBKPI=class PLBKPI extends Component{setup(){this.state=useState({year:String((new Date()).getFullYear()),years:[],salespersons:[],monthly_subtotals_ytd:Array(12).fill(0),monthly_subtotals_target:Array(12).fill(0),monthly_percentage:Array(12).fill(0),company_yearly_target:0,loading:true,});this.rpc=useService("rpc");onMounted(async()=>{this.computeYearOptions();await this.loadKPIData();});}
 computeYearOptions(){const now=new Date();const currentYear=now.getFullYear();const years=[];for(let y=currentYear;y>=2000;y--){years.push(String(y));}
 this.state.years=years;}
-async loadKPIData(){try{this.state.loading=true;const year=this.state.year?Number(this.state.year):(new Date()).getFullYear();const kpiData=await this.rpc("/plb/kpi_data",{year:year});if(kpiData){this.state.salespersons=kpiData.salespersons||[];this.state.monthly_subtotals_ytd=kpiData.monthly_subtotals_ytd||Array(12).fill(0);this.state.monthly_subtotals_target=kpiData.monthly_subtotals_target||Array(12).fill(0);this.state.company_yearly_target=kpiData.company_yearly_target||0;this.state.total_ytd_revenue=kpiData.total_ytd_revenue||0;this.state.total_realized_revenue=kpiData.total_realized_revenue||0;this.state.total_target_revenue=kpiData.total_target_revenue||0;this.state.ytd_percentage=kpiData.ytd_percentage||0;this.state.realized_percentage=kpiData.realized_percentage||0;this.state.monthly_percentage=Array(12).fill(0).map((_,idx)=>{const target=this.state.monthly_subtotals_target[idx];const ytd=this.state.monthly_subtotals_ytd[idx];if(target&&target>0){return(ytd/target)*100;}
+async loadKPIData(){try{this.state.loading=true;const year=this.state.year?Number(this.state.year):(new Date()).getFullYear();const kpiData=await this.rpc("/plb/kpi_data",{year:year});if(kpiData){this.state.salespersons=kpiData.salespersons||[];this.state.monthly_subtotals_ytd=kpiData.monthly_subtotals_ytd||Array(12).fill(0);this.state.monthly_subtotals_target=kpiData.monthly_subtotals_target||Array(12).fill(0);this.state.company_yearly_target=kpiData.company_yearly_target||0;this.state.monthly_percentage=Array(12).fill(0).map((_,idx)=>{const target=this.state.monthly_subtotals_target[idx];const ytd=this.state.monthly_subtotals_ytd[idx];if(target&&target>0){return(ytd/target)*100;}
 return 0;});}
 console.debug('PLB KPI loaded:',{year:year,salespersons:this.state.salespersons.length,});}catch(err){console.error('Failed to load PLB KPI data:',err);}finally{this.state.loading=false;}}
 setYear=async(evOrValue)=>{const value=(evOrValue&&evOrValue.target&&evOrValue.target.value!==undefined)?evOrValue.target.value:evOrValue;this.state.year=value;await this.loadKPIData();}
@@ -18825,10 +19018,6 @@ formatNumber(value){if(value===false||value===null||value===undefined||value==='
 const n=Number(value);if(Number.isNaN(n)){return'0.00';}
 return n.toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2});}
 formatCurrency(value){return this.formatNumber(value);}
-getGaugeColor(percentage){if(percentage<50){return'#C62828';}else if(percentage>=50&&percentage<70){return'#F57C00';}else if(percentage>=70&&percentage<=100){return'#0D47A1';}else{return'#2E7D32';}}
-getGaugeStatus(percentage){if(percentage<50){return'FAIL';}else if(percentage>=50&&percentage<70){return'ENTRY';}else if(percentage>=70&&percentage<=100){return'TARGET';}else{return'EXCEEDED';}}
-getGaugeArcPath(percentage){const maxPercentage=120;const clampedPercentage=Math.min(maxPercentage,Math.max(0,percentage));if(clampedPercentage===0){return'';}
-const startAngle=180;const endAngle=180+(clampedPercentage/maxPercentage)*180;const endAngleRad=(endAngle*Math.PI)/180;const cx=100;const cy=100;const radius=80;const startX=cx-radius;const startY=cy;const endX=cx+radius*Math.cos(endAngleRad);const endY=cy+radius*Math.sin(endAngleRad);return`M ${startX} ${startY} A ${radius} ${radius} 0 0 1 ${endX} ${endY}`;}
 static template=xml`
 <style>
     /* KPI Dashboard Styling */
@@ -19173,116 +19362,6 @@ static template=xml`
     * {
         transition: background-color 0.2s ease, border-color 0.2s ease;
     }
-
-    /* Gauge Meter Styling */
-    .plb-gauge-container {
-        display: flex;
-        gap: 24px;
-        margin-bottom: 24px;
-        flex-wrap: wrap;
-    }
-
-    .plb-gauge-card {
-        flex: 1;
-        min-width: 300px;
-        background: #FFFFFF;
-        border-radius: 8px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-        padding: 20px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .plb-gauge-title {
-        font-size: 1rem;
-        font-weight: 600;
-        color: #1A1A1A;
-        margin-bottom: 16px;
-        text-align: center;
-    }
-
-    .plb-gauge-svg {
-        width: 200px;
-        height: 130px;
-        margin-bottom: 12px;
-    }
-
-    .plb-gauge-background {
-        fill: none;
-        stroke: #E0E0E0;
-        stroke-width: 12;
-        stroke-linecap: round;
-    }
-
-    .plb-gauge-arc {
-        fill: none;
-        stroke-width: 12;
-        stroke-linecap: round;
-        transition: stroke 0.3s ease;
-    }
-
-    .plb-gauge-value {
-        font-size: 1.5rem;
-        font-weight: 700;
-        color: #1A1A1A;
-        margin-bottom: 4px;
-    }
-
-    .plb-gauge-label {
-        font-size: 0.85rem;
-        color: #4A4A4A;
-        margin-bottom: 8px;
-    }
-
-    .plb-gauge-status {
-        display: inline-block;
-        padding: 4px 12px;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: #FFFFFF;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
-    }
-
-    .plb-gauge-status.fail {
-        background: #C62828;
-    }
-
-    .plb-gauge-status.entry {
-        background: #F57C00;
-    }
-
-    .plb-gauge-status.target {
-        background: #0D47A1;
-    }
-
-    .plb-gauge-status.exceeded {
-        background: #2E7D32;
-    }
-
-    .plb-gauge-zones {
-        display: flex;
-        justify-content: center;
-        gap: 12px;
-        margin-top: 12px;
-        flex-wrap: wrap;
-    }
-
-    .plb-gauge-zone {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        font-size: 0.75rem;
-        color: #4A4A4A;
-    }
-
-    .plb-gauge-zone-color {
-        width: 12px;
-        height: 12px;
-        border-radius: 2px;
-    }
 </style>
 
 <div class="plb-kpi-container" style="overflow: auto; height: 100%;">
@@ -19333,98 +19412,6 @@ static template=xml`
             <div class="plb-header-decoration plb-header-decoration-2"></div>
         </div>
 
-        <!-- Gauge Meters -->
-        <div class="plb-gauge-container">
-            <!-- YTD Revenue Target Gauge -->
-            <div class="plb-gauge-card">
-                <h5 class="plb-gauge-title">YTD Rev Target (MYR mil)</h5>
-                <svg class="plb-gauge-svg" viewBox="0 0 200 130">
-                    <!-- Background arc (gray) -->
-                    <path class="plb-gauge-background" d="M 20 100 A 80 80 0 0 1 180 100"/>
-
-                    <!-- Progress arc (colored based on percentage) -->
-                    <path class="plb-gauge-arc"
-                          t-att-d="getGaugeArcPath(state.ytd_percentage)"
-                          t-att-stroke="getGaugeColor(state.ytd_percentage)"/>
-
-
-                    <!-- Percentage text -->
-                    <text x="100" y="115" text-anchor="middle" font-size="20" font-weight="bold" fill="#1A1A1A">
-                        <t t-esc="formatNumber(state.ytd_percentage)"/>%
-                    </text>
-                </svg>
-                <div class="plb-gauge-value">
-                    <t t-esc="formatNumber(state.total_ytd_revenue)"/> M
-                </div>
-                <div class="plb-gauge-label">Expected Revenue (Millions)</div>
-                <span class="plb-gauge-status" t-att-class="getGaugeStatus(state.ytd_percentage).toLowerCase()">
-                    <t t-esc="getGaugeStatus(state.ytd_percentage)"/>
-                </span>
-                <div class="plb-gauge-zones">
-                    <div class="plb-gauge-zone">
-                        <span class="plb-gauge-zone-color" style="background: #C62828;"></span>
-                        <span>Fail</span>
-                    </div>
-                    <div class="plb-gauge-zone">
-                        <span class="plb-gauge-zone-color" style="background: #F57C00;"></span>
-                        <span>Entry</span>
-                    </div>
-                    <div class="plb-gauge-zone">
-                        <span class="plb-gauge-zone-color" style="background: #0D47A1;"></span>
-                        <span>Target</span>
-                    </div>
-                    <div class="plb-gauge-zone">
-                        <span class="plb-gauge-zone-color" style="background: #2E7D32;"></span>
-                        <span>Exceeded</span>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Realized Revenue Target Gauge -->
-            <div class="plb-gauge-card">
-                <h5 class="plb-gauge-title">Realized Rev Target (MYR mil)</h5>
-                <svg class="plb-gauge-svg" viewBox="0 0 200 130">
-                    <!-- Background arc (gray) -->
-                    <path class="plb-gauge-background" d="M 20 100 A 80 80 0 0 1 180 100"/>
-
-                    <!-- Progress arc (colored based on percentage) -->
-                    <path class="plb-gauge-arc"
-                          t-att-d="getGaugeArcPath(state.realized_percentage)"
-                          t-att-stroke="getGaugeColor(state.realized_percentage)"/>
-
-
-                    <!-- Percentage text -->
-                    <text x="100" y="115" text-anchor="middle" font-size="20" font-weight="bold" fill="#1A1A1A">
-                        <t t-esc="formatNumber(state.realized_percentage)"/>%
-                    </text>
-                </svg>
-                <div class="plb-gauge-value">
-                    <t t-esc="formatNumber(state.total_realized_revenue)"/> M
-                </div>
-                <div class="plb-gauge-label">Monthly Subtotal YTD (Millions)</div>
-                <span class="plb-gauge-status" t-att-class="getGaugeStatus(state.realized_percentage).toLowerCase()">
-                    <t t-esc="getGaugeStatus(state.realized_percentage)"/>
-                </span>
-                <div class="plb-gauge-zones">
-                    <div class="plb-gauge-zone">
-                        <span class="plb-gauge-zone-color" style="background: #C62828;"></span>
-                        <span>Fail</span>
-                    </div>
-                    <div class="plb-gauge-zone">
-                        <span class="plb-gauge-zone-color" style="background: #F57C00;"></span>
-                        <span>Entry</span>
-                    </div>
-                    <div class="plb-gauge-zone">
-                        <span class="plb-gauge-zone-color" style="background: #0D47A1;"></span>
-                        <span>Target</span>
-                    </div>
-                    <div class="plb-gauge-zone">
-                        <span class="plb-gauge-zone-color" style="background: #2E7D32;"></span>
-                        <span>Exceeded</span>
-                    </div>
-                </div>
-            </div>
-        </div>
 
         <!-- KPI Table -->
         <div class="plb-kpi-card mb-5">
