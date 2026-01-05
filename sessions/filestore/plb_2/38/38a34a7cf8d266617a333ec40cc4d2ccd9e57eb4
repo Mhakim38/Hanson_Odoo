@@ -184065,7 +184065,7 @@ return __exports;
 
 /**************************************************
 *  Filepath: /plb_dashboard/static/src/js/kpi.js  *
-*  Lines: 596                                     *
+*  Lines: 745                                     *
 **************************************************/
 odoo.define('@plb_dashboard/js/kpi', ['@web/core/registry', '@odoo/owl', '@web/core/utils/hooks'], function (require) {
 'use strict';
@@ -184083,6 +184083,7 @@ const PLBKPI = __exports.PLBKPI = class PLBKPI extends Component {
             year: String((new Date()).getFullYear()),
             years: [],
             salespersons: [],
+            team_summary: [],
             monthly_subtotals_ytd: Array(12).fill(0),
             monthly_subtotals_target: Array(12).fill(0),
             monthly_percentage: Array(12).fill(0),
@@ -184117,9 +184118,18 @@ const PLBKPI = __exports.PLBKPI = class PLBKPI extends Component {
 
             const year = this.state.year ? Number(this.state.year) : (new Date()).getFullYear();
 
-            // Fetch KPI data from controller endpoint
-            const kpiData = await this.rpc("/plb/kpi_data", { year: year });
+            // Fetch both team summary and KPI data from controller endpoints
+            const [teamSummaryData, kpiData] = await Promise.all([
+                this.rpc("/plb/sales_team_summary", { year: year }),
+                this.rpc("/plb/kpi_data", { year: year })
+            ]);
 
+            // Set team summary data
+            if (teamSummaryData) {
+                this.state.team_summary = teamSummaryData.team_summary || [];
+            }
+
+            // Set KPI data
             if (kpiData) {
                 this.state.salespersons = kpiData.salespersons || [];
                 this.state.monthly_subtotals_ytd = kpiData.monthly_subtotals_ytd || Array(12).fill(0);
@@ -184140,6 +184150,7 @@ const PLBKPI = __exports.PLBKPI = class PLBKPI extends Component {
             console.debug('PLB KPI loaded:', {
                 year: year,
                 salespersons: this.state.salespersons.length,
+                teams: this.state.team_summary.length,
             });
 
         } catch (err) {
@@ -184397,6 +184408,87 @@ const PLBKPI = __exports.PLBKPI = class PLBKPI extends Component {
 
     .plb-kpi-card {
         background: #FFFFFF;
+        border-radius: 16px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        overflow: hidden;
+        border: 1px solid #D0D5DD;
+    }
+
+    .plb-kpi-card .card-header {
+        background: linear-gradient(135deg, #0D47A1 0%, #1565C0 100%);
+        padding: 20px 28px;
+        border: none;
+    }
+
+    .plb-kpi-card .card-header h4 {
+        margin: 0;
+        color: #FFFFFF;
+        font-size: 1.4rem;
+        font-weight: 700;
+        letter-spacing: 0.3px;
+    }
+
+    /* Team Summary Table Styles */
+    .plb-team-summary-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 13px;
+        background: #FFFFFF;
+    }
+
+    .plb-team-summary-table thead th {
+        background: linear-gradient(135deg, #0D47A1 0%, #1565C0 100%);
+        color: #FFFFFF;
+        padding: 14px 10px;
+        text-align: center;
+        font-weight: 700;
+        font-size: 12px;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        vertical-align: middle;
+    }
+
+    .plb-team-summary-table tbody td {
+        padding: 12px 10px;
+        border: 1px solid #D0D5DD;
+        text-align: center;
+        color: #1A1A1A;
+        vertical-align: middle;
+    }
+
+    .plb-team-summary-table tbody tr:hover {
+        background-color: #F8F9FA;
+    }
+
+    .plb-team-summary-table tbody td.location-cell {
+        text-align: left;
+        font-weight: 600;
+        color: #0D47A1;
+    }
+
+    .plb-team-summary-table tbody td.lead-cell {
+        text-align: left;
+        font-size: 12px;
+        color: #4A4A4A;
+    }
+
+    .plb-team-summary-table tbody td.ytd-vs-target-cell {
+        font-weight: 700;
+    }
+
+    .plb-team-summary-table tbody td.ytd-vs-target-cell.bg-success {
+        background-color: #d4edda !important;
+        color: #155724;
+    }
+
+    .plb-team-summary-table tbody td.ytd-vs-target-cell.bg-danger {
+        background-color: #f8d7da !important;
+        color: #721c24;
+    }
+
+    .plb-kpi-card {
+        background: #FFFFFF;
         border-radius: 8px;
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
         overflow: hidden;
@@ -184565,6 +184657,63 @@ const PLBKPI = __exports.PLBKPI = class PLBKPI extends Component {
             <!-- Decorative elements -->
             <div class="plb-header-decoration plb-header-decoration-1"></div>
             <div class="plb-header-decoration plb-header-decoration-2"></div>
+        </div>
+
+
+        <!-- Sales Team Summary Table -->
+        <div class="plb-kpi-card mb-4">
+            <div class="card-header">
+                <h4>Sales Team Summary - <t t-esc="state.year"/></h4>
+            </div>
+            <div class="card-body p-0">
+                <div class="plb-kpi-table-container">
+                    <table class="table table-bordered plb-team-summary-table">
+                        <thead>
+                            <tr>
+                                <th>Location</th>
+                                <th>Commercial Lead</th>
+                                <th><t t-esc="state.year"/> YTD</th>
+                                <th>To Target</th>
+                                <th>Target</th>
+                                <th>YTD vs Target</th>
+                                <th>Qualify</th>
+                                <th>Proposal Submitted</th>
+                                <th>Shortlisted</th>
+                                <th>Verbal</th>
+                                <th>Total Pipeline</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-if="state.team_summary.length">
+                                <t t-foreach="state.team_summary" t-as="team" t-key="team.location + '_' + team.commercial_lead">
+                                    <tr>
+                                        <td class="location-cell"><t t-esc="team.location"/></td>
+                                        <td class="lead-cell"><t t-esc="team.commercial_lead"/></td>
+                                        <td><t t-esc="formatCurrency(team.ytd)"/></td>
+                                        <td><t t-esc="formatCurrency(team.to_target)"/></td>
+                                        <td><t t-esc="formatCurrency(team.target)"/></td>
+                                        <td t-att-class="'ytd-vs-target-cell ' + (team.ytd_vs_target >= 100 ? 'bg-success' : 'bg-danger')">
+                                            <t t-esc="formatNumber(team.ytd_vs_target)"/>%
+                                        </td>
+                                        <td><t t-esc="formatCurrency(team.qualify)"/></td>
+                                        <td><t t-esc="formatCurrency(team.proposal)"/></td>
+                                        <td><t t-esc="formatCurrency(team.shortlisted)"/></td>
+                                        <td><t t-esc="formatCurrency(team.verbal)"/></td>
+                                        <td><t t-esc="formatCurrency(team.total_pipeline)"/></td>
+                                    </tr>
+                                </t>
+                            </t>
+                            <t t-else="">
+                                <tr>
+                                    <td colspan="11" class="text-center text-muted" style="padding: 40px;">
+                                        No sales team data available for <t t-esc="state.year"/>
+                                    </td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
 
 
@@ -201208,4 +201357,4 @@ return __exports;
 </templates>`);
                     });
 
-//# sourceMappingURL=/web/assets/6f8636b/web.assets_web.js.map
+//# sourceMappingURL=/web/assets/8f3bc80/web.assets_web.js.map
