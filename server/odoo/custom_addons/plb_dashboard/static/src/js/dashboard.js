@@ -2039,7 +2039,7 @@ PLBDashboard.template = xml/* xml */ `
     <!-- Dashboard Header -->
     <div class="plb-dashboard-header">
         <h3 class="mb-0" style="font-size: 1.75rem; font-weight: 700; letter-spacing: 0.5px; color: #FFFFFF;">
-            PLB Dashboard
+            Sales Performance Matrix
         </h3>
         <p class="mb-0 mt-2" style="font-size: 0.95rem; color: #FFFFFF; opacity: 0.9;">Comprehensive business analytics</p>
     </div>
@@ -2774,10 +2774,10 @@ PLBDashboard.template = xml/* xml */ `
                     <table class="table table-bordered table-hover table-sm sticky-head plb-data-table mb-3" style="border-collapse:collapse; border-spacing:0;">
                         <thead class="table-light">
                             <tr>
-                                <th rowspan="2">No.</th>
                                 <th rowspan="2">Quarter</th>
                                 <th rowspan="2">Sales</th>
                                 <th rowspan="2">Stage</th>
+                                <th rowspan="2">No.</th>
                                 <th rowspan="2">Services</th>
                                 <th rowspan="2">Customer</th>
                                 <th rowspan="2">Annualized Revenue</th>
@@ -2797,10 +2797,10 @@ PLBDashboard.template = xml/* xml */ `
                         <t t-set="contractRows" t-value="getFilteredTableRows().filter(r => r.stage &amp;&amp; r.stage.toLowerCase().includes('contract'))"/>
                         <t t-if="contractRows &amp;&amp; contractRows.length">
                             <tr t-foreach="contractRows" t-as="row" t-key="row.id">
-                                <td class="text-center"><t t-esc="row_index + 1"/></td>
                                 <td class="text-center"><t t-esc="row.quarter || '-'"/></td>
                                 <td><t t-esc="formatText(row.salesperson)"/></td>
                                 <td><t t-esc="row.stage || 'NULL'"/></td>
+                                <td class="text-center"><t t-esc="row_index + 1"/></td>
                                 <td><t t-esc="formatText(row.services)"/></td>
                                 <td><t t-esc="row.customer || 'NULL'"/></td>
                                 <td class="text-end"><t t-esc="formatCurrency(row.sales)"/></td>

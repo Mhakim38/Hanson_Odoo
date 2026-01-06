@@ -668,7 +668,7 @@ export class PLBKPI extends Component {
                         </svg>
                     </div>
                     <div class="plb-header-titles">
-                        <h1 class="plb-header-main-title">KPI Dashboard</h1>
+                        <h1 class="plb-header-main-title">Individual Dashboard</h1>
                         <p class="plb-header-subtitle">Salesperson performance metrics and targets</p>
                     </div>
                 </div>
