@@ -2782,6 +2782,7 @@ PLBDashboard.template = xml/* xml */ `
                                 <th rowspan="2">Customer</th>
                                 <th rowspan="2">Annualized Revenue</th>
                                 <th colspan="12" class="text-center">Realized Revenue (Months)</th>
+                                <th rowspan="2">Stage II</th>
                                 <th rowspan="2">Month</th>
                                 <th rowspan="2">Week</th>
                                 <th rowspan="2">Realized Revenue 2025</th>
@@ -2810,6 +2811,7 @@ PLBDashboard.template = xml/* xml */ `
                                     <td class="text-end"><t t-esc="formatCurrency(month)"/></td>
                                 </t>
 
+                                <td><t t-esc="row.stage || 'NULL'"/></td>
                                 <td class="text-center"><t t-esc="row.month || '-'"/></td>
                                 <td class="text-center"><t t-esc="row.week || '-'"/></td>
                                 <td class="text-end"><t t-esc="formatCurrency(row.realizedRevenue)"/></td>
@@ -2818,13 +2820,13 @@ PLBDashboard.template = xml/* xml */ `
                         </t>
                         <t t-else="">
                             <tr>
-                                <td colspan="21" class="text-center text-muted">No contract stage data available</td>
+                                <td colspan="22" class="text-center text-muted">No contract stage data available</td>
                             </tr>
                         </t>
                      </t>
                      <t t-else="">
                          <tr>
-                            <td colspan="21" class="text-center text-muted">No data available</td>
+                            <td colspan="22" class="text-center text-muted">No data available</td>
                          </tr>
                      </t>
                  </tbody>
@@ -2837,7 +2839,7 @@ PLBDashboard.template = xml/* xml */ `
                          <t t-foreach="state.monthlySubtotals" t-as="m" t-key="m">
                              <td class="text-end plb-month-border" style="font-weight:700;"><t t-esc="formatCurrency(m)"/></td>
                          </t>
-                         <td colspan="4"></td>
+                         <td colspan="5"></td>
                      </tr>
 
                      <!-- Cumulative row: slightly lighter styling, no full-width top border so the double line appears only under monthly columns -->
@@ -2846,7 +2848,7 @@ PLBDashboard.template = xml/* xml */ `
                          <t t-foreach="state.monthlyCumulative" t-as="c" t-key="c">
                              <td class="text-end plb-cumulative-no-top" style="font-weight:600;"><t t-esc="formatCurrency(c)"/></td>
                          </t>
-                         <td colspan="4"></td>
+                         <td colspan="5"></td>
                      </tr>
                  </tfoot>
              </table>
