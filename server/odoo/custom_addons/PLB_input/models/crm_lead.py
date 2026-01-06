@@ -38,11 +38,11 @@ class CrmLead(models.Model):
     ], string='Scope of Service')
 
     freight_type = fields.Selection([
-        ('sfr', 'SFR'),
-        ('fcl', 'FCL'),
-        ('lcl', 'LCL'),
-        ('afr', 'AFR'),
-        ('fwd', 'FWD'),
+        ('sfr', 'Sea Freight (SFR)'),
+        ('fcl', 'Full Container Load (FCL)'),
+        ('lcl', 'Less Container Load (LCL)'),
+        ('afr', 'Air Freight (AFR)'),
+        ('fwd', 'Forwarding (FWD)'),
     ], string='Freight Type')
 
     @api.depends('scope_of_service')
