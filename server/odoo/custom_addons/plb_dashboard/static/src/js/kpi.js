@@ -16,6 +16,9 @@ export class PLBKPI extends Component {
             monthly_subtotals_target: Array(12).fill(0),
             monthly_percentage: Array(12).fill(0),
             company_yearly_target: 0,
+            annualized_ytd_gain: 0,
+            current_year_realized: 0,
+            target_completion: 0,
             loading: true,
         });
 
@@ -63,6 +66,9 @@ export class PLBKPI extends Component {
                 this.state.monthly_subtotals_ytd = kpiData.monthly_subtotals_ytd || Array(12).fill(0);
                 this.state.monthly_subtotals_target = kpiData.monthly_subtotals_target || Array(12).fill(0);
                 this.state.company_yearly_target = kpiData.company_yearly_target || 0;
+                this.state.annualized_ytd_gain = kpiData.annualized_ytd_gain || 0;
+                this.state.current_year_realized = kpiData.current_year_realized || 0;
+                this.state.target_completion = kpiData.target_completion || 0;
 
                 // Calculate monthly percentage (YTD / Target * 100)
                 this.state.monthly_percentage = Array(12).fill(0).map((_, idx) => {
@@ -189,6 +195,13 @@ export class PLBKPI extends Component {
         flex-wrap: wrap;
     }
 
+    .plb-target-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        flex: 1;
+    }
+
     .plb-target-display {
         background: rgba(255, 255, 255, 0.15);
         backdrop-filter: blur(10px);
@@ -196,7 +209,7 @@ export class PLBKPI extends Component {
         border-radius: 16px;
         border: 2px solid rgba(255, 255, 255, 0.2);
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-        min-width: 240px;
+        min-width: 200px;
     }
 
     .plb-target-label {
@@ -307,6 +320,11 @@ export class PLBKPI extends Component {
             width: 100%;
             justify-content: space-between;
         }
+
+        .plb-target-grid {
+            grid-template-columns: 1fr;
+            width: 100%;
+        }
     }
 
     @media (max-width: 768px) {
@@ -331,6 +349,10 @@ export class PLBKPI extends Component {
         .plb-target-display,
         .plb-year-selector-wrapper {
             width: 100%;
+        }
+
+        .plb-target-grid {
+            grid-template-columns: 1fr;
         }
     }
 
@@ -533,6 +555,89 @@ export class PLBKPI extends Component {
         margin-top: 16px;
     }
 
+    /* Metrics Summary Section */
+    .plb-metrics-summary {
+        margin-top: 32px;
+        margin-bottom: 32px;
+    }
+
+    .plb-metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 24px;
+    }
+
+    .plb-metric-card {
+        background: #FFFFFF;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+        border: 1px solid #D0D5DD;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .plb-metric-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+    }
+
+    .plb-metric-card.primary {
+        border-left: 4px solid #0D47A1;
+    }
+
+    .plb-metric-card.success {
+        border-left: 4px solid #28a745;
+    }
+
+    .plb-metric-card.info {
+        border-left: 4px solid #17a2b8;
+    }
+
+    .plb-metric-card.warning {
+        border-left: 4px solid #C62828;
+    }
+
+    .plb-metric-label {
+        font-size: 0.875rem;
+        color: #4A4A4A;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+    }
+
+    .plb-metric-value {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #1A1A1A;
+        line-height: 1.2;
+    }
+
+    .plb-metric-value.highlight-blue {
+        color: #0D47A1;
+    }
+
+    .plb-metric-value.highlight-green {
+        color: #28a745;
+    }
+
+    .plb-metric-value.highlight-red {
+        color: #C62828;
+    }
+
+    .plb-metric-subtitle {
+        font-size: 0.75rem;
+        color: #4A4A4A;
+        margin-top: 8px;
+        font-weight: 500;
+    }
+
+    @media (max-width: 768px) {
+        .plb-metrics-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
     /* Smooth transitions */
     * {
         transition: background-color 0.2s ease, border-color 0.2s ease;
@@ -568,10 +673,6 @@ export class PLBKPI extends Component {
                     </div>
                 </div>
                 <div class="plb-header-right">
-                    <div class="plb-target-display">
-                        <div class="plb-target-label">Company Yearly Target</div>
-                        <div class="plb-target-value">MYR <t t-esc="formatNumber(state.company_yearly_target)"/> Million</div>
-                    </div>
                     <div class="plb-year-selector-wrapper">
                         <label class="plb-year-label">Year</label>
                         <select class="plb-year-select" t-on-change="ev => this.setYear(ev.target.value)">
@@ -587,6 +688,31 @@ export class PLBKPI extends Component {
             <div class="plb-header-decoration plb-header-decoration-2"></div>
         </div>
 
+        <!-- Metrics Summary Section -->
+        <div class="plb-metrics-summary">
+            <div class="plb-metrics-grid">
+                <div class="plb-metric-card primary">
+                    <div class="plb-metric-label">Company Yearly Target</div>
+                    <div class="plb-metric-value highlight-blue">MYR <t t-esc="formatNumber(state.company_yearly_target)"/> M</div>
+                    <div class="plb-metric-subtitle">Overall target for <t t-esc="state.year"/></div>
+                </div>
+                <div class="plb-metric-card success">
+                    <div class="plb-metric-label">Annualized YTD Gain</div>
+                    <div class="plb-metric-value highlight-green">MYR <t t-esc="formatNumber(state.annualized_ytd_gain)"/> M</div>
+                    <div class="plb-metric-subtitle">Expected revenue (contract stage)</div>
+                </div>
+                <div class="plb-metric-card info">
+                    <div class="plb-metric-label"><t t-esc="state.year"/> Realized Target</div>
+                    <div class="plb-metric-value">MYR <t t-esc="formatNumber(state.current_year_realized)"/> M</div>
+                    <div class="plb-metric-subtitle">Actual realized revenue for <t t-esc="state.year"/></div>
+                </div>
+                <div class="plb-metric-card warning">
+                    <div class="plb-metric-label">Target Completion</div>
+                    <div class="plb-metric-value highlight-red"><t t-esc="formatNumber(state.target_completion)"/>%</div>
+                    <div class="plb-metric-subtitle">Annualized YTD / Target</div>
+                </div>
+            </div>
+        </div>
 
         <!-- Sales Team Summary Table -->
         <div class="plb-kpi-card mb-4">

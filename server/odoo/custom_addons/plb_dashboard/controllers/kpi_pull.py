@@ -445,6 +445,18 @@ class PLBKPIController(http.Controller):
         # Formula: Sum of Monthly Subtotal YTD (MAR) / Company Yearly Target × 100
         realized_percentage = (total_realized_revenue / company_target_for_calculation * 100) if company_target_for_calculation > 0 else 0
 
+        # Additional metrics for Company Yearly Target display
+        # 1. Annualized YTD gain: Direct sum of expected_revenue (contract stage, filtered by date_secured year)
+        #    This is the same as total_ytd_revenue
+        annualized_ytd_gain = total_ytd_revenue / 1000000  # In millions
+
+        # 2. Current Year Realized Target: Sum of MAR (like Realized FY2025 in dashboard)
+        #    Formula: MAR * months_active_in_year for each contract
+        current_year_realized = total_realized_revenue / 1000000  # In millions
+
+        # 3. Target Completion: Annualized / Target
+        target_completion = (total_ytd_revenue / company_target_for_calculation * 100) if company_target_for_calculation > 0 else 0
+
         return {
             'year': y,
             'salespersons': salesperson_list,
@@ -458,5 +470,9 @@ class PLBKPIController(http.Controller):
             'total_target_revenue': company_yearly_target / 1000000,  # Use company target for display
             'ytd_percentage': ytd_percentage,
             'realized_percentage': realized_percentage,
+            # Additional metrics for display
+            'annualized_ytd_gain': annualized_ytd_gain,
+            'current_year_realized': current_year_realized,
+            'target_completion': target_completion,
         }
 
