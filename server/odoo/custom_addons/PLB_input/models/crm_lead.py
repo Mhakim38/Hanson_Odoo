@@ -200,15 +200,41 @@ class CrmLead(models.Model):
             name = (getattr(rec.stage_id, 'name', '') or '').strip().lower()
             rec.is_proposal_submitted_stage = bool(name and 'proposal' in name and 'submitted' in name)
 
+    # New helper boolean: True when moving TO the final Contract stage (Won with probability 100)
+    # This is different from is_contract_stage which is for Shortlisted/Verbal
+    is_final_contract_stage = fields.Boolean(string='Is Final Contract Stage', compute='_compute_is_final_contract_stage', store=True)
+
+    @api.depends('stage_id')
+    def _compute_is_final_contract_stage(self):
+        """Return True if stage is the final Contract/Won stage (probability 100)"""
+        for rec in self:
+            name = (getattr(rec.stage_id, 'name', '') or '').strip().lower()
+            # Check probability first - Won stage typically has probability 100
+            if rec.stage_id:
+                prob = getattr(rec.stage_id, 'probability', False)
+                if prob is not False and prob >= 100:
+                    rec.is_final_contract_stage = True
+                    continue
+            # Otherwise check by name for 'contract' or 'won'
+            rec.is_final_contract_stage = bool(name and ('contract' in name or 'won' in name))
+
     # New helper boolean for views: True when stage is "Contract" or "Loss" (read-only stage)
     is_readonly_stage = fields.Boolean(string='Is Read-Only Stage', compute='_compute_is_readonly_stage', store=True)
 
     @api.depends('stage_id')
     def _compute_is_readonly_stage(self):
-        """Return True if stage name contains 'contract' or 'loss' (case-insensitive)"""
+        """Return True if stage name contains 'contract' or 'loss' (case-insensitive) OR probability >= 100"""
         for rec in self:
             name = (getattr(rec.stage_id, 'name', '') or '').strip().lower()
-            rec.is_readonly_stage = bool(name and ('contract' in name or 'loss' in name))
+            # Check probability first (won/lost stages typically have probability 100 or 0)
+            if rec.stage_id:
+                prob = getattr(rec.stage_id, 'probability', False)
+                # Probability 100 = Won, Probability 0 = Lost
+                if prob is not False and (prob >= 100 or prob == 0):
+                    rec.is_readonly_stage = True
+                    continue
+            # Otherwise check by name
+            rec.is_readonly_stage = bool(name and ('contract' in name or 'loss' in name or 'lost' in name or 'won' in name))
 
     # === COMPUTE METHODS ===
     # Note: contract_months is user-editable. Validation is handled by _check_contract_months.
@@ -320,14 +346,28 @@ class CrmLead(models.Model):
                 return stage
         return Stage.search(domain, limit=1)
 
+    def _find_new_stage(self, team_id=False):
+        """Find a 'New' stage"""
+        Stage = self.env['crm.stage']
+        domain = [('name', 'ilike', 'new')]
+        if team_id:
+            stage = Stage.search([('name', 'ilike', 'new'), ('team_id', 'in', (team_id, False))], limit=1)
+            if stage:
+                return stage
+        return Stage.search(domain, limit=1)
+
+    def _is_contract_final_stage(self):
+        """Check if stage name contains 'contract' (final won stage)"""
+        self.ensure_one()
+        name = (getattr(self.stage_id, 'name', '') or '').strip().lower()
+        return bool(name and 'contract' in name)
+
     @api.onchange('stage_id')
     def _onchange_stage_require_qualify_fields(self):
-        """When user selects a Proposal stage, ensure required fields (operating_profit_margin
-        and quotation_attachment) have been filled. If not, revert to a Qualify stage
-        and show a friendly warning.
-
-        Additionally, when moving to Proposal Submitted stage with Freight Forwarding scope,
-        ensure all freight forwarding fields are filled.
+        """Enhanced validation for stage transitions:
+        1. New -> Qualify: Basic info
+        2. Qualify -> Proposal Submitted: Financial/quotation info
+        3. Any -> Contract: Final contract info
         """
         for rec in self:
             if not rec.stage_id:
@@ -335,12 +375,82 @@ class CrmLead(models.Model):
 
             stage_name = (getattr(rec.stage_id, 'name', '') or '').strip().lower()
 
-            # Check for Proposal stage requirements
-            if self._stage_name_contains(rec.stage_id, 'proposal'):
+            # === NEW → QUALIFY VALIDATION ===
+            if 'qualify' in stage_name:
                 missing = []
+
+                # 1. Customer Name (partner_id)
+                if not rec.partner_id:
+                    missing.append('Customer Name')
+
+                # 2. Project Name (name)
+                if not rec.name or not rec.name.strip():
+                    missing.append('Project Name')
+
+                # 3. Chance (priority)
+                if rec.priority in (False, None, '0'):
+                    missing.append('Chance (Priority)')
+
+                # 4. Expected Start Date
+                if not rec.expected_start_date:
+                    missing.append('Expected Start Date')
+
+                # 5. Scope of Service
+                if not rec.scope_of_service:
+                    missing.append('Scope of Service')
+
+                # 6. Origin Country
+                if not rec.origin_country_id:
+                    missing.append('Origin Country')
+
+                # 7. Destination Country
+                if not rec.destination_country_id:
+                    missing.append('Destination Country')
+
+                # 8. Port of Loading/Destination (if Freight Forwarding)
+                if rec.scope_of_service == 'freight_forwarding':
+                    if not rec.port_of_loading_id:
+                        missing.append('Port of Loading')
+                    if not rec.port_of_destination_id:
+                        missing.append('Port of Destination')
+
+                # 9. Product
+                if not rec.product:
+                    missing.append('Customer Product')
+
+                # 10. Dept/Region
+                if not rec.dept_region:
+                    missing.append('Dept/Region')
+
+                if missing:
+                    # Revert to New stage
+                    new_stage = rec._find_new_stage(team_id=(rec.team_id.id if rec.team_id else False))
+                    if new_stage:
+                        rec.stage_id = new_stage
+                    return {
+                        'warning': {
+                            'title': 'Missing Required Information for Qualify',
+                            'message': 'You must fill the following fields before moving to Qualify: %s.\nThe stage has been reverted to New.' % (', '.join(missing))
+                        }
+                    }
+
+            # === QUALIFY → PROPOSAL SUBMITTED VALIDATION ===
+            if 'proposal' in stage_name:
+                missing = []
+
+                # 1. Expected Revenue
+                if not rec.expected_revenue or rec.expected_revenue <= 0:
+                    missing.append('Expected Revenue')
+
+                # 2. Contract Period (contract_months)
+                if not rec.contract_months or rec.contract_months <= 0:
+                    missing.append('Contract Period (Contract Months)')
+
+                # 3. Operating Profit Margin
                 if rec.operating_profit_margin in (False, None):
                     missing.append('Operating Profit Margin')
-                # Accept either the dedicated quotation_attachment binary OR any existing ir.attachment for this lead
+
+                # 4. Quotation Attachment
                 att_ok = False
                 if rec.quotation_attachment:
                     att_ok = True
@@ -354,7 +464,7 @@ class CrmLead(models.Model):
                     missing.append('Quotation Attachment')
 
                 # Additional check for Proposal Submitted with Freight Forwarding
-                if 'proposal' in stage_name and 'submitted' in stage_name:
+                if 'submitted' in stage_name:
                     if rec.scope_of_service == 'freight_forwarding':
                         if not rec.freight_type:
                             missing.append('Freight Type')
@@ -370,27 +480,119 @@ class CrmLead(models.Model):
                             missing.append('Customer Product')
 
                 if missing:
-                    # revert to a qualify stage (if possible) and show a warning
-                    qualify_stage = self._find_qualify_stage(team_id=(rec.team_id.id if getattr(rec, 'team_id', False) else False))
+                    qualify_stage = rec._find_qualify_stage(team_id=(rec.team_id.id if rec.team_id else False))
                     if qualify_stage:
                         rec.stage_id = qualify_stage
                     return {
                         'warning': {
-                            'title': 'Missing required information',
+                            'title': 'Missing Required Information for Proposal',
                             'message': 'You must fill the following fields before moving to Proposal: %s.\nThe stage has been reverted to Qualify.' % (', '.join(missing))
                         }
                     }
 
+            # === ANY → FINAL CONTRACT VALIDATION ===
+            # Only validate when moving to the FINAL Contract/Won stage (probability 100)
+            # NOT for Shortlisted/Verbal stages
+            if rec.stage_id:
+                prob = getattr(rec.stage_id, 'probability', False)
+                is_final_contract = False
+                if prob is not False and prob >= 100:
+                    is_final_contract = True
+                elif 'contract' in stage_name and 'shortlisted' not in stage_name and 'verbal' not in stage_name:
+                    # Stage name is 'contract' or 'won' but NOT 'shortlisted' or 'verbal'
+                    is_final_contract = True
+
+                if is_final_contract:
+                    missing = []
+
+                    # 1. Remarks (remark field)
+                    if not rec.remark or not rec.remark.strip():
+                        missing.append('Remarks')
+
+                    # 2. Date Secured
+                    if not rec.date_secured:
+                        missing.append('Date Secured')
+
+                    # 3. Date Go Live
+                    if not rec.date_go_live:
+                        missing.append('Date Go Live')
+
+                    # 4. Realized Revenue (automatically calculated, but check if valid)
+                    if not rec.realized_revenue or rec.realized_revenue <= 0:
+                        missing.append('Realized Revenue 2026')
+
+                    # 5. Contract Attachment
+                    att_ok = False
+                    if rec.attachment_file:
+                        att_ok = True
+                    else:
+                        Attachment = self.env['ir.attachment']
+                        if rec.id:
+                            count = Attachment.search_count([('res_model', '=', 'crm.lead'), ('res_id', '=', rec.id)])
+                            if count:
+                                att_ok = True
+                    if not att_ok:
+                        missing.append('Contract Attachment')
+
+                    if missing:
+                        # Revert to previous stage (try to find Shortlisted or Verbal)
+                        prev_stage = self.env['crm.stage'].search([
+                            '|', ('name', 'ilike', 'shortlisted'), ('name', 'ilike', 'verbal')
+                        ], limit=1)
+                        if prev_stage:
+                            rec.stage_id = prev_stage
+                        return {
+                            'warning': {
+                                'title': 'Missing Required Information for Contract',
+                                'message': 'You must fill the following fields before moving to Contract: %s.' % (', '.join(missing))
+                            }
+                        }
+
     @api.model_create_multi
     def create(self, vals_list):
-        # Validate on create: if user tries to create a record in a Proposal stage, prevent it unless required fields are set
+        # Validate on create: if user tries to create a record in Qualify, Proposal or Contract stage, prevent it unless required fields are set
         for vals in vals_list:
             stage_id = vals.get('stage_id')
             if stage_id:
                 stage = self.env['crm.stage'].browse(stage_id)
                 name = (getattr(stage, 'name', '') or '').strip().lower()
+
+                # Check for Qualify stage requirements
+                if 'qualify' in name:
+                    missing = []
+                    if not vals.get('partner_id'):
+                        missing.append('Customer Name')
+                    if not vals.get('name') or not vals.get('name').strip():
+                        missing.append('Project Name')
+                    if vals.get('priority') in (None, False, '0'):
+                        missing.append('Chance (Priority)')
+                    if not vals.get('expected_start_date'):
+                        missing.append('Expected Start Date')
+                    if not vals.get('scope_of_service'):
+                        missing.append('Scope of Service')
+                    if not vals.get('origin_country_id'):
+                        missing.append('Origin Country')
+                    if not vals.get('destination_country_id'):
+                        missing.append('Destination Country')
+                    if vals.get('scope_of_service') == 'freight_forwarding':
+                        if not vals.get('port_of_loading_id'):
+                            missing.append('Port of Loading')
+                        if not vals.get('port_of_destination_id'):
+                            missing.append('Port of Destination')
+                    if not vals.get('product'):
+                        missing.append('Customer Product')
+                    if not vals.get('dept_region'):
+                        missing.append('Dept/Region')
+                    if missing:
+                        raise ValidationError('Cannot create lead in Qualify stage: missing %s.' % (', '.join(missing)))
+
+                # Check for Proposal stage requirements
                 if 'proposal' in name:
                     missing = []
+                    if not vals.get('expected_revenue') or vals.get('expected_revenue', 0) <= 0:
+                        missing.append('Expected Revenue')
+                    if not vals.get('contract_months') or vals.get('contract_months', 0) <= 0:
+                        missing.append('Contract Period (Contract Months)')
                     if vals.get('operating_profit_margin') in (None, False):
                         missing.append('Operating Profit Margin')
                     # check attachment either in vals or existing attachments (none on create)
@@ -415,19 +617,57 @@ class CrmLead(models.Model):
 
                     if missing:
                         raise ValidationError('Cannot create lead in Proposal stage: missing %s. Please fill them while in Qualify stage.' % (', '.join(missing)))
+
+                # Check for FINAL Contract stage requirements (probability 100 or stage name 'contract'/'won')
+                # NOT for Shortlisted/Verbal stages
+                prob = getattr(stage, 'probability', False)
+                is_final_contract = False
+                if prob is not False and prob >= 100:
+                    is_final_contract = True
+                elif 'contract' in name and 'shortlisted' not in name and 'verbal' not in name:
+                    is_final_contract = True
+
+                if is_final_contract:
+                    missing = []
+                    if not vals.get('remark') or not vals.get('remark').strip():
+                        missing.append('Remarks')
+                    if not vals.get('date_secured'):
+                        missing.append('Date Secured')
+                    if not vals.get('date_go_live'):
+                        missing.append('Date Go Live')
+                    if not vals.get('realized_revenue') or vals.get('realized_revenue', 0) <= 0:
+                        missing.append('Realized Revenue 2026')
+                    if not vals.get('attachment_file'):
+                        missing.append('Contract Attachment')
+                    if missing:
+                        raise ValidationError('Cannot create lead in Contract stage: missing %s.' % (', '.join(missing)))
+
         return super(CrmLead, self).create(vals_list)
 
     def write(self, vals):
         # Skip proposal check if context flag is set (used by wizard)
         skip_check = self.env.context.get('skip_proposal_check', False)
 
-        # Check if record is in Contract or Loss stage and prevent editing (except stage_id changes)
+        # === PREVENT MOVING OUT OF OR EDITING IN CONTRACT/LOSS STAGES ===
         for rec in self:
             if rec.is_readonly_stage:
-                # Allow stage changes but prevent other field modifications
-                non_stage_keys = [k for k in vals.keys() if k != 'stage_id']
-                if non_stage_keys:
-                    raise ValidationError('Cannot edit leads in Contract or Loss stage. The data is locked.')
+                # Check if trying to change stage OUT of Contract/Loss
+                if 'stage_id' in vals:
+                    new_stage_id = vals.get('stage_id')
+                    if new_stage_id != rec.stage_id.id:
+                        # Trying to move to a different stage
+                        raise ValidationError(
+                            'Cannot move leads out of Contract or Loss stage. '
+                            'Once a lead is in Contract or Loss stage, it cannot be moved to another stage. '
+                            'The data is locked.'
+                        )
+
+                # Prevent editing ANY field (including stage_id as handled above)
+                if vals:
+                    raise ValidationError(
+                        'Cannot edit leads in Contract or Loss stage. '
+                        'The data is locked for audit purposes.'
+                    )
 
         # For each record, check if user is attempting to move it to a Proposal stage without required fields
         if not skip_check:
@@ -438,8 +678,73 @@ class CrmLead(models.Model):
                 if effective_stage:
                     stage = self.env['crm.stage'].browse(effective_stage)
                     name = (getattr(stage, 'name', '') or '').strip().lower()
+
+                    # === NEW → QUALIFY VALIDATION (in write) ===
+                    if 'qualify' in name:
+                        missing = []
+                        partner = vals.get('partner_id') if 'partner_id' in vals else rec.partner_id
+                        if not partner:
+                            missing.append('Customer Name')
+
+                        lead_name = vals.get('name') if 'name' in vals else rec.name
+                        if not lead_name or not lead_name.strip():
+                            missing.append('Project Name')
+
+                        priority = vals.get('priority') if 'priority' in vals else rec.priority
+                        if priority in (False, None, '0'):
+                            missing.append('Chance (Priority)')
+
+                        exp_start = vals.get('expected_start_date') if 'expected_start_date' in vals else rec.expected_start_date
+                        if not exp_start:
+                            missing.append('Expected Start Date')
+
+                        scope = vals.get('scope_of_service') if 'scope_of_service' in vals else rec.scope_of_service
+                        if not scope:
+                            missing.append('Scope of Service')
+
+                        origin = vals.get('origin_country_id') if 'origin_country_id' in vals else rec.origin_country_id
+                        if not origin:
+                            missing.append('Origin Country')
+
+                        dest = vals.get('destination_country_id') if 'destination_country_id' in vals else rec.destination_country_id
+                        if not dest:
+                            missing.append('Destination Country')
+
+                        if scope == 'freight_forwarding':
+                            pol = vals.get('port_of_loading_id') if 'port_of_loading_id' in vals else rec.port_of_loading_id
+                            if not pol:
+                                missing.append('Port of Loading')
+                            pod = vals.get('port_of_destination_id') if 'port_of_destination_id' in vals else rec.port_of_destination_id
+                            if not pod:
+                                missing.append('Port of Destination')
+
+                        prod = vals.get('product') if 'product' in vals else rec.product
+                        if not prod:
+                            missing.append('Customer Product')
+
+                        dept = vals.get('dept_region') if 'dept_region' in vals else rec.dept_region
+                        if not dept:
+                            missing.append('Dept/Region')
+
+                        if missing:
+                            # Don't raise ValidationError - let onchange handle it to avoid double popup
+                            # The onchange will revert the stage and show user-friendly warning
+                            pass
+
+                    # === QUALIFY → PROPOSAL VALIDATION (in write) ===
                     if 'proposal' in name:
                         missing = []
+
+                        # Check expected_revenue
+                        exp_rev = vals.get('expected_revenue') if 'expected_revenue' in vals else rec.expected_revenue
+                        if not exp_rev or exp_rev <= 0:
+                            missing.append('Expected Revenue')
+
+                        # Check contract_months
+                        contract_mon = vals.get('contract_months') if 'contract_months' in vals else rec.contract_months
+                        if not contract_mon or contract_mon <= 0:
+                            missing.append('Contract Period (Contract Months)')
+
                         # Check operating_profit_margin: if it's being changed in vals, consider that; otherwise use rec
                         opm = vals.get('operating_profit_margin') if 'operating_profit_margin' in vals else rec.operating_profit_margin
                         if opm in (None, False):
@@ -522,6 +827,56 @@ class CrmLead(models.Model):
                                 'target': 'new',
                                 'context': self.env.context,
                             }
+
+                    # === ANY → FINAL CONTRACT VALIDATION (in write) ===
+                    # Only validate when moving to the FINAL Contract/Won stage (probability 100)
+                    # NOT for Shortlisted/Verbal stages
+                    prob = getattr(stage, 'probability', False)
+                    is_final_contract = False
+                    if prob is not False and prob >= 100:
+                        is_final_contract = True
+                    elif 'contract' in name and 'shortlisted' not in name and 'verbal' not in name:
+                        # Stage name is 'contract' or 'won' but NOT 'shortlisted' or 'verbal'
+                        is_final_contract = True
+
+                    if is_final_contract:
+                        missing = []
+
+                        # 1. Remarks (remark field)
+                        remark_val = vals.get('remark') if 'remark' in vals else rec.remark
+                        if not remark_val or not remark_val.strip():
+                            missing.append('Remarks')
+
+                        # 2. Date Secured
+                        date_sec = vals.get('date_secured') if 'date_secured' in vals else rec.date_secured
+                        if not date_sec:
+                            missing.append('Date Secured')
+
+                        # 3. Date Go Live
+                        date_gl = vals.get('date_go_live') if 'date_go_live' in vals else rec.date_go_live
+                        if not date_gl:
+                            missing.append('Date Go Live')
+
+                        # 4. Realized Revenue
+                        real_rev = vals.get('realized_revenue') if 'realized_revenue' in vals else rec.realized_revenue
+                        if not real_rev or real_rev <= 0:
+                            missing.append('Realized Revenue 2026')
+
+                        # 5. Contract Attachment
+                        att_ok = False
+                        if 'attachment_file' in vals and vals.get('attachment_file'):
+                            att_ok = True
+                        elif rec.attachment_file:
+                            att_ok = True
+                        else:
+                            Attachment = self.env['ir.attachment']
+                            if rec.id and Attachment.search_count([('res_model', '=', 'crm.lead'), ('res_id', '=', rec.id)]):
+                                att_ok = True
+                        if not att_ok:
+                            missing.append('Contract Attachment')
+
+                        if missing:
+                            raise ValidationError('Cannot move to Contract stage: missing %s.' % (', '.join(missing)))
 
                 # Existing checks for date_secured and attachment_file constraints
                 # If date_secured included in vals, ensure effective stage is contract
