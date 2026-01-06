@@ -181193,7 +181193,7 @@ return __exports;
 
 /********************************************************
 *  Filepath: /plb_dashboard/static/src/js/dashboard.js  *
-*  Lines: 2866                                          *
+*  Lines: 2867                                          *
 ********************************************************/
 odoo.define('@plb_dashboard/js/dashboard', ['@web/core/registry', '@odoo/owl', '@web/core/utils/hooks'], function (require) {
 'use strict';
@@ -183974,20 +183974,18 @@ PLBDashboard.template = xml/* xml */ `
                     <table class="table table-bordered table-hover table-sm sticky-head plb-data-table mb-3" style="border-collapse:collapse; border-spacing:0;">
                         <thead class="table-light">
                             <tr>
-                                <th rowspan="2">Company</th>
-                                <th rowspan="2">Project Name</th>
-                                <th rowspan="2">Salesperson</th>
-                                <th rowspan="2">Week</th>
-                                <th rowspan="2">Month</th>
+                                <th rowspan="2">No.</th>
                                 <th rowspan="2">Quarter</th>
+                                <th rowspan="2">Sales</th>
                                 <th rowspan="2">Stage</th>
-                                <th rowspan="2">Annualized Revenue</th>
                                 <th rowspan="2">Services</th>
-                                <!-- Dept/Region column removed -->
+                                <th rowspan="2">Customer</th>
+                                <th rowspan="2">Annualized Revenue</th>
                                 <th colspan="12" class="text-center">Realized Revenue (Months)</th>
-                                <th rowspan="2">Realized FY2025</th>
-                                <th rowspan="2">Carry Forward</th>
-                                 <!-- Profit Margin column removed -->
+                                <th rowspan="2">Month</th>
+                                <th rowspan="2">Week</th>
+                                <th rowspan="2">Realized Revenue 2025</th>
+                                <th rowspan="2">Carry Forward 2026</th>
                              </tr>
                             <tr>
                                 <th>Jan</th><th>Feb</th><th>Mar</th><th>Apr</th><th>May</th><th>Jun</th>
@@ -183999,33 +183997,34 @@ PLBDashboard.template = xml/* xml */ `
                         <t t-set="contractRows" t-value="getFilteredTableRows().filter(r => r.stage &amp;&amp; r.stage.toLowerCase().includes('contract'))"/>
                         <t t-if="contractRows &amp;&amp; contractRows.length">
                             <tr t-foreach="contractRows" t-as="row" t-key="row.id">
-                                <td><t t-esc="row.company || 'NULL'"/></td>
-                                <td><t t-esc="row.customer || 'NULL'"/></td>
+                                <td class="text-center"><t t-esc="row_index + 1"/></td>
+                                <td class="text-center"><t t-esc="row.quarter || '-'"/></td>
                                 <td><t t-esc="formatText(row.salesperson)"/></td>
-                                <td><t t-esc="row.week || '-'"/></td>
-                                <td><t t-esc="row.month || '-'"/></td>
-                                <td><t t-esc="row.quarter || '-'"/></td>
                                 <td><t t-esc="row.stage || 'NULL'"/></td>
-                                <td class="text-end"><t t-esc="formatCurrency(row.sales)"/></td>
                                 <td><t t-esc="formatText(row.services)"/></td>
+                                <td><t t-esc="row.customer || 'NULL'"/></td>
+                                <td class="text-end"><t t-esc="formatCurrency(row.sales)"/></td>
 
                                 <!-- Loop for monthly revenue -->
                                 <t t-foreach="row.monthlyRevenue || []" t-as="month" t-key="month">
                                     <td class="text-end"><t t-esc="formatCurrency(month)"/></td>
                                 </t>
+
+                                <td class="text-center"><t t-esc="row.month || '-'"/></td>
+                                <td class="text-center"><t t-esc="row.week || '-'"/></td>
                                 <td class="text-end"><t t-esc="formatCurrency(row.realizedRevenue)"/></td>
                                 <td class="text-end"><t t-esc="formatCurrency(row.carryForward)"/></td>
                             </tr>
                         </t>
                         <t t-else="">
                             <tr>
-                                <td colspan="23" class="text-center text-muted">No contract stage data available</td>
+                                <td colspan="21" class="text-center text-muted">No contract stage data available</td>
                             </tr>
                         </t>
                      </t>
                      <t t-else="">
                          <tr>
-                            <td colspan="23" class="text-center text-muted">No data available</td>
+                            <td colspan="21" class="text-center text-muted">No data available</td>
                          </tr>
                      </t>
                  </tbody>
@@ -184033,19 +184032,21 @@ PLBDashboard.template = xml/* xml */ `
                      <!-- Emphasized subtotal row: double top/bottom border only on monthly columns -->
                      <tr style="font-weight:700; background:#f8f9fa;">
                          <!-- remove bottom border on the leading label cell so the double line won't continue across -->
-                         <td colspan="9" class="text-end plb-subtotal-no-bottom"><strong>Monthly Subtotal</strong></td>
+                         <td colspan="7" class="text-end plb-subtotal-no-bottom"><strong>Monthly Subtotal</strong></td>
                          <!-- Double top and bottom border only on monthly columns (Jan..Dec) -->
                          <t t-foreach="state.monthlySubtotals" t-as="m" t-key="m">
                              <td class="text-end plb-month-border" style="font-weight:700;"><t t-esc="formatCurrency(m)"/></td>
                          </t>
+                         <td colspan="4"></td>
                      </tr>
 
                      <!-- Cumulative row: slightly lighter styling, no full-width top border so the double line appears only under monthly columns -->
                      <tr style="font-weight:600; background:#ffffff;">
-                         <td colspan="9" class="text-end plb-cumulative-no-top"><strong>Cumulative</strong></td>
+                         <td colspan="7" class="text-end plb-cumulative-no-top"><strong>Cumulative</strong></td>
                          <t t-foreach="state.monthlyCumulative" t-as="c" t-key="c">
                              <td class="text-end plb-cumulative-no-top" style="font-weight:600;"><t t-esc="formatCurrency(c)"/></td>
                          </t>
+                         <td colspan="4"></td>
                      </tr>
                  </tfoot>
              </table>
@@ -201483,4 +201484,4 @@ return __exports;
 </templates>`);
                     });
 
-//# sourceMappingURL=/web/assets/aa7f445/web.assets_web.js.map
+//# sourceMappingURL=/web/assets/54f8446/web.assets_web.js.map
