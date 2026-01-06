@@ -365,13 +365,13 @@ export class PLBKPI extends Component {
     }
 
     .plb-team-summary-table thead th {
-        background: linear-gradient(135deg, #0D47A1 0%, #1565C0 100%);
-        color: #FFFFFF;
+        background: #f2f4f7;
+        color: #1A1A1A;
         padding: 14px 10px;
         text-align: center;
         font-weight: 700;
         font-size: 12px;
-        border: 1px solid rgba(255, 255, 255, 0.2);
+        border: 1px solid #D0D5DD;
         text-transform: uppercase;
         letter-spacing: 0.5px;
         vertical-align: middle;
