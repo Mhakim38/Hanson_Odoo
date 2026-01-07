@@ -13,7 +13,7 @@ class CrmLead(models.Model):
     )
     # Make contract_months editable by user. Server constraint enforces ranges.
     contract_months = fields.Integer(
-        string='Contract Months',
+        string='Number of Months',
         default=12,
     )
 
@@ -59,6 +59,16 @@ class CrmLead(models.Model):
 
     show_freight_type = fields.Boolean(compute='_compute_show_freight_type', store=False)
 
+    @api.onchange('contract_type')
+    def _onchange_contract_type(self):
+        """Auto-set contract_months based on contract_type"""
+        if self.contract_type == 'long_term':
+            self.contract_months = 12
+        elif self.contract_type == 'adhoc':
+            # Set to a reasonable default within adhoc range (1-11)
+            if not self.contract_months or self.contract_months < 1 or self.contract_months > 11:
+                self.contract_months = 1
+
     # 3. Locations
     origin_country_id = fields.Many2one('res.country', string='Origin Country')
     destination_country_id = fields.Many2one('res.country', string='Destination Country')
@@ -86,7 +96,7 @@ class CrmLead(models.Model):
     ], string='Dept/Region')
 
     realized_revenue = fields.Monetary(
-        string='Realized Revenue (MYR)',
+        string='Forecast Revenue for Current Year',
         currency_field='company_currency',
         compute='_compute_realized_revenue',
         store=True,
@@ -156,14 +166,14 @@ class CrmLead(models.Model):
     )
 
     # New fields requested
-    remark = fields.Text(string='Remark')
+    remark = fields.Text(string='Remarks/Contract Period/Adhoc')
     # Use tags for multiple emails (many2many), since direct access to stand-alone email records is not allowed.
     tag_ids = fields.Many2many('crm.lead.tag', 'crm_lead_tag_rel', 'lead_id', 'tag_id', string='Other Emails',
                                help='Tag-style free-form email entries (enter multiple).')
 
     operating_profit_margin = fields.Float(
         string='Operating Profit Margin (%)',
-        digits=(16, 0),
+        digits=(16, 2),
     )
 
 
@@ -246,7 +256,6 @@ class CrmLead(models.Model):
     # === COMPUTE METHODS ===
     # Note: contract_months is user-editable. Validation is handled by _check_contract_months.
 
-    @api.depends('id')
     def _compute_row_number(self):
         """Compute row number for tree view display."""
         for index, rec in enumerate(self, start=1):
@@ -273,29 +282,9 @@ class CrmLead(models.Model):
                 if not (1 <= (rec.contract_months or 0) <= 11):
                     raise ValidationError('Adhoc contracts must have Contract Months between 1 and 11.')
             elif rec.contract_type == 'long_term':
-                if (rec.contract_months or 0) < 12:
-                    raise ValidationError('Long Term contracts must have Contract Months of at least 12.')
+                if (rec.contract_months or 0) != 12:
+                    raise ValidationError('Long Term contracts need to be 12.')
 
-    @api.onchange('contract_type', 'contract_months')
-    def _onchange_contract_months(self):
-        """Provide an immediate UI warning when contract_months is outside allowed ranges for the selected contract_type."""
-        for rec in self:
-            if rec.contract_type == 'adhoc':
-                if not (1 <= (rec.contract_months or 0) <= 11):
-                    return {
-                        'warning': {
-                            'title': 'Invalid Contract Months',
-                            'message': 'Adhoc contracts must have Contract Months between 1 and 11.'
-                        }
-                    }
-            elif rec.contract_type == 'long_term':
-                if (rec.contract_months or 0) >=1 and (rec.contract_months or 0) <=11:
-                    return {
-                        'warning': {
-                            'title': 'Invalid Contract Months',
-                            'message': 'Long Term contracts must have Contract Months of at least 12.'
-                        }
-                    }
 
     @api.constrains('stage_id', 'date_secured')
     def _check_won_requirements(self):

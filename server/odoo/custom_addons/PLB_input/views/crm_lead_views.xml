@@ -23,6 +23,10 @@
                 <button name="action_decline" string="Decline" type="object" class="btn-danger" groups="base.group_system"/>
             </xpath>
 
+            <xpath expr="//field[@name='expected_revenue']" position="attributes">
+                <attribute name="string">Value Per Annum</attribute>
+            </xpath>
+
             <!-- Hide Expected Closing (date_deadline) -->
             <xpath expr="//label[@for='date_deadline']" position="attributes">
                 <attribute name="invisible">1</attribute>
@@ -51,7 +55,7 @@
                 <group colspan="2">
                     <group string="Contract Details">
                         <field name="contract_type" widget="radio" readonly="is_readonly_stage"/>
-                        <field name="contract_months" readonly="is_readonly_stage"/>
+                        <field name="contract_months" string="Number of Months" readonly="is_readonly_stage"/>
                         <field name="expected_start_date" readonly="is_readonly_stage"/>
                         <!-- date_secured readonly unless computed boolean is_contract_stage is True -->
                         <field name="date_secured" readonly="not is_contract_stage or is_readonly_stage"/>
@@ -139,7 +143,7 @@
         <field name="inherit_id" ref="crm.crm_case_tree_view_oppor"/>
         <field name="arch" type="xml">
             <xpath expr="field[@name='partner_id']" position="before">
-<!--                <field name="row_number"/>-->
+                <field name="row_number"/>
             </xpath>
             <xpath expr="field[@name='priority']" position="before">
                 <field name="operating_profit_margin" widget="percentage" optional="show"/>
@@ -148,7 +152,7 @@
                 <attribute name="string">PIC</attribute>
             </xpath>
             <xpath expr="field[@name='name']" position="attributes">
-                <attribute name="string">Initiative/Project Description madefakerr</attribute>
+                <attribute name="string">Initiative/Project Description</attribute>
             </xpath>
             <xpath expr="field[@name='name']" position="after">
                 <field name="team_id" invisible="1" optional="show"/>
@@ -168,7 +172,7 @@
                 <field name="scope_of_service" string="Scope of Service" optional="show"/>
                 <field name="product" string="Product" optional="show"/>
                 <field name="dept_region" string="Dept/Region" optional="show"/>
-                <field name="realized_revenue" sum="Realized Revenue" optional="show" widget="monetary" options="{'currency_field': 'company_currency'}"/>
+                <field name="realized_revenue" sum="Forecast Revenue for Current Year" optional="show" widget="monetary" options="{'currency_field': 'company_currency'}"/>
                 <field name="origin_country_id" optional="show"/>
                 <field name="destination_country_id" optional="show"/>
                 <field name="port_of_loading_id" optional="show"/>
