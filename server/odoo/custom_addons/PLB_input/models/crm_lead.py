@@ -17,6 +17,13 @@ class CrmLead(models.Model):
         default=12,
     )
 
+    # Row number for tree view display
+    row_number = fields.Integer(
+        string='No.',
+        compute='_compute_row_number',
+        store=False
+    )
+
     expected_start_date = fields.Date(string='Expected Start Date')
     date_go_live = fields.Date(string='Date Go Live')
 
@@ -80,7 +87,7 @@ class CrmLead(models.Model):
 
     realized_revenue = fields.Monetary(
         string='Realized Revenue (MYR)',
-        currency_field='company_currency_id',
+        currency_field='company_currency',
         compute='_compute_realized_revenue',
         store=True,
         readonly=False
@@ -156,7 +163,7 @@ class CrmLead(models.Model):
 
     operating_profit_margin = fields.Float(
         string='Operating Profit Margin (%)',
-        digits=(5, 2),
+        digits=(16, 0),
     )
 
 
@@ -238,6 +245,12 @@ class CrmLead(models.Model):
 
     # === COMPUTE METHODS ===
     # Note: contract_months is user-editable. Validation is handled by _check_contract_months.
+
+    @api.depends('id')
+    def _compute_row_number(self):
+        """Compute row number for tree view display."""
+        for index, rec in enumerate(self, start=1):
+            rec.row_number = index
 
     # Helper to determine if a stage should be treated as 'won'.
     def _is_won_stage(self):
@@ -808,7 +821,7 @@ class CrmLead(models.Model):
                                 'target_stage_id': effective_stage,
                                 'message': 'You must fill the following fields before moving to Proposal: %s.\nThe stage has been reverted to Qualify.' % (', '.join(missing)),
                                 'operating_profit_margin': rec.operating_profit_margin,
-                                'currency_id': rec.company_currency_id.id,
+                                'currency_id': rec.company_currency.id,
                                 'freight_type': rec.freight_type,
                                 'origin_country_id': rec.origin_country_id.id if rec.origin_country_id else False,
                                 'destination_country_id': rec.destination_country_id.id if rec.destination_country_id else False,

@@ -53,9 +53,9 @@
                         <field name="contract_type" widget="radio" readonly="is_readonly_stage"/>
                         <field name="contract_months" readonly="is_readonly_stage"/>
                         <field name="expected_start_date" readonly="is_readonly_stage"/>
-                        <field name="date_go_live" readonly="is_readonly_stage"/>
                         <!-- date_secured readonly unless computed boolean is_contract_stage is True -->
                         <field name="date_secured" readonly="not is_contract_stage or is_readonly_stage"/>
+                        <field name="date_go_live" readonly="is_readonly_stage"/>
                         <!-- New: inline attachment stored on the lead; editable only in Shortlisted or Verbal stages -->
                         <field name="attachment_file" filename="attachment_filename" readonly="not is_contract_stage or is_readonly_stage"/>
                         <field name="attachment_filename" readonly="1"/>
@@ -90,7 +90,7 @@
                         <field name="realized_revenue" readonly="is_readonly_stage"/>
                         <!-- moved fields: remark, operating_profit_margin -->
                         <field name="remark" readonly="is_readonly_stage"/>
-                        <field name="operating_profit_margin" widget="percent" readonly="is_readonly_stage"/>
+                        <field name="operating_profit_margin" widget="percentage" readonly="is_readonly_stage"/>
                         <!-- Quotation attachment required in Qualify and editable in Qualify stage -->
                         <field name="quotation_attachment" filename="quotation_attachment_filename" readonly="is_readonly_stage"/>
                         <field name="quotation_attachment_filename" readonly="1"/>
@@ -138,6 +138,18 @@
         <field name="model">crm.lead</field>
         <field name="inherit_id" ref="crm.crm_case_tree_view_oppor"/>
         <field name="arch" type="xml">
+            <xpath expr="field[@name='partner_id']" position="before">
+<!--                <field name="row_number"/>-->
+            </xpath>
+            <xpath expr="field[@name='priority']" position="before">
+                <field name="operating_profit_margin" widget="percentage" optional="show"/>
+            </xpath>
+            <xpath expr="field[@name='user_id']" position="attributes">
+                <attribute name="string">PIC</attribute>
+            </xpath>
+            <xpath expr="field[@name='name']" position="attributes">
+                <attribute name="string">Initiative/Project Description madefakerr</attribute>
+            </xpath>
             <xpath expr="field[@name='name']" position="after">
                 <field name="team_id" invisible="1" optional="show"/>
 <!--                <field name="name" string="Project" optional="show"/>-->
@@ -147,16 +159,20 @@
 <!--                <field name="create_date" string="Date Funnel" optional="show"/>-->
             </xpath>
             <xpath expr="field[@name='stage_id']" position="after">
-                <field name="description" string="Remarks" optional="show"/>
+                <field name="description" string="Remarks/Contract Period/Adhoc" optional="show"/>
             </xpath>
             <xpath expr="field[@name='create_date']" position="after">
                 <field name="expected_start_date" string="Expected Start Date" optional="show"/>
                 <field name="date_secured" string="Date Secured" optional="show"/>
                 <field name="date_go_live" string="Date Go Live" optional="show"/>
-                <field name="scope_of_service" string="Scope of service" optional="show"/>
+                <field name="scope_of_service" string="Scope of Service" optional="show"/>
                 <field name="product" string="Product" optional="show"/>
-                <field name="dept_region" string="Dept/region" optional="show"/>
-                <field name="realized_revenue" optional="show"/>
+                <field name="dept_region" string="Dept/Region" optional="show"/>
+                <field name="realized_revenue" sum="Realized Revenue" optional="show" widget="monetary" options="{'currency_field': 'company_currency'}"/>
+                <field name="origin_country_id" optional="show"/>
+                <field name="destination_country_id" optional="show"/>
+                <field name="port_of_loading_id" optional="show"/>
+                <field name="port_of_destination_id" optional="show"/>
             </xpath>
 <!--            <xpath expr="//field[@name='create_date']" position="after">-->
 <!--                <field name="priority" widget="priority"/>-->
