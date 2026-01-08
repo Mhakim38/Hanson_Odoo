@@ -901,7 +901,7 @@ export class PLBDashboard extends Component {
             for (let i = 0; i <= tickCount; i++) {
                 const val = i * step;
                 const y = marginTop + ((1 - Math.min(val / maxVal, 1)) * plotH);
-                ticks.push({ y: y, label: `${val.toFixed(1)}` });
+                ticks.push({ y: y, label: `${val.toFixed(1)}`, idx: i });
             }
 
             const filteredPoints = sCur.flatPoints.filter(p => p); const filteredPrev = sPrev.flatPoints.filter(p => p);
@@ -1033,7 +1033,7 @@ export class PLBDashboard extends Component {
             for (let i = 0; i <= tickCount; i++) {
                 const val = i * step;
                 const y = marginTop + plotH - ((val / maxVal) * plotH);
-                ticks.push({ y: y, label: `${val.toFixed(1)}` });
+                ticks.push({ y: y, label: `${val.toFixed(1)}`, idx: i });
             }
 
             this.state.pipelineRegionSeries = {
@@ -1159,7 +1159,7 @@ export class PLBDashboard extends Component {
             for (let i = 0; i <= tickCount; i++) {
                 const val = i * step;
                 const y = marginTop + ((1 - Math.min(val / maxVal, 1)) * plotH);
-                ticks.push({ y: y, label: `${val.toFixed(1)}` });
+                ticks.push({ y: y, label: `${val.toFixed(1)}`, idx: i });
             }
 
             this.state.avgPipelinePerPersonSeries = {
@@ -1288,7 +1288,7 @@ export class PLBDashboard extends Component {
             for (let i = 0; i <= tickCount; i++) {
                 const val = i * step;
                 const y = marginTop + ((1 - Math.min(val / maxVal, 1)) * plotH);
-                ticks.push({ y: y, label: `${val.toFixed(1)}` });
+                ticks.push({ y: y, label: `${val.toFixed(1)}`, idx: i });
             }
 
             this.state.avgPipelinePerPersonByRegionSeries = {
@@ -2423,7 +2423,7 @@ PLBDashboard.template = xml/* xml */ `
                             <svg width="100%" height="100%" viewBox="0 0 600 320" aria-label="Total pipeline YTD chart">
                                 <!-- horizontal month axis (x) and vertical revenue grid (y) -->
                                 <g class="grid" stroke="#e9ecef" stroke-width="0.6">
-                                    <t t-foreach="state.pipelineSeries &amp;&amp; state.pipelineSeries.ticks || []" t-as="tk" t-key="tk.y">
+                                    <t t-foreach="state.pipelineSeries &amp;&amp; state.pipelineSeries.ticks || []" t-as="tk" t-key="'ptk-'+tk.idx">
                                         <line t-att-x1="60" t-att-y1="tk.y" t-att-x2="580" t-att-y2="tk.y"/>
                                     </t>
                                 </g>
@@ -2468,7 +2468,7 @@ PLBDashboard.template = xml/* xml */ `
                                 </t>
 
                                 <!-- y ticks labels -->
-                                <t t-foreach="state.pipelineSeries &amp;&amp; state.pipelineSeries.ticks || []" t-as="tk" t-key="tk.y">
+                                <t t-foreach="state.pipelineSeries &amp;&amp; state.pipelineSeries.ticks || []" t-as="tk" t-key="'ptkl-'+tk.idx">
                                     <text t-att-x="48" t-att-y="tk.y + 4" text-anchor="end" fill="#333" font-size="11px"><t t-esc="tk.label"/>M</text>
                                 </t>
 
@@ -2501,7 +2501,7 @@ PLBDashboard.template = xml/* xml */ `
                             <svg width="100%" height="100%" viewBox="0 0 600 320" aria-label="Total pipeline YTD by Dept/Region chart">
                                 <!-- Grid lines -->
                                 <g class="grid" stroke="#e9ecef" stroke-width="0.6">
-                                    <t t-foreach="state.pipelineRegionSeries &amp;&amp; state.pipelineRegionSeries.ticks || []" t-as="tk" t-key="'prtk-'+tk.y">
+                                    <t t-foreach="state.pipelineRegionSeries &amp;&amp; state.pipelineRegionSeries.ticks || []" t-as="tk" t-key="'prtk-'+tk.idx">
                                         <line t-att-x1="80" t-att-y1="tk.y" t-att-x2="580" t-att-y2="tk.y"/>
                                     </t>
                                 </g>
@@ -2538,7 +2538,7 @@ PLBDashboard.template = xml/* xml */ `
                                 </t>
 
                                 <!-- Y-axis tick labels -->
-                                <t t-foreach="state.pipelineRegionSeries &amp;&amp; state.pipelineRegionSeries.ticks || []" t-as="tk" t-key="'prtk2-'+tk.y">
+                                <t t-foreach="state.pipelineRegionSeries &amp;&amp; state.pipelineRegionSeries.ticks || []" t-as="tk" t-key="'prtk2-'+tk.idx">
                                     <text t-att-x="68" t-att-y="tk.y + 4" text-anchor="end" fill="#333" font-size="11px"><t t-esc="tk.label"/>M</text>
                                 </t>
 
@@ -2572,7 +2572,7 @@ PLBDashboard.template = xml/* xml */ `
                             <svg width="100%" height="100%" viewBox="0 0 600 320" aria-label="Avg pipeline per person chart">
                                 <!-- Grid lines -->
                                 <g class="grid" stroke="#e9ecef" stroke-width="0.6">
-                                    <t t-foreach="state.avgPipelinePerPersonSeries &amp;&amp; state.avgPipelinePerPersonSeries.ticks || []" t-as="tk" t-key="'apptk-'+tk.y">
+                                    <t t-foreach="state.avgPipelinePerPersonSeries &amp;&amp; state.avgPipelinePerPersonSeries.ticks || []" t-as="tk" t-key="'apptk-'+tk.idx">
                                         <line t-att-x1="80" t-att-y1="tk.y" t-att-x2="580" t-att-y2="tk.y"/>
                                     </t>
                                 </g>
@@ -2609,7 +2609,7 @@ PLBDashboard.template = xml/* xml */ `
                                 </t>
 
                                 <!-- y ticks labels -->
-                                <t t-foreach="state.avgPipelinePerPersonSeries &amp;&amp; state.avgPipelinePerPersonSeries.ticks || []" t-as="tk" t-key="'apptl-'+tk.y">
+                                <t t-foreach="state.avgPipelinePerPersonSeries &amp;&amp; state.avgPipelinePerPersonSeries.ticks || []" t-as="tk" t-key="'apptl-'+tk.idx">
                                     <text t-att-x="48" t-att-y="tk.y + 4" text-anchor="end" fill="#333" font-size="11px"><t t-esc="tk.label"/>M</text>
                                 </t>
 
@@ -2641,7 +2641,7 @@ PLBDashboard.template = xml/* xml */ `
                             <svg width="100%" height="100%" viewBox="0 0 600 320" aria-label="Avg pipeline per person by Region chart">
                                 <!-- Grid lines -->
                                 <g class="grid" stroke="#e9ecef" stroke-width="0.6">
-                                    <t t-foreach="state.avgPipelinePerPersonByRegionSeries &amp;&amp; state.avgPipelinePerPersonByRegionSeries.ticks || []" t-as="tk" t-key="'apprtk-'+tk.y">
+                                    <t t-foreach="state.avgPipelinePerPersonByRegionSeries &amp;&amp; state.avgPipelinePerPersonByRegionSeries.ticks || []" t-as="tk" t-key="'apprtk-'+tk.idx">
                                         <line t-att-x1="80" t-att-y1="tk.y" t-att-x2="580" t-att-y2="tk.y"/>
                                     </t>
                                 </g>

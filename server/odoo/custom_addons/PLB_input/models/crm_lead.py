@@ -103,35 +103,35 @@ class CrmLead(models.Model):
         readonly=False
     )
 
-    @api.depends('expected_revenue', 'contract_months', 'expected_start_date')
+    @api.depends('expected_revenue', 'contract_months', 'date_go_live')
     def _compute_realized_revenue(self):
         """
         Calculate realized revenue based on:
         - MAR (Monthly Annualized Revenue) = Expected Revenue / Contract Months
-        - RR = MAR * (12 - Current Month(Expected Start Date) + 1)
+        - RR = MAR * (12 - Current Month(Date Go Live) + 1)
         """
         for rec in self:
             realized_revenue = 0.0
 
             sales = rec.expected_revenue or 0.0
             contract_months = rec.contract_months or 0
-            expected_start = rec.expected_start_date
+            go_live_date = rec.date_go_live
 
             # Only calculate if we have all required fields
-            if not expected_start or not contract_months or contract_months <= 0:
+            if not go_live_date or not contract_months or contract_months <= 0:
                 rec.realized_revenue = 0.0
                 continue
 
-            # Parse start month from expected_start_date
+            # Parse start month from date_go_live
             start_month = None
-            if isinstance(expected_start, str):
+            if isinstance(go_live_date, str):
                 try:
-                    start_month = int(expected_start.split('-')[1])
+                    start_month = int(go_live_date.split('-')[1])
                 except Exception:
                     start_month = None
             else:
                 try:
-                    start_month = expected_start.month
+                    start_month = go_live_date.month
                 except Exception:
                     start_month = None
 
@@ -535,7 +535,7 @@ class CrmLead(models.Model):
                             if count:
                                 att_ok = True
                     if not att_ok:
-                        missing.append('Contract Attachment')
+                        missing.append('Attachment file')
 
                     if missing:
                         # Revert to previous stage (try to find Shortlisted or Verbal)
