@@ -99,7 +99,7 @@ class PLBDashboardController(http.Controller):
             # Financial calculations based on user's spec:
             # MAR (Monthly Annualized Revenue) = Expected Revenue / Contract Months
             # Realized Revenue (RR) = MAR * (12 - Date Go Live month + 1) BUT capped by contract months
-            # Carry Forward = Expected Revenue - RR
+            # Carry Forward = Value Per Annum - RR
 
             sales = lead.get('expected_revenue', 0) or 0
             contract_months = lead.get('contract_months', 0) or 0
@@ -1024,7 +1024,7 @@ class PLBDashboardController(http.Controller):
         return {
             'year': y,
             'company_yearly_target': company_yearly_target / 1000000,  # In millions
-            'total_ytd_revenue': total_expected_revenue / 1000000,  # Expected Revenue in millions
+            'total_ytd_revenue': total_expected_revenue / 1000000,  # Value Per Annum in millions
             'total_realized_revenue': total_realized_revenue_ytd / 1000000,  # Realized revenue in millions
             'ytd_percentage': ytd_percentage,
             'realized_percentage': realized_percentage,

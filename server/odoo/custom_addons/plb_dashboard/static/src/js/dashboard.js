@@ -2068,7 +2068,7 @@ PLBDashboard.template = xml/* xml */ `
             <div class="col-12 col-sm-6 col-lg-3">
                 <div class="card plb-summary-card card-blue text-center">
                     <div class="card-body">
-                        <h6>Expected Revenue</h6>
+                        <h6>Value Per Annum</h6>
                         <h3 style="font-size: 1.25rem;"><t t-esc="formatCurrency(state.revenueSummary.total_expected_revenue)"/></h3>
                     </div>
                 </div>
@@ -2076,7 +2076,7 @@ PLBDashboard.template = xml/* xml */ `
             <div class="col-12 col-sm-6 col-lg-3">
                 <div class="card plb-summary-card card-red text-center">
                     <div class="card-body">
-                        <h6>Realized FY2025</h6>
+                        <h6>Forecast Revenue <t t-esc="state.filters.year || new Date().getFullYear()"/></h6>
                         <h3 style="font-size: 1.25rem;"><t t-esc="formatCurrency(state.revenueSummary.total_realized_revenue)"/></h3>
                     </div>
                 </div>
@@ -2170,7 +2170,7 @@ PLBDashboard.template = xml/* xml */ `
                 <div class="plb-gauge-value">
                     <t t-esc="formatNumber(state.total_ytd_revenue)"/> M
                 </div>
-                <div class="plb-gauge-label">Expected Revenue (Millions)</div>
+                <div class="plb-gauge-label">Value Per Annum (Millions)</div>
                 <span class="plb-gauge-status" t-att-class="getGaugeStatus(state.ytd_percentage).toLowerCase()">
                     <t t-esc="getGaugeStatus(state.ytd_percentage)"/>
                 </span>
@@ -2214,7 +2214,7 @@ PLBDashboard.template = xml/* xml */ `
                 <div class="plb-gauge-value">
                     <t t-esc="formatNumber(state.total_realized_revenue)"/> M
                 </div>
-                <div class="plb-gauge-label">Monthly Subtotal YTD (Millions)</div>
+                <div class="plb-gauge-label">Forecast Revenue (Millions)</div>
                 <span class="plb-gauge-status" t-att-class="getGaugeStatus(state.realized_percentage).toLowerCase()">
                     <t t-esc="getGaugeStatus(state.realized_percentage)"/>
                 </span>

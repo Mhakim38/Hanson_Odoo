@@ -438,7 +438,7 @@ class PLBKPIController(http.Controller):
         company_target_for_calculation = company_yearly_target if company_yearly_target > 0 else total_target_revenue
 
         # YTD Rev Target percentage: Uses EXPECTED_REVENUE (direct sum, not annualized)
-        # Formula: Expected Revenue (sum of expected_revenue) / Company Yearly Target × 100
+        # Formula: Value Per Annum (sum of expected_revenue) / Company Yearly Target × 100
         ytd_percentage = (total_ytd_revenue / company_target_for_calculation * 100) if company_target_for_calculation > 0 else 0
 
         # Realized Rev Target percentage: Uses Monthly Subtotal (YTD) - sum of MAR
@@ -465,7 +465,7 @@ class PLBKPIController(http.Controller):
             # Company target
             'company_yearly_target': company_yearly_target / 1000000,  # In millions
             # Gauge data (in millions)
-            'total_ytd_revenue': total_ytd_revenue / 1000000,  # Expected Revenue (sum) in millions
+            'total_ytd_revenue': total_ytd_revenue / 1000000,  # Value Per Annum (sum) in millions
             'total_realized_revenue': total_realized_revenue / 1000000,  # Realized revenue in millions
             'total_target_revenue': company_yearly_target / 1000000,  # Use company target for display
             'ytd_percentage': ytd_percentage,

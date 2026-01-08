@@ -183268,7 +183268,7 @@ PLBDashboard.template = xml/* xml */ `
             <div class="col-12 col-sm-6 col-lg-3">
                 <div class="card plb-summary-card card-blue text-center">
                     <div class="card-body">
-                        <h6>Expected Revenue</h6>
+                        <h6>Value Per Annum</h6>
                         <h3 style="font-size: 1.25rem;"><t t-esc="formatCurrency(state.revenueSummary.total_expected_revenue)"/></h3>
                     </div>
                 </div>
@@ -183276,7 +183276,7 @@ PLBDashboard.template = xml/* xml */ `
             <div class="col-12 col-sm-6 col-lg-3">
                 <div class="card plb-summary-card card-red text-center">
                     <div class="card-body">
-                        <h6>Realized FY2025</h6>
+                        <h6>Forecast Revenue <t t-esc="state.filters.year || new Date().getFullYear()"/></h6>
                         <h3 style="font-size: 1.25rem;"><t t-esc="formatCurrency(state.revenueSummary.total_realized_revenue)"/></h3>
                     </div>
                 </div>
@@ -183370,7 +183370,7 @@ PLBDashboard.template = xml/* xml */ `
                 <div class="plb-gauge-value">
                     <t t-esc="formatNumber(state.total_ytd_revenue)"/> M
                 </div>
-                <div class="plb-gauge-label">Expected Revenue (Millions)</div>
+                <div class="plb-gauge-label">Value Per Annum (Millions)</div>
                 <span class="plb-gauge-status" t-att-class="getGaugeStatus(state.ytd_percentage).toLowerCase()">
                     <t t-esc="getGaugeStatus(state.ytd_percentage)"/>
                 </span>
@@ -183414,7 +183414,7 @@ PLBDashboard.template = xml/* xml */ `
                 <div class="plb-gauge-value">
                     <t t-esc="formatNumber(state.total_realized_revenue)"/> M
                 </div>
-                <div class="plb-gauge-label">Monthly Subtotal YTD (Millions)</div>
+                <div class="plb-gauge-label">Forecast Revenue (Millions)</div>
                 <span class="plb-gauge-status" t-att-class="getGaugeStatus(state.realized_percentage).toLowerCase()">
                     <t t-esc="getGaugeStatus(state.realized_percentage)"/>
                 </span>
@@ -184774,12 +184774,12 @@ const PLBKPI = __exports.PLBKPI = class PLBKPI extends Component {
                 <div class="plb-metric-card success">
                     <div class="plb-metric-label">Annualized YTD Gain</div>
                     <div class="plb-metric-value highlight-green">MYR <t t-esc="formatNumber(state.annualized_ytd_gain)"/> M</div>
-                    <div class="plb-metric-subtitle">Expected revenue (contract stage)</div>
+                    <div class="plb-metric-subtitle">Value Per Annum (contract stage)</div>
                 </div>
                 <div class="plb-metric-card info">
                     <div class="plb-metric-label"><t t-esc="state.year"/> Realized Target</div>
                     <div class="plb-metric-value">MYR <t t-esc="formatNumber(state.current_year_realized)"/> M</div>
-                    <div class="plb-metric-subtitle">Actual realized revenue for <t t-esc="state.year"/></div>
+                    <div class="plb-metric-subtitle">Forecast Revenue <t t-esc="state.year"/></div>
                 </div>
                 <div class="plb-metric-card warning">
                     <div class="plb-metric-label">Target Completion</div>
@@ -201486,4 +201486,4 @@ return __exports;
 </templates>`);
                     });
 
-//# sourceMappingURL=/web/assets/e202f69/web.assets_web.js.map
+//# sourceMappingURL=/web/assets/ec0d1b5/web.assets_web.js.map

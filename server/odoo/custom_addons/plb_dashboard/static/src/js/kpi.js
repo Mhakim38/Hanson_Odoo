@@ -699,12 +699,12 @@ export class PLBKPI extends Component {
                 <div class="plb-metric-card success">
                     <div class="plb-metric-label">Annualized YTD Gain</div>
                     <div class="plb-metric-value highlight-green">MYR <t t-esc="formatNumber(state.annualized_ytd_gain)"/> M</div>
-                    <div class="plb-metric-subtitle">Expected revenue (contract stage)</div>
+                    <div class="plb-metric-subtitle">Value Per Annum (contract stage)</div>
                 </div>
                 <div class="plb-metric-card info">
                     <div class="plb-metric-label"><t t-esc="state.year"/> Realized Target</div>
                     <div class="plb-metric-value">MYR <t t-esc="formatNumber(state.current_year_realized)"/> M</div>
-                    <div class="plb-metric-subtitle">Actual realized revenue for <t t-esc="state.year"/></div>
+                    <div class="plb-metric-subtitle">Forecast Revenue <t t-esc="state.year"/></div>
                 </div>
                 <div class="plb-metric-card warning">
                     <div class="plb-metric-label">Target Completion</div>
