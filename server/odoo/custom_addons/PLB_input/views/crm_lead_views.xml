@@ -22,6 +22,9 @@
                     <field name="is_readonly_stage" invisible="1"/>
                 <button name="action_decline" string="Decline" type="object" class="btn-danger" groups="base.group_system"/>
             </xpath>
+<!--            <xpath expr="field[@name='priority']" position="attributes">-->
+<!--                <attribute name="string">Chance</attribute>-->
+<!--            </xpath>-->
 
             <xpath expr="//field[@name='expected_revenue']" position="attributes">
                 <attribute name="string">Value Per Annum</attribute>
@@ -59,7 +62,8 @@
                         <field name="expected_start_date" readonly="is_readonly_stage"/>
                         <!-- date_secured readonly unless computed boolean is_contract_stage is True -->
                         <field name="date_secured" readonly="not is_contract_stage or is_readonly_stage"/>
-                        <field name="date_go_live" readonly="is_readonly_stage"/>
+                        <!-- date_go_live readonly unless computed boolean is_contract_stage is True -->
+                        <field name="date_go_live" readonly="not is_contract_stage or is_readonly_stage"/>
                         <!-- New: inline attachment stored on the lead; editable only in Shortlisted or Verbal stages -->
                         <field name="attachment_file" filename="attachment_filename" readonly="not is_contract_stage or is_readonly_stage"/>
                         <field name="attachment_filename" readonly="1"/>
@@ -150,6 +154,9 @@
             </xpath>
             <xpath expr="field[@name='user_id']" position="attributes">
                 <attribute name="string">PIC</attribute>
+            </xpath>
+            <xpath expr="field[@name='priority']" position="attributes">
+                <attribute name="string">Chance</attribute>
             </xpath>
             <xpath expr="field[@name='name']" position="attributes">
                 <attribute name="string">Initiative/Project Description</attribute>

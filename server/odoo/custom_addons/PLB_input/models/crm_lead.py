@@ -32,8 +32,8 @@ class CrmLead(models.Model):
 
     # New: allow uploading a single attachment on the lead (stored on the record)
     # This is intentionally a Binary field so we can apply the same 'only when stage is Contract' logic
-    attachment_file = fields.Binary(string='Attachment File')
-    attachment_filename = fields.Char(string='Attachment Filename')
+    attachment_file = fields.Binary(string='Contract File')
+    attachment_filename = fields.Char(string='Contract Filename')
 
     # 2. Scope of Service and Freight details
     scope_of_service = fields.Selection([
@@ -885,6 +885,10 @@ class CrmLead(models.Model):
                 if 'date_secured' in vals:
                     if not self._stage_is_contract(effective_stage):
                         raise ValidationError('Date Secured can only be set when the lead stage is Shortlisted or Verbal.')
+                # If date_go_live included in vals, ensure effective stage is contract (Shortlisted/Verbal)
+                if 'date_go_live' in vals:
+                    if not self._stage_is_contract(effective_stage):
+                        raise ValidationError('Date Go Live can only be set when the lead stage is Shortlisted or Verbal.')
                 if 'attachment_file' in vals:
                     if vals.get('attachment_file') and not self._stage_is_contract(effective_stage):
                         raise ValidationError('Attachment can only be added when the lead stage is Shortlisted or Verbal.')
