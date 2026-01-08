@@ -98,25 +98,25 @@ class PLBDashboardController(http.Controller):
 
             # Financial calculations based on user's spec:
             # MAR (Monthly Annualized Revenue) = Expected Revenue / Contract Months
-            # Realized Revenue (RR) = MAR * (12 - Expected Start Date month + 1) BUT capped by contract months
+            # Realized Revenue (RR) = MAR * (12 - Date Go Live month + 1) BUT capped by contract months
             # Carry Forward = Expected Revenue - RR
 
             sales = lead.get('expected_revenue', 0) or 0
             contract_months = lead.get('contract_months', 0) or 0
-            expected_start = lead.get('expected_start_date')
+            date_go_live = lead.get('date_go_live')
 
-            # Parse start month robustly (Odoo may return date or string)
+            # Parse go live month robustly (Odoo may return date or string)
             start_month = None
-            if expected_start:
-                if isinstance(expected_start, str):
+            if date_go_live:
+                if isinstance(date_go_live, str):
                     try:
                         # expecting format YYYY-MM-DD
-                        start_month = int(expected_start.split('-')[1])
+                        start_month = int(date_go_live.split('-')[1])
                     except Exception:
                         start_month = None
                 else:
                     try:
-                        start_month = expected_start.month
+                        start_month = date_go_live.month
                     except Exception:
                         start_month = None
 
@@ -151,15 +151,15 @@ class PLBDashboardController(http.Controller):
                         amount = mar
                 monthly_revenue.append(amount)
 
-            # Calculate week, month, quarter from expected_start_date
+            # Calculate week, month, quarter from date_go_live
             week_of_year = None
             month_name = None
             quarter = None
-            if expected_start:
-                if isinstance(expected_start, str):
+            if date_go_live:
+                if isinstance(date_go_live, str):
                     try:
                         from datetime import datetime
-                        dt = datetime.strptime(expected_start, '%Y-%m-%d')
+                        dt = datetime.strptime(date_go_live, '%Y-%m-%d')
                         week_of_year = dt.isocalendar()[1]  # ISO week number
                         month_name = dt.strftime('%B')  # Full month name (e.g., 'January')
                         quarter = f"Q{(dt.month - 1) // 3 + 1}"  # Q1, Q2, Q3, Q4
@@ -167,9 +167,9 @@ class PLBDashboardController(http.Controller):
                         pass
                 else:
                     try:
-                        week_of_year = expected_start.isocalendar()[1]
-                        month_name = expected_start.strftime('%B')
-                        quarter = f"Q{(expected_start.month - 1) // 3 + 1}"
+                        week_of_year = date_go_live.isocalendar()[1]
+                        month_name = date_go_live.strftime('%B')
+                        quarter = f"Q{(date_go_live.month - 1) // 3 + 1}"
                     except Exception:
                         pass
 
@@ -213,7 +213,7 @@ class PLBDashboardController(http.Controller):
     @http.route('/plb/stage_counts', type='json', auth='user')
     def get_stage_counts(self, year=None):
         """
-        Get count of leads grouped by stage, filtered by expected_start_date year
+        Get count of leads grouped by stage, filtered by date_go_live year
         """
         from datetime import datetime
         Lead = request.env['crm.lead'].sudo()
@@ -226,29 +226,29 @@ class PLBDashboardController(http.Controller):
         except Exception:
             y = datetime.now().year
 
-        # Get all leads with stage and expected_start_date
-        stages = Lead.search_read([], ['stage_id', 'expected_start_date'])
+        # Get all leads with stage and date_go_live
+        stages = Lead.search_read([], ['stage_id', 'date_go_live'])
 
-        # Count by stage, filtering by expected_start_date year
+        # Count by stage, filtering by date_go_live year
         stage_counts = {}
         for lead in stages:
-            # Filter by expected_start_date year
-            expected_start = lead.get('expected_start_date')
-            start_year = None
-            if expected_start:
-                if isinstance(expected_start, str):
+            # Filter by date_go_live year
+            date_go_live = lead.get('date_go_live')
+            go_live_year = None
+            if date_go_live:
+                if isinstance(date_go_live, str):
                     try:
-                        start_year = int(expected_start.split('-')[0])
+                        go_live_year = int(date_go_live.split('-')[0])
                     except Exception:
-                        start_year = None
+                        go_live_year = None
                 else:
                     try:
-                        start_year = expected_start.year
+                        go_live_year = date_go_live.year
                     except Exception:
-                        start_year = None
+                        go_live_year = None
 
-            # Only count leads with expected_start_date in the specified year
-            if start_year != y:
+            # Only count leads with date_go_live in the specified year
+            if go_live_year != y:
                 continue
 
             stage = lead.get('stage_id')
@@ -261,7 +261,7 @@ class PLBDashboardController(http.Controller):
     @http.route('/plb/revenue_summary', type='json', auth='user')
     def get_revenue_summary(self, year=None):
         """
-        Get aggregated revenue statistics, filtered by expected_start_date year
+        Get aggregated revenue statistics, filtered by date_go_live year
         """
         from datetime import datetime
         Lead = request.env['crm.lead'].sudo()
@@ -276,7 +276,7 @@ class PLBDashboardController(http.Controller):
 
         leads = Lead.search_read(
             domain=[],
-            fields=['expected_revenue', 'realized_revenue', 'contract_months', 'expected_start_date']
+            fields=['expected_revenue', 'realized_revenue', 'contract_months', 'date_go_live']
         )
 
         total_expected = 0.0
@@ -284,40 +284,40 @@ class PLBDashboardController(http.Controller):
         total_leads = 0
 
         for l in leads:
-            expected_start = l.get('expected_start_date')
+            date_go_live = l.get('date_go_live')
 
-            # Filter by expected_start_date year
-            start_year = None
-            if expected_start:
-                if isinstance(expected_start, str):
+            # Filter by date_go_live year
+            go_live_year = None
+            if date_go_live:
+                if isinstance(date_go_live, str):
                     try:
-                        start_year = int(expected_start.split('-')[0])
+                        go_live_year = int(date_go_live.split('-')[0])
                     except Exception:
-                        start_year = None
+                        go_live_year = None
                 else:
                     try:
-                        start_year = expected_start.year
+                        go_live_year = date_go_live.year
                     except Exception:
-                        start_year = None
+                        go_live_year = None
 
-            # Only process leads with expected_start_date in the specified year
-            if start_year != y:
+            # Only process leads with date_go_live in the specified year
+            if go_live_year != y:
                 continue
 
             sales = l.get('expected_revenue', 0) or 0
             contract_months = l.get('contract_months', 0) or 0
 
-            # determine start month
+            # determine go live month
             start_month = None
-            if expected_start:
-                if isinstance(expected_start, str):
+            if date_go_live:
+                if isinstance(date_go_live, str):
                     try:
-                        start_month = int(expected_start.split('-')[1])
+                        start_month = int(date_go_live.split('-')[1])
                     except Exception:
                         start_month = None
                 else:
                     try:
-                        start_month = expected_start.month
+                        start_month = date_go_live.month
                     except Exception:
                         start_month = None
 
@@ -402,27 +402,27 @@ class PLBDashboardController(http.Controller):
 
         leads = Lead.search_read(
             domain=[],
-            fields=['expected_revenue', 'expected_start_date', 'date_secured']
+            fields=['expected_revenue', 'date_go_live', 'date_secured']
         )
 
         for l in leads:
             sales = l.get('expected_revenue', 0) or 0
-            # expected_start_date -> denominator (use expected start month to attribute expected revenue)
-            es = l.get('expected_start_date')
-            if es:
+            # date_go_live -> denominator (use go live month to attribute expected revenue)
+            date_go_live = l.get('date_go_live')
+            if date_go_live:
                 try:
-                    if isinstance(es, str):
+                    if isinstance(date_go_live, str):
                         # format YYYY-MM-DD or with time
-                        dt = datetime.strptime(es.split('+')[0].split('Z')[0].strip(), '%Y-%m-%d %H:%M:%S') if ' ' in es else datetime.strptime(es, '%Y-%m-%d')
+                        dt = datetime.strptime(date_go_live.split('+')[0].split('Z')[0].strip(), '%Y-%m-%d %H:%M:%S') if ' ' in date_go_live else datetime.strptime(date_go_live, '%Y-%m-%d')
                     else:
-                        dt = es
+                        dt = date_go_live
                     if dt.year == y:
                         m = dt.month
                         monthly_denom[m-1] += float(sales)
                 except Exception:
                     # fallback: try find year/month via string
                     try:
-                        s = str(es)
+                        s = str(date_go_live)
                         mm = int(s.split('-')[1])
                         yy = int(s.split('-')[0])
                         if yy == y:
@@ -506,7 +506,7 @@ class PLBDashboardController(http.Controller):
 
         leads = Lead.search_read(
             domain=[],
-            fields=['expected_revenue', 'expected_start_date', 'date_secured', 'dept_region']
+            fields=['expected_revenue', 'date_go_live', 'date_secured', 'dept_region']
         )
 
         for l in leads:
@@ -526,20 +526,20 @@ class PLBDashboardController(http.Controller):
                     'denominator': [0.0] * 12,
                 }
 
-            # expected_start_date -> denominator
-            es = l.get('expected_start_date')
-            if es:
+            # date_go_live -> denominator
+            date_go_live = l.get('date_go_live')
+            if date_go_live:
                 try:
-                    if isinstance(es, str):
-                        dt = datetime.strptime(es.split('+')[0].split('Z')[0].strip(), '%Y-%m-%d %H:%M:%S') if ' ' in es else datetime.strptime(es, '%Y-%m-%d')
+                    if isinstance(date_go_live, str):
+                        dt = datetime.strptime(date_go_live.split('+')[0].split('Z')[0].strip(), '%Y-%m-%d %H:%M:%S') if ' ' in date_go_live else datetime.strptime(date_go_live, '%Y-%m-%d')
                     else:
-                        dt = es
+                        dt = date_go_live
                     if dt.year == y:
                         m = dt.month
                         regions[rkey]['denominator'][m-1] += float(sales)
                 except Exception:
                     try:
-                        s = str(es)
+                        s = str(date_go_live)
                         mm = int(s.split('-')[1])
                         yy = int(s.split('-')[0])
                         if yy == y:
@@ -625,7 +625,7 @@ class PLBDashboardController(http.Controller):
 
         leads = Lead.search_read(
             domain=[],
-            fields=['expected_revenue', 'expected_start_date', 'dept_region']
+            fields=['expected_revenue', 'date_go_live', 'dept_region']
         )
 
         for l in leads:
@@ -644,20 +644,20 @@ class PLBDashboardController(http.Controller):
                     'monthly': [0.0] * 12,
                 }
 
-            # expected_start_date -> attribute revenue to that month
-            es = l.get('expected_start_date')
-            if es:
+            # date_go_live -> attribute revenue to that month
+            date_go_live = l.get('date_go_live')
+            if date_go_live:
                 try:
-                    if isinstance(es, str):
-                        dt = datetime.strptime(es.split('+')[0].split('Z')[0].strip(), '%Y-%m-%d %H:%M:%S') if ' ' in es else datetime.strptime(es, '%Y-%m-%d')
+                    if isinstance(date_go_live, str):
+                        dt = datetime.strptime(date_go_live.split('+')[0].split('Z')[0].strip(), '%Y-%m-%d %H:%M:%S') if ' ' in date_go_live else datetime.strptime(date_go_live, '%Y-%m-%d')
                     else:
-                        dt = es
+                        dt = date_go_live
                     if dt.year == y:
                         m = dt.month
                         regions[rkey]['monthly'][m-1] += float(sales)
                 except Exception:
                     try:
-                        s = str(es)
+                        s = str(date_go_live)
                         mm = int(s.split('-')[1])
                         yy = int(s.split('-')[0])
                         if yy == y:
@@ -713,7 +713,7 @@ class PLBDashboardController(http.Controller):
 
         leads = Lead.search_read(
             domain=[],
-            fields=['expected_revenue', 'expected_start_date', 'user_id']
+            fields=['expected_revenue', 'date_go_live', 'user_id']
         )
 
         for l in leads:
@@ -728,14 +728,14 @@ class PLBDashboardController(http.Controller):
                 elif isinstance(user_id, int):
                     uid = user_id
 
-            # expected_start_date -> attribute revenue to that month
-            es = l.get('expected_start_date')
-            if es:
+            # date_go_live -> attribute revenue to that month
+            date_go_live = l.get('date_go_live')
+            if date_go_live:
                 try:
-                    if isinstance(es, str):
-                        dt = datetime.strptime(es.split('+')[0].split('Z')[0].strip(), '%Y-%m-%d %H:%M:%S') if ' ' in es else datetime.strptime(es, '%Y-%m-%d')
+                    if isinstance(date_go_live, str):
+                        dt = datetime.strptime(date_go_live.split('+')[0].split('Z')[0].strip(), '%Y-%m-%d %H:%M:%S') if ' ' in date_go_live else datetime.strptime(date_go_live, '%Y-%m-%d')
                     else:
-                        dt = es
+                        dt = date_go_live
                     if dt.year == y:
                         m = dt.month
                         monthly_pipeline[m-1] += float(sales)
@@ -743,7 +743,7 @@ class PLBDashboardController(http.Controller):
                             monthly_people[m-1].add(uid)
                 except Exception:
                     try:
-                        s = str(es)
+                        s = str(date_go_live)
                         mm = int(s.split('-')[1])
                         yy = int(s.split('-')[0])
                         if yy == y:
@@ -825,7 +825,7 @@ class PLBDashboardController(http.Controller):
 
         leads = Lead.search_read(
             domain=[],
-            fields=['expected_revenue', 'expected_start_date', 'user_id', 'dept_region']
+            fields=['expected_revenue', 'date_go_live', 'user_id', 'dept_region']
         )
 
         for l in leads:
@@ -859,14 +859,14 @@ class PLBDashboardController(http.Controller):
                 elif isinstance(user_id, int):
                     uid = user_id
 
-            # expected_start_date -> attribute revenue to that month
-            es = l.get('expected_start_date')
-            if es:
+            # date_go_live -> attribute revenue to that month
+            date_go_live = l.get('date_go_live')
+            if date_go_live:
                 try:
-                    if isinstance(es, str):
-                        dt = datetime.strptime(es.split('+')[0].split('Z')[0].strip(), '%Y-%m-%d %H:%M:%S') if ' ' in es else datetime.strptime(es, '%Y-%m-%d')
+                    if isinstance(date_go_live, str):
+                        dt = datetime.strptime(date_go_live.split('+')[0].split('Z')[0].strip(), '%Y-%m-%d %H:%M:%S') if ' ' in date_go_live else datetime.strptime(date_go_live, '%Y-%m-%d')
                     else:
-                        dt = es
+                        dt = date_go_live
                     if dt.year == y:
                         m = dt.month
                         regions[rkey]['monthly_pipeline'][m-1] += float(sales)
@@ -874,7 +874,7 @@ class PLBDashboardController(http.Controller):
                             regions[rkey]['monthly_people'][m-1].add(uid)
                 except Exception:
                     try:
-                        s = str(es)
+                        s = str(date_go_live)
                         mm = int(s.split('-')[1])
                         yy = int(s.split('-')[0])
                         if yy == y:
@@ -958,7 +958,7 @@ class PLBDashboardController(http.Controller):
 
         leads = Lead.search_read(
             domain=[('stage_id', 'in', contract_stage_ids)] if contract_stage_ids else [('id', '=', False)],
-            fields=['expected_revenue', 'expected_start_date', 'contract_months', 'realized_revenue']
+            fields=['expected_revenue', 'date_go_live', 'contract_months', 'realized_revenue']
         )
 
         total_expected_revenue = 0.0  # Direct sum of expected_revenue
@@ -967,30 +967,30 @@ class PLBDashboardController(http.Controller):
         for lead in leads:
             sales = lead.get('expected_revenue', 0) or 0
             contract_months = lead.get('contract_months', 0) or 0
-            expected_start = lead.get('expected_start_date')
+            date_go_live = lead.get('date_go_live')
 
-            # Parse start date
-            start_year = None
-            start_month = None
-            if expected_start:
-                if isinstance(expected_start, str):
+            # Parse go live date
+            go_live_year = None
+            go_live_month = None
+            if date_go_live:
+                if isinstance(date_go_live, str):
                     try:
-                        parts = expected_start.split('-')
-                        start_year = int(parts[0])
-                        start_month = int(parts[1])
+                        parts = date_go_live.split('-')
+                        go_live_year = int(parts[0])
+                        go_live_month = int(parts[1])
                     except Exception:
-                        start_year = None
-                        start_month = None
+                        go_live_year = None
+                        go_live_month = None
                 else:
                     try:
-                        start_year = expected_start.year
-                        start_month = expected_start.month
+                        go_live_year = date_go_live.year
+                        go_live_month = date_go_live.month
                     except Exception:
-                        start_year = None
-                        start_month = None
+                        go_live_year = None
+                        go_live_month = None
 
-            # Only process leads with expected_start_date in the specified year
-            if start_year != y:
+            # Only process leads with date_go_live in the specified year
+            if go_live_year != y:
                 continue
 
             # Accumulate expected revenue for YTD gauge (direct sum)
@@ -1005,11 +1005,11 @@ class PLBDashboardController(http.Controller):
                     mar = 0.0
 
             # Calculate total MAR for months in the year
-            if start_month and 1 <= start_month <= 12:
+            if go_live_month and 1 <= go_live_month <= 12:
                 for month_idx in range(12):
                     actual_month = month_idx + 1
-                    if actual_month >= start_month:
-                        months_from_start = actual_month - start_month
+                    if actual_month >= go_live_month:
+                        months_from_start = actual_month - go_live_month
                         if months_from_start < contract_months:
                             total_realized_revenue_ytd += mar
 

@@ -223,20 +223,20 @@ export class PLBDashboard extends Component {
             if (f.service && f.service !== 'All') {
                 if ((r.services || '') !== f.service) return false;
             }
-            // Table filtering is strictly based on Expected Start Date year per your requirement.
-            const es = r.expectedStartDate || r.expectedStartDate || r.expectedStartDate || '';
-            if (!es) return false;
+            // Table filtering is strictly based on Date Go Live year per your requirement.
+            const dateGoLive = r.dateGoLive || r.date_go_live || '';
+            if (!dateGoLive) return false;
             let yy = null;
-            if (typeof es === 'string') {
+            if (typeof dateGoLive === 'string') {
                 // try ISO-like pattern first
-                const m = es.match(/(\d{4})-(\d{2})-(\d{2})/);
+                const m = dateGoLive.match(/(\d{4})-(\d{2})-(\d{2})/);
                 if (m) { yy = Number(m[1]); }
                 else {
-                    const m2 = es.match(/(20\d{2}|19\d{2})/);
+                    const m2 = dateGoLive.match(/(20\d{2}|19\d{2})/);
                     if (m2) yy = Number(m2[0]);
                 }
-            } else if (es instanceof Date) {
-                yy = es.getFullYear();
+            } else if (dateGoLive instanceof Date) {
+                yy = dateGoLive.getFullYear();
             }
             return yy === yearFilter;
         });
@@ -544,15 +544,15 @@ export class PLBDashboard extends Component {
                 const monthly_denom = Array(12).fill(0);
                 rows.forEach(r => {
                     const sales = (r.sales === false || r.sales === null || r.sales === undefined || r.sales === '') ? 0 : Number(r.sales) || 0;
-                    // denom: expected_start_date
-                    const es = r.expectedStartDate || r.expected_start_date || r.expectedStart || r.expected_start || r.expected_start_date || r.expectedStartDate;
-                    if (es) {
+                    // denom: date_go_live
+                    const dateGoLive = r.dateGoLive || r.date_go_live;
+                    if (dateGoLive) {
                         let dt = null;
-                        if (typeof es === 'string') {
-                            const m = es.match(/(\d{4})-(\d{2})-(\d{2})/);
+                        if (typeof dateGoLive === 'string') {
+                            const m = dateGoLive.match(/(\d{4})-(\d{2})-(\d{2})/);
                             if (m) { dt = { year: Number(m[1]), month: Number(m[2]) }; }
-                        } else if (es instanceof Date) {
-                            dt = { year: es.getFullYear(), month: es.getMonth() + 1 };
+                        } else if (dateGoLive instanceof Date) {
+                            dt = { year: dateGoLive.getFullYear(), month: dateGoLive.getMonth() + 1 };
                         }
                         if (dt && dt.year === Number(y)) {
                             monthly_denom[dt.month - 1] += Number(sales);
@@ -726,19 +726,19 @@ export class PLBDashboard extends Component {
                     };
                 }
 
-                // expectedStartDate -> denominator for either current or prev year
-                const es = r.expectedStartDate || r.expected_start_date || r.expectedStart || r.expected_start || r.expected_start_date || r.expectedStartDate;
-                if (es) {
+                // dateGoLive -> denominator for either current or prev year
+                const dateGoLive = r.dateGoLive || r.date_go_live;
+                if (dateGoLive) {
                     let yy = null, mm = null;
-                    if (typeof es === 'string') {
-                        const m = es.match(/(\d{4})-(\d{2})-(\d{2})/);
+                    if (typeof dateGoLive === 'string') {
+                        const m = dateGoLive.match(/(\d{4})-(\d{2})-(\d{2})/);
                         if (m) { yy = Number(m[1]); mm = Number(m[2]); }
                         else {
-                            const m2 = es.match(/(20\d{2}|19\d{2})/);
+                            const m2 = dateGoLive.match(/(20\d{2}|19\d{2})/);
                             if (m2) yy = Number(m2[0]);
                         }
-                    } else if (es instanceof Date) {
-                        yy = es.getFullYear(); mm = es.getMonth() + 1;
+                    } else if (dateGoLive instanceof Date) {
+                        yy = dateGoLive.getFullYear(); mm = dateGoLive.getMonth() + 1;
                     }
                     if (mm && (yy === curYear)) {
                         regions[rkey].denominator[mm-1] += sales;
@@ -815,14 +815,14 @@ export class PLBDashboard extends Component {
 
             const agg = { cur: Array(12).fill(0), prev: Array(12).fill(0) };
             (rows || []).forEach(r => {
-                const es = r.expectedStartDate || r.expected_start_date || r.expectedStart || r.expected_start || r.expected_start_date || r.expectedStartDate;
+                const dateGoLive = r.dateGoLive || r.date_go_live;
                 let yy = null, mm = null;
-                if (es) {
-                    if (typeof es === 'string') {
-                        const m = es.match(/(\d{4})-(\d{2})-(\d{2})/);
+                if (dateGoLive) {
+                    if (typeof dateGoLive === 'string') {
+                        const m = dateGoLive.match(/(\d{4})-(\d{2})-(\d{2})/);
                         if (m) { yy = Number(m[1]); mm = Number(m[2]); }
-                        else { const m2 = es.match(/(20\d{2}|19\d{2})/); if (m2) yy = Number(m2[0]); }
-                    } else if (es instanceof Date) { yy = es.getFullYear(); mm = es.getMonth() + 1; }
+                        else { const m2 = dateGoLive.match(/(20\d{2}|19\d{2})/); if (m2) yy = Number(m2[0]); }
+                    } else if (dateGoLive instanceof Date) { yy = dateGoLive.getFullYear(); mm = dateGoLive.getMonth() + 1; }
                 }
                 if (!mm || !yy) return;
                 // expected revenue field: prefer expectedRevenue, fallback to sales
@@ -2680,7 +2680,7 @@ PLBDashboard.template = xml/* xml */ `
                                 </t>
 
                                 <!-- y ticks labels -->
-                                <t t-foreach="state.avgPipelinePerPersonByRegionSeries &amp;&amp; state.avgPipelinePerPersonByRegionSeries.ticks || []" t-as="tk" t-key="'apprtl-'+tk.y">
+                                <t t-foreach="state.avgPipelinePerPersonByRegionSeries &amp;&amp; state.avgPipelinePerPersonByRegionSeries.ticks || []" t-as="tk" t-key="'apprtl-'+tk.idx">
                                     <text t-att-x="48" t-att-y="tk.y + 4" text-anchor="end" fill="#333" font-size="11px"><t t-esc="tk.label"/>M</text>
                                 </t>
 
