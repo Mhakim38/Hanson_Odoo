@@ -409,18 +409,19 @@ class CrmLead(models.Model):
                 if not rec.destination_country_id:
                     missing.append('Destination Country')
 
-                # 8. Port of Loading/Destination (if Freight Forwarding)
-                if rec.scope_of_service == 'freight_forwarding':
-                    if not rec.port_of_loading_id:
-                        missing.append('Port of Loading')
-                    if not rec.port_of_destination_id:
-                        missing.append('Port of Destination')
+                # 8. Port of Loading (mandatory for all)
+                if not rec.port_of_loading_id:
+                    missing.append('Port of Loading')
 
-                # 9. Product
+                # 9. Port of Destination (mandatory for all)
+                if not rec.port_of_destination_id:
+                    missing.append('Port of Destination')
+
+                # 10. Product
                 if not rec.product:
                     missing.append('Customer Product')
 
-                # 10. Dept/Region
+                # 11. Dept/Region
                 if not rec.dept_region:
                     missing.append('Dept/Region')
 
@@ -576,11 +577,10 @@ class CrmLead(models.Model):
                         missing.append('Origin Country')
                     if not vals.get('destination_country_id'):
                         missing.append('Destination Country')
-                    if vals.get('scope_of_service') == 'freight_forwarding':
-                        if not vals.get('port_of_loading_id'):
-                            missing.append('Port of Loading')
-                        if not vals.get('port_of_destination_id'):
-                            missing.append('Port of Destination')
+                    if not vals.get('port_of_loading_id'):
+                        missing.append('Port of Loading')
+                    if not vals.get('port_of_destination_id'):
+                        missing.append('Port of Destination')
                     if not vals.get('product'):
                         missing.append('Customer Product')
                     if not vals.get('dept_region'):
@@ -712,13 +712,13 @@ class CrmLead(models.Model):
                         if not dest:
                             missing.append('Destination Country')
 
-                        if scope == 'freight_forwarding':
-                            pol = vals.get('port_of_loading_id') if 'port_of_loading_id' in vals else rec.port_of_loading_id
-                            if not pol:
-                                missing.append('Port of Loading')
-                            pod = vals.get('port_of_destination_id') if 'port_of_destination_id' in vals else rec.port_of_destination_id
-                            if not pod:
-                                missing.append('Port of Destination')
+                        pol = vals.get('port_of_loading_id') if 'port_of_loading_id' in vals else rec.port_of_loading_id
+                        if not pol:
+                            missing.append('Port of Loading')
+
+                        pod = vals.get('port_of_destination_id') if 'port_of_destination_id' in vals else rec.port_of_destination_id
+                        if not pod:
+                            missing.append('Port of Destination')
 
                         prod = vals.get('product') if 'product' in vals else rec.product
                         if not prod:
