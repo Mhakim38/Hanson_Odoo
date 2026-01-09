@@ -30,6 +30,9 @@ class CrmLead(models.Model):
     # New: Date Secured (user fills when won)
     date_secured = fields.Date(string='Date Secured')
 
+    # Date Funnel: Auto-filled when lead enters Qualify stage
+    date_funnel = fields.Date(string='Date Funnel', readonly=True, copy=False)
+
     # New: allow uploading a single attachment on the lead (stored on the record)
     # This is intentionally a Binary field so we can apply the same 'only when stage is Contract' logic
     attachment_file = fields.Binary(string='Contract File')
@@ -628,6 +631,15 @@ class CrmLead(models.Model):
                     if missing:
                         raise ValidationError('Cannot create lead in Contract stage: missing %s.' % (', '.join(missing)))
 
+        # Auto-set date_funnel when creating lead in Qualify stage
+        for vals in vals_list:
+            stage_id = vals.get('stage_id')
+            if stage_id:
+                stage = self.env['crm.stage'].browse(stage_id)
+                stage_name = (getattr(stage, 'name', '') or '').strip().lower()
+                if 'qualify' in stage_name and 'date_funnel' not in vals:
+                    vals['date_funnel'] = fields.Date.today()
+
         return super(CrmLead, self).create(vals_list)
 
     def write(self, vals):
@@ -866,6 +878,17 @@ class CrmLead(models.Model):
                 if 'attachment_file' in vals:
                     if vals.get('attachment_file') and not self._stage_is_contract(effective_stage):
                         raise ValidationError('Attachment can only be added when the lead stage is Shortlisted or Verbal.')
+
+        # Auto-set date_funnel when entering Qualify stage
+        if 'stage_id' in vals:
+            for rec in self:
+                new_stage_id = vals.get('stage_id')
+                if new_stage_id and new_stage_id != rec.stage_id.id:
+                    new_stage = self.env['crm.stage'].browse(new_stage_id)
+                    stage_name = (getattr(new_stage, 'name', '') or '').strip().lower()
+                    # If moving to Qualify stage and date_funnel not already set
+                    if 'qualify' in stage_name and not rec.date_funnel:
+                        vals['date_funnel'] = fields.Date.today()
 
         return super(CrmLead, self).write(vals)
 

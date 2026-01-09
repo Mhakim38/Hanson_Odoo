@@ -38,9 +38,9 @@
                 <attribute name="invisible">1</attribute>
             </xpath>
 
-            <!-- Add Date Funnel (create_date) after Salesperson (user_id) -->
+            <!-- Add Date Funnel after Salesperson (user_id) -->
             <xpath expr="//field[@name='user_id']" position="after">
-                <field name="create_date" string="Date Funnel" readonly="1"/>
+                <field name="date_funnel" readonly="1"/>
             </xpath>
 
             <!-- Hide core Won button when stage is Decline -->
@@ -173,6 +173,7 @@
                 <field name="description" string="Remarks/Contract Period/Adhoc" optional="show"/>
             </xpath>
             <xpath expr="field[@name='create_date']" position="after">
+                <field name="date_funnel" string="Date Funnel" optional="show"/>
                 <field name="expected_start_date" string="Expected Start Date" optional="show"/>
                 <field name="date_secured" string="Date Secured" optional="show"/>
                 <field name="date_go_live" string="Date Go Live" optional="show"/>
