@@ -29,6 +29,7 @@ class PLBDashboardController(http.Controller):
                 'create_date',
                 'date_go_live',
                 'date_secured',
+                'date_funnel',
                 'operating_profit_margin',
                 'dept_region',
             ]
@@ -193,6 +194,7 @@ class PLBDashboardController(http.Controller):
                 'createDate': lead.get('create_date', ''),
                 'dateGoLive': lead.get('date_go_live', ''),
                 'dateSecured': lead.get('date_secured', ''),
+                'dateFunnel': lead.get('date_funnel', ''),
                 # Monthly revenue calculated from MAR and expected start date
                 'monthlyRevenue': monthly_revenue,
                 # Dept/Region
@@ -951,13 +953,14 @@ class PLBDashboardController(http.Controller):
             settings = request.env['target.kpi.settings'].get_settings_for_year(y)
             company_yearly_target = settings.yearly_target or 0
 
-        # Get all leads for contract stage
+        # Get all leads for contract and decline stages
         Stage = request.env['crm.stage'].sudo()
         contract_stages = Stage.search([('name', 'ilike', 'contract')])
-        contract_stage_ids = [s.id for s in contract_stages]
+        decline_stages = Stage.search([('name', 'ilike', 'decline')])
+        stage_ids = [s.id for s in contract_stages] + [s.id for s in decline_stages]
 
         leads = Lead.search_read(
-            domain=[('stage_id', 'in', contract_stage_ids)] if contract_stage_ids else [('id', '=', False)],
+            domain=[('stage_id', 'in', stage_ids)] if stage_ids else [('id', '=', False)],
             fields=['expected_revenue', 'date_go_live', 'contract_months', 'realized_revenue']
         )
 

@@ -123,7 +123,7 @@
             </xpath>
             <xpath expr="//field[@name='probability']" position="after">
                 <div style="display:flex; flex-direction:column;" class="mb-2 ms-3">
-                    <label for="priority" string="Priority" style="font-weight:bold;" class="mb-1 mt-2"/>
+                    <label for="priority" string="Chance" style="font-weight:bold;" class="mb-1 mt-2"/>
                     <field name="priority" widget="priority" nolabel="1"/>
                 </div>
             </xpath>

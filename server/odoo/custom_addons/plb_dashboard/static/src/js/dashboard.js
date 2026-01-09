@@ -223,20 +223,21 @@ export class PLBDashboard extends Component {
             if (f.service && f.service !== 'All') {
                 if ((r.services || '') !== f.service) return false;
             }
-            // Table filtering is strictly based on Date Go Live year per your requirement.
-            const dateGoLive = r.dateGoLive || r.date_go_live || '';
-            if (!dateGoLive) return false;
+            // Table filtering is based on Date Go Live year (preferred), with fallback to dateFunnel or createDate
+            // This allows Decline stage leads (which may not have date_go_live) to be displayed
+            let dateToUse = r.dateGoLive || r.date_go_live || r.dateFunnel || r.createDate || r.create_date || '';
+            if (!dateToUse) return false;
             let yy = null;
-            if (typeof dateGoLive === 'string') {
+            if (typeof dateToUse === 'string') {
                 // try ISO-like pattern first
-                const m = dateGoLive.match(/(\d{4})-(\d{2})-(\d{2})/);
+                const m = dateToUse.match(/(\d{4})-(\d{2})-(\d{2})/);
                 if (m) { yy = Number(m[1]); }
                 else {
-                    const m2 = dateGoLive.match(/(20\d{2}|19\d{2})/);
+                    const m2 = dateToUse.match(/(20\d{2}|19\d{2})/);
                     if (m2) yy = Number(m2[0]);
                 }
-            } else if (dateGoLive instanceof Date) {
-                yy = dateGoLive.getFullYear();
+            } else if (dateToUse instanceof Date) {
+                yy = dateToUse.getFullYear();
             }
             return yy === yearFilter;
         });
@@ -2795,7 +2796,7 @@ PLBDashboard.template = xml/* xml */ `
                         </thead>
                 <tbody>
                     <t t-if="getFilteredTableRows() &amp;&amp; getFilteredTableRows().length">
-                        <t t-set="contractRows" t-value="getFilteredTableRows().filter(r => r.stage &amp;&amp; r.stage.toLowerCase().includes('contract'))"/>
+                        <t t-set="contractRows" t-value="getFilteredTableRows().filter(r => r.stage &amp;&amp; (r.stage.toLowerCase().includes('contract') || r.stage.toLowerCase().includes('decline')))"/>
                         <t t-if="contractRows &amp;&amp; contractRows.length">
                             <tr t-foreach="contractRows" t-as="row" t-key="row.id">
                                 <td class="text-center"><t t-esc="row.quarter || '-'"/></td>
@@ -2820,7 +2821,7 @@ PLBDashboard.template = xml/* xml */ `
                         </t>
                         <t t-else="">
                             <tr>
-                                <td colspan="22" class="text-center text-muted">No contract stage data available</td>
+                                <td colspan="22" class="text-center text-muted">No contract or decline stage data available</td>
                             </tr>
                         </t>
                      </t>

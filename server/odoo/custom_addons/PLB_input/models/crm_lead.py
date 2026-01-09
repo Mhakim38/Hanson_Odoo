@@ -488,16 +488,47 @@ class CrmLead(models.Model):
                         }
                     }
 
+            # === ANY → RENEWAL/DECLINE/LOST VALIDATION (excluding Contract - handled separately below) ===
+            is_renewal = 'renewal' in stage_name
+            is_decline = 'decline' in stage_name
+            is_lost = 'lost' in stage_name
+
+            # Validate Renewal, Decline, or Lost stages (Contract has its own validation below)
+            if is_renewal or is_decline or is_lost:
+                missing = []
+
+                # 1. Date Go Live - required for Renewal only
+                if is_renewal:
+                    if not rec.date_go_live:
+                        missing.append('Date Go Live')
+
+                # 2. Date Secured - required for Renewal and Decline
+                if is_renewal or is_decline:
+                    if not rec.date_secured:
+                        missing.append('Date Secured')
+
+                # 3. Remark - required for all (Renewal, Decline, Lost)
+                if not rec.remark or not rec.remark.strip():
+                    missing.append('Remarks')
+
+                if missing:
+                    return {
+                        'warning': {
+                            'title': 'Missing Required Information',
+                            'message': 'You must fill the following fields before moving to this stage: %s.' % (', '.join(missing))
+                        }
+                    }
+
             # === ANY → FINAL CONTRACT VALIDATION ===
             # Only validate when moving to the FINAL Contract/Won stage (probability 100)
-            # NOT for Shortlisted/Verbal stages
+            # NOT for Shortlisted/Verbal/Renewal/Decline stages
             if rec.stage_id:
                 prob = getattr(rec.stage_id, 'probability', False)
                 is_final_contract = False
                 if prob is not False and prob >= 100:
                     is_final_contract = True
-                elif 'contract' in stage_name and 'shortlisted' not in stage_name and 'verbal' not in stage_name:
-                    # Stage name is 'contract' or 'won' but NOT 'shortlisted' or 'verbal'
+                elif 'contract' in stage_name and 'shortlisted' not in stage_name and 'verbal' not in stage_name and 'renewal' not in stage_name and 'decline' not in stage_name:
+                    # Stage name is 'contract' or 'won' but NOT 'shortlisted', 'verbal', 'renewal', or 'decline'
                     is_final_contract = True
 
                 if is_final_contract:
@@ -607,13 +638,38 @@ class CrmLead(models.Model):
                     if missing:
                         raise ValidationError('Cannot create lead in Proposal stage: missing %s. Please fill them while in Qualify stage.' % (', '.join(missing)))
 
+                # Check for Renewal, Decline, or Lost stage requirements (Contract handled separately below)
+                is_renewal = 'renewal' in name
+                is_decline = 'decline' in name
+                is_lost = 'lost' in name
+
+                if is_renewal or is_decline or is_lost:
+                    missing = []
+
+                    # 1. Date Go Live - required for Renewal only
+                    if is_renewal:
+                        if not vals.get('date_go_live'):
+                            missing.append('Date Go Live')
+
+                    # 2. Date Secured - required for Renewal and Decline
+                    if is_renewal or is_decline:
+                        if not vals.get('date_secured'):
+                            missing.append('Date Secured')
+
+                    # 3. Remark - required for all (Renewal, Decline, Lost)
+                    if not vals.get('remark') or not vals.get('remark').strip():
+                        missing.append('Remarks')
+
+                    if missing:
+                        raise ValidationError('Cannot create lead in %s stage: missing %s.' % (name.title(), ', '.join(missing)))
+
                 # Check for FINAL Contract stage requirements (probability 100 or stage name 'contract'/'won')
-                # NOT for Shortlisted/Verbal stages
+                # NOT for Shortlisted/Verbal/Renewal/Decline stages
                 prob = getattr(stage, 'probability', False)
                 is_final_contract = False
                 if prob is not False and prob >= 100:
                     is_final_contract = True
-                elif 'contract' in name and 'shortlisted' not in name and 'verbal' not in name:
+                elif 'contract' in name and 'shortlisted' not in name and 'verbal' not in name and 'renewal' not in name and 'decline' not in name:
                     is_final_contract = True
 
                 if is_final_contract:
@@ -818,13 +874,14 @@ class CrmLead(models.Model):
 
                     # === ANY → FINAL CONTRACT VALIDATION (in write) ===
                     # Only validate when moving to the FINAL Contract/Won stage (probability 100)
-                    # NOT for Shortlisted/Verbal stages
+                    # NOT for Shortlisted/Verbal/Renewal/Decline stages
+                    # Note: Renewal, Decline, and Lost validations are handled by @api.onchange only
                     prob = getattr(stage, 'probability', False)
                     is_final_contract = False
                     if prob is not False and prob >= 100:
                         is_final_contract = True
-                    elif 'contract' in name and 'shortlisted' not in name and 'verbal' not in name:
-                        # Stage name is 'contract' or 'won' but NOT 'shortlisted' or 'verbal'
+                    elif 'contract' in name and 'shortlisted' not in name and 'verbal' not in name and 'renewal' not in name and 'decline' not in name:
+                        # Stage name is 'contract' or 'won' but NOT 'shortlisted', 'verbal', 'renewal', or 'decline'
                         is_final_contract = True
 
                     if is_final_contract:
