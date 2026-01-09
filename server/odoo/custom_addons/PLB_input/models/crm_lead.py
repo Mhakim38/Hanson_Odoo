@@ -401,27 +401,11 @@ class CrmLead(models.Model):
                 if not rec.scope_of_service:
                     missing.append('Scope of Service')
 
-                # 6. Origin Country
-                if not rec.origin_country_id:
-                    missing.append('Origin Country')
-
-                # 7. Destination Country
-                if not rec.destination_country_id:
-                    missing.append('Destination Country')
-
-                # 8. Port of Loading (mandatory for all)
-                if not rec.port_of_loading_id:
-                    missing.append('Port of Loading')
-
-                # 9. Port of Destination (mandatory for all)
-                if not rec.port_of_destination_id:
-                    missing.append('Port of Destination')
-
-                # 10. Product
+                # 6. Product
                 if not rec.product:
                     missing.append('Customer Product')
 
-                # 11. Dept/Region
+                # 7. Dept/Region
                 if not rec.dept_region:
                     missing.append('Dept/Region')
 
@@ -453,7 +437,23 @@ class CrmLead(models.Model):
                 if rec.operating_profit_margin in (False, None):
                     missing.append('Operating Profit Margin')
 
-                # 4. Quotation Attachment
+                # 4. Origin Country
+                if not rec.origin_country_id:
+                    missing.append('Origin Country')
+
+                # 5. Destination Country
+                if not rec.destination_country_id:
+                    missing.append('Destination Country')
+
+                # 6. Port of Loading
+                if not rec.port_of_loading_id:
+                    missing.append('Port of Loading')
+
+                # 7. Port of Destination
+                if not rec.port_of_destination_id:
+                    missing.append('Port of Destination')
+
+                # 8. Quotation Attachment
                 att_ok = False
                 if rec.quotation_attachment:
                     att_ok = True
@@ -471,14 +471,6 @@ class CrmLead(models.Model):
                     if rec.scope_of_service == 'freight_forwarding':
                         if not rec.freight_type:
                             missing.append('Freight Type')
-                        if not rec.origin_country_id:
-                            missing.append('Origin Country')
-                        if not rec.destination_country_id:
-                            missing.append('Destination Country')
-                        if not rec.port_of_loading_id:
-                            missing.append('Port of Loading')
-                        if not rec.port_of_destination_id:
-                            missing.append('Port of Destination')
                         if not rec.product:
                             missing.append('Customer Product')
 
@@ -573,14 +565,6 @@ class CrmLead(models.Model):
                         missing.append('Expected Start Date')
                     if not vals.get('scope_of_service'):
                         missing.append('Scope of Service')
-                    if not vals.get('origin_country_id'):
-                        missing.append('Origin Country')
-                    if not vals.get('destination_country_id'):
-                        missing.append('Destination Country')
-                    if not vals.get('port_of_loading_id'):
-                        missing.append('Port of Loading')
-                    if not vals.get('port_of_destination_id'):
-                        missing.append('Port of Destination')
                     if not vals.get('product'):
                         missing.append('Customer Product')
                     if not vals.get('dept_region'):
@@ -597,6 +581,14 @@ class CrmLead(models.Model):
                         missing.append('Contract Period (Contract Months)')
                     if vals.get('operating_profit_margin') in (None, False):
                         missing.append('Operating Profit Margin')
+                    if not vals.get('origin_country_id'):
+                        missing.append('Origin Country')
+                    if not vals.get('destination_country_id'):
+                        missing.append('Destination Country')
+                    if not vals.get('port_of_loading_id'):
+                        missing.append('Port of Loading')
+                    if not vals.get('port_of_destination_id'):
+                        missing.append('Port of Destination')
                     # check attachment either in vals or existing attachments (none on create)
                     if not vals.get('quotation_attachment') and not vals.get('attachment_file'):
                         missing.append('Quotation Attachment')
@@ -606,14 +598,6 @@ class CrmLead(models.Model):
                         if vals.get('scope_of_service') == 'freight_forwarding':
                             if not vals.get('freight_type'):
                                 missing.append('Freight Type')
-                            if not vals.get('origin_country_id'):
-                                missing.append('Origin Country')
-                            if not vals.get('destination_country_id'):
-                                missing.append('Destination Country')
-                            if not vals.get('port_of_loading_id'):
-                                missing.append('Port of Loading')
-                            if not vals.get('port_of_destination_id'):
-                                missing.append('Port of Destination')
                             if not vals.get('product'):
                                 missing.append('Customer Product')
 
@@ -704,21 +688,6 @@ class CrmLead(models.Model):
                         if not scope:
                             missing.append('Scope of Service')
 
-                        origin = vals.get('origin_country_id') if 'origin_country_id' in vals else rec.origin_country_id
-                        if not origin:
-                            missing.append('Origin Country')
-
-                        dest = vals.get('destination_country_id') if 'destination_country_id' in vals else rec.destination_country_id
-                        if not dest:
-                            missing.append('Destination Country')
-
-                        pol = vals.get('port_of_loading_id') if 'port_of_loading_id' in vals else rec.port_of_loading_id
-                        if not pol:
-                            missing.append('Port of Loading')
-
-                        pod = vals.get('port_of_destination_id') if 'port_of_destination_id' in vals else rec.port_of_destination_id
-                        if not pod:
-                            missing.append('Port of Destination')
 
                         prod = vals.get('product') if 'product' in vals else rec.product
                         if not prod:
@@ -751,6 +720,27 @@ class CrmLead(models.Model):
                         opm = vals.get('operating_profit_margin') if 'operating_profit_margin' in vals else rec.operating_profit_margin
                         if opm in (None, False):
                             missing.append('Operating Profit Margin')
+
+                        # Check Origin Country
+                        origin = vals.get('origin_country_id') if 'origin_country_id' in vals else rec.origin_country_id
+                        if not origin:
+                            missing.append('Origin Country')
+
+                        # Check Destination Country
+                        dest = vals.get('destination_country_id') if 'destination_country_id' in vals else rec.destination_country_id
+                        if not dest:
+                            missing.append('Destination Country')
+
+                        # Check Port of Loading
+                        pol = vals.get('port_of_loading_id') if 'port_of_loading_id' in vals else rec.port_of_loading_id
+                        if not pol:
+                            missing.append('Port of Loading')
+
+                        # Check Port of Destination
+                        pod = vals.get('port_of_destination_id') if 'port_of_destination_id' in vals else rec.port_of_destination_id
+                        if not pod:
+                            missing.append('Port of Destination')
+
                         # quotation attachment: check vals, existing dedicated field, or ir.attachment
                         att_ok = False
                         if 'quotation_attachment' in vals and vals.get('quotation_attachment'):
@@ -776,22 +766,6 @@ class CrmLead(models.Model):
                                 freight = vals.get('freight_type') if 'freight_type' in vals else rec.freight_type
                                 if not freight:
                                     missing.append('Freight Type')
-                                # Check origin_country_id
-                                origin = vals.get('origin_country_id') if 'origin_country_id' in vals else rec.origin_country_id
-                                if not origin:
-                                    missing.append('Origin Country')
-                                # Check destination_country_id
-                                dest = vals.get('destination_country_id') if 'destination_country_id' in vals else rec.destination_country_id
-                                if not dest:
-                                    missing.append('Destination Country')
-                                # Check port_of_loading_id
-                                pol = vals.get('port_of_loading_id') if 'port_of_loading_id' in vals else rec.port_of_loading_id
-                                if not pol:
-                                    missing.append('Port of Loading')
-                                # Check port_of_destination_id
-                                pod = vals.get('port_of_destination_id') if 'port_of_destination_id' in vals else rec.port_of_destination_id
-                                if not pod:
-                                    missing.append('Port of Destination')
                                 # Check product
                                 prod = vals.get('product') if 'product' in vals else rec.product
                                 if not prod:
