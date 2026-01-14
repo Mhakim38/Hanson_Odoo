@@ -1,0 +1,54 @@
+<odoo>
+
+<record id="action_crm_lead_dms_upload_wizard" model="ir.actions.act_window">
+    <field name="name">Upload Quotation / Contract</field>
+    <field name="res_model">crm.lead.dms.upload.wizard</field>
+    <field name="view_mode">form</field>
+    <field name="target">new</field>
+</record>
+
+<record id="view_crm_lead_form_inherit_dms" model="ir.ui.view">
+    <field name="name">crm.lead.form.inherit.dms</field>
+    <field name="model">crm.lead</field>
+    <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+    <field name="arch" type="xml">
+        <header>
+            <button name="%(action_crm_lead_dms_upload_wizard)d"
+                    string="Upload Documents"
+                    type="action"
+                    class="btn-primary"/>
+        </header>
+    </field>
+</record>
+
+
+
+    <record id="crm_lead_form_dms" model="ir.ui.view">
+        <field name="name">crm.lead.form.dms</field>
+        <field name="model">crm.lead</field>
+        <field name="inherit_id" ref="crm.crm_lead_view_form"/>
+        <field name="arch" type="xml">
+
+            <!-- SMART BUTTON -->
+            <xpath expr="//div[@class='oe_button_box']" position="inside">
+                <button
+                    name="action_open_dms"
+                    type="object"
+                    class="oe_stat_button"
+                    icon="fa-folder">
+                    <field name="dms_count" widget="statinfo" string="Documents"/>
+                </button>
+            </xpath>
+
+            <!-- BOOLEAN INDICATORS -->
+            <xpath expr="//sheet/notebook/page[@name='internal_notes']" position="before">
+                <group string="Documents Status" col="2">
+                    <field name="has_quotation" readonly="1"/>
+                    <field name="has_contract" readonly="1"/>
+                </group>
+            </xpath>
+
+        </field>
+    </record>
+
+</odoo>

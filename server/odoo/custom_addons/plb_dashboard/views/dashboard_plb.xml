@@ -9,9 +9,9 @@
         <field name="tag">PLB_kpi_tag</field>
     </record>
 
-    <menuitem id="PLB_root_menu" name="PLB"/>
-    <menuitem id="PLB_dashboard_menu" name="Dashboard" parent="PLB_root_menu" action="PLB_dashboard_action" sequence="10"/>
-    <menuitem id="PLB_kpi_menu" name="KPI" parent="PLB_root_menu" action="PLB_kpi_action" sequence="20"/>
+    <menuitem id="PLB_root_menu" name="Dashboard"/>
+    <menuitem id="PLB_dashboard_menu" name="SPM" parent="PLB_root_menu" action="PLB_dashboard_action" sequence="10"/>
+    <menuitem id="PLB_kpi_menu" name="Individual" parent="PLB_root_menu" action="PLB_kpi_action" sequence="20"/>
     <menuitem id="PLB_config_menu" name="Config" parent="PLB_root_menu" sequence="30"/>
     <menuitem id="PLB_target_kpi_menu" name="Target KPI" parent="PLB_config_menu" action="action_employee_target_kpi" sequence="10"/>
 </odoo>

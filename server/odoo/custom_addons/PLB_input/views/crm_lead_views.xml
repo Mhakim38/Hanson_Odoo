@@ -20,7 +20,14 @@
                     <!-- ensure the computed flag is available to header modifiers -->
                 <field name="is_decline_stage" invisible="1"/>
                     <field name="is_readonly_stage" invisible="1"/>
+                <field name="is_unlocked" invisible="1"/>
                 <button name="action_decline" string="Decline" type="object" class="btn-danger" groups="base.group_system"/>
+                <button name="action_unlock" string="Unlock" type="object" class="btn-warning"
+                        groups="base.group_system"
+                        invisible="not is_readonly_stage or is_unlocked"/>
+                <button name="action_lock" string="Lock" type="object" class="btn-secondary"
+                        groups="base.group_system"
+                        invisible="not is_readonly_stage or not is_unlocked"/>
             </xpath>
 <!--            <xpath expr="field[@name='priority']" position="attributes">-->
 <!--                <attribute name="string">Chance</attribute>-->
@@ -57,16 +64,16 @@
             <xpath expr="//sheet/notebook" position="before">
                 <group colspan="2">
                     <group string="Contract Details">
-                        <field name="contract_type" widget="radio" readonly="is_readonly_stage"/>
-                        <field name="contract_months" string="Number of Months" readonly="is_readonly_stage"/>
-                        <field name="expected_start_date" readonly="is_readonly_stage"/>
+                        <field name="contract_type" widget="radio" readonly="is_readonly_stage and (not is_unlocked or not is_user_admin)"/>
+                        <field name="contract_months" string="Number of Months" readonly="is_readonly_stage and (not is_unlocked or not is_user_admin)"/>
+                        <field name="expected_start_date" readonly="is_readonly_stage and (not is_unlocked or not is_user_admin)"/>
                         <!-- date_secured readonly unless computed boolean is_contract_stage is True -->
-                        <field name="date_secured" readonly="not is_contract_stage or is_readonly_stage"/>
+                        <field name="date_secured" readonly="(not is_contract_stage or (is_readonly_stage and (not is_unlocked or not is_user_admin)))"/>
                         <!-- date_go_live readonly unless computed boolean is_contract_stage is True -->
-                        <field name="date_go_live" readonly="not is_contract_stage or is_readonly_stage"/>
+                        <field name="date_go_live" readonly="(not is_contract_stage or (is_readonly_stage and (not is_unlocked or not is_user_admin)))"/>
                         <!-- New: inline attachment stored on the lead; editable only in Shortlisted or Verbal stages -->
-                        <field name="attachment_file" filename="attachment_filename" readonly="not is_contract_stage or is_readonly_stage"/>
-                        <field name="attachment_filename" readonly="1"/>
+                        <field name="attachment_file" filename="attachment_filename" readonly="(not is_contract_stage or (is_readonly_stage and (not is_unlocked or not is_user_admin)))"/>
+                        <field name="attachment_filename" invisible="1" readonly="1"/>
                         <!-- computed boolean used in modifiers must be present in the view -->
                         <field name="is_contract_stage" invisible="1"/>
                         <!-- computed boolean for final contract/won stage (probability 100) -->
@@ -79,29 +86,33 @@
                         <field name="is_proposal_submitted_stage" invisible="1"/>
                         <!-- computed boolean for Contract/Loss stage (readonly) -->
                         <field name="is_readonly_stage" invisible="1"/>
+                        <!-- boolean for unlocked state (admin can temporarily unlock) -->
+                        <field name="is_unlocked" invisible="1"/>
+                        <!-- boolean for checking if current user is admin -->
+                        <field name="is_user_admin" invisible="1"/>
                     </group>
 
                     <group string="Service Information">
-                        <field name="scope_of_service" readonly="is_readonly_stage"/>
-                        <field name="freight_type" invisible="scope_of_service != 'freight_forwarding'" readonly="is_readonly_stage"/>
-                        <field name="origin_country_id" readonly="is_readonly_stage"/>
-                        <field name="destination_country_id" readonly="is_readonly_stage"/>
-                        <field name="port_of_loading_id" readonly="is_readonly_stage"/>
-                        <field name="port_of_destination_id" readonly="is_readonly_stage"/>
-                        <field name="product" readonly="is_readonly_stage"/>
+                        <field name="scope_of_service" readonly="is_readonly_stage and (not is_unlocked or not is_user_admin)"/>
+                        <field name="freight_type" invisible="scope_of_service != 'freight_forwarding'" readonly="is_readonly_stage and (not is_unlocked or not is_user_admin)"/>
+                        <field name="origin_country_id" readonly="is_readonly_stage and (not is_unlocked or not is_user_admin)"/>
+                        <field name="destination_country_id" readonly="is_readonly_stage and (not is_unlocked or not is_user_admin)"/>
+                        <field name="port_of_loading_id" readonly="is_readonly_stage and (not is_unlocked or not is_user_admin)"/>
+                        <field name="port_of_destination_id" readonly="is_readonly_stage and (not is_unlocked or not is_user_admin)"/>
+                        <field name="product" readonly="is_readonly_stage and (not is_unlocked or not is_user_admin)"/>
                     </group>
                 </group>
 
                 <group colspan="2">
                     <group string="Additional Info">
-                        <field name="dept_region" readonly="is_readonly_stage"/>
-                        <field name="realized_revenue" readonly="is_readonly_stage"/>
+                        <field name="dept_region" readonly="is_readonly_stage and (not is_unlocked or not is_user_admin)"/>
+                        <field name="realized_revenue" readonly="is_readonly_stage and (not is_unlocked or not is_user_admin)"/>
                         <!-- moved fields: remark, operating_profit_margin -->
-                        <field name="remark" readonly="is_readonly_stage"/>
-                        <field name="operating_profit_margin" widget="percentage" readonly="is_readonly_stage"/>
+                        <field name="remark" readonly="is_readonly_stage and (not is_unlocked or not is_user_admin)"/>
+                        <field name="operating_profit_margin" widget="percentage" readonly="is_readonly_stage and (not is_unlocked or not is_user_admin)"/>
                         <!-- Quotation attachment required in Qualify and editable in Qualify stage -->
-                        <field name="quotation_attachment" filename="quotation_attachment_filename" readonly="is_readonly_stage"/>
-                        <field name="quotation_attachment_filename" readonly="1"/>
+                        <field name="quotation_attachment" filename="quotation_attachment_filename" readonly="is_readonly_stage and (not is_unlocked or not is_user_admin)"/>
+                        <field name="quotation_attachment_filename" invisible="1" readonly="1"/>
                         <!-- Hide category_type as requested -->
                         <field name="category_type" invisible="1"/>
                     </group>
@@ -130,12 +141,12 @@
 
             <!-- Make partner_id (Customer Name) always available for editing (except in readonly stages) -->
             <xpath expr="//field[@name='partner_id']" position="attributes">
-                <attribute name="readonly">is_readonly_stage</attribute>
+                <attribute name="readonly">is_readonly_stage and (not is_unlocked or not is_user_admin)</attribute>
             </xpath>
 
             <!-- Make expected_revenue always available for editing (except in readonly stages) -->
             <xpath expr="//field[@name='expected_revenue']" position="attributes">
-                <attribute name="readonly">is_readonly_stage</attribute>
+                <attribute name="readonly">is_readonly_stage and (not is_unlocked or not is_user_admin)</attribute>
             </xpath>
         </field>
     </record>

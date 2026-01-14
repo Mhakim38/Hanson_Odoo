@@ -33,6 +33,9 @@ class CrmLead(models.Model):
     # Date Funnel: Auto-filled when lead enters Qualify stage
     date_funnel = fields.Date(string='Date Funnel', readonly=True, copy=False)
 
+    # Unlock field: allows admin to temporarily unlock Contract/Loss stages for editing
+    is_unlocked = fields.Boolean(string='Unlocked', default=False, copy=False, tracking=True)
+
     # New: allow uploading a single attachment on the lead (stored on the record)
     # This is intentionally a Binary field so we can apply the same 'only when stage is Contract' logic
     attachment_file = fields.Binary(string='Contract File')
@@ -241,6 +244,9 @@ class CrmLead(models.Model):
     # New helper boolean for views: True when stage is "Contract" or "Loss" (read-only stage)
     is_readonly_stage = fields.Boolean(string='Is Read-Only Stage', compute='_compute_is_readonly_stage', store=True)
 
+    # Helper boolean for views: True when current user is an admin
+    is_user_admin = fields.Boolean(string='Is User Admin', compute='_compute_is_user_admin')
+
     @api.depends('stage_id')
     def _compute_is_readonly_stage(self):
         """Return True if stage name contains 'contract' or 'loss' (case-insensitive) OR probability >= 100"""
@@ -255,6 +261,12 @@ class CrmLead(models.Model):
                     continue
             # Otherwise check by name
             rec.is_readonly_stage = bool(name and ('contract' in name or 'loss' in name or 'lost' in name or 'won' in name))
+
+    def _compute_is_user_admin(self):
+        """Check if current user is an administrator (base.group_system)"""
+        is_admin = self.env.user.has_group('base.group_system')
+        for rec in self:
+            rec.is_user_admin = is_admin
 
     # === COMPUTE METHODS ===
     # Note: contract_months is user-editable. Validation is handled by _check_contract_months.
@@ -705,6 +717,22 @@ class CrmLead(models.Model):
         # === PREVENT MOVING OUT OF OR EDITING IN CONTRACT/LOSS STAGES ===
         for rec in self:
             if rec.is_readonly_stage:
+                # If unlocked, only admins can edit
+                if rec.is_unlocked:
+                    # Check if user is admin
+                    if not self.env.user.has_group('base.group_system'):
+                        raise AccessError(
+                            'Only administrators can edit unlocked leads in Contract or Loss stage. '
+                            'Please contact an administrator if changes are needed.'
+                        )
+                    # Admin can edit unlocked leads - allow the write to proceed
+                    continue
+
+                # If locked, nobody can edit
+                # Allow unlocking (admin setting is_unlocked=True)
+                if vals.keys() == {'is_unlocked'} and vals.get('is_unlocked') == True:
+                    continue
+
                 # Check if trying to change stage OUT of Contract/Loss
                 if 'stage_id' in vals:
                     new_stage_id = vals.get('stage_id')
@@ -948,6 +976,101 @@ class CrmLead(models.Model):
                         vals['date_funnel'] = fields.Date.today()
 
         return super(CrmLead, self).write(vals)
+
+    # Action to unlock Contract/Loss stage leads temporarily (admin only)
+    def action_unlock(self):
+        """Temporarily unlock leads in Contract/Loss stages for editing.
+
+        Only accessible to administrators (base.group_system).
+        The lead will automatically lock again after the next save.
+        """
+        if not self.env.user.has_group('base.group_system'):
+            raise AccessError('Only users with Administrator (Settings) access may unlock leads.')
+
+        for rec in self:
+            if rec.is_readonly_stage:
+                rec.write({'is_unlocked': True})
+
+        # If single record, reopen its form so the UI refreshes
+        if len(self) == 1:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': 'Unlocked',
+                    'message': 'Lead unlocked for editing.',
+                    'type': 'success',
+                    'sticky': False,
+                    'next': {
+                        'type': 'ir.actions.act_window',
+                        'res_model': 'crm.lead',
+                        'view_mode': 'form',
+                        'res_id': self.id,
+                        'views': [(False, 'form')],
+                        'target': 'current',
+                    }
+                }
+            }
+
+        # For multiple records, return a client reload
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': 'Unlocked',
+                'message': 'Lead(s) unlocked for editing.',
+                'type': 'success',
+                'sticky': False,
+                'next': {'type': 'ir.actions.client', 'tag': 'reload'}
+            }
+        }
+
+    # Action to lock Contract/Loss stage leads manually (admin only)
+    def action_lock(self):
+        """Manually lock leads in Contract/Loss stages.
+
+        Only accessible to administrators (base.group_system).
+        """
+        if not self.env.user.has_group('base.group_system'):
+            raise AccessError('Only users with Administrator (Settings) access may lock leads.')
+
+        for rec in self:
+            if rec.is_readonly_stage and rec.is_unlocked:
+                rec.write({'is_unlocked': False})
+
+        # If single record, reopen its form so the UI refreshes
+        if len(self) == 1:
+            return {
+                'type': 'ir.actions.client',
+                'tag': 'display_notification',
+                'params': {
+                    'title': 'Locked',
+                    'message': 'Lead locked for audit purposes.',
+                    'type': 'info',
+                    'sticky': False,
+                    'next': {
+                        'type': 'ir.actions.act_window',
+                        'res_model': 'crm.lead',
+                        'view_mode': 'form',
+                        'res_id': self.id,
+                        'views': [(False, 'form')],
+                        'target': 'current',
+                    }
+                }
+            }
+
+        # For multiple records, return a client reload
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'display_notification',
+            'params': {
+                'title': 'Locked',
+                'message': 'Lead(s) locked for audit purposes.',
+                'type': 'info',
+                'sticky': False,
+                'next': {'type': 'ir.actions.client', 'tag': 'reload'}
+            }
+        }
 
     # New action to move leads to a Decline stage
     def action_decline(self):

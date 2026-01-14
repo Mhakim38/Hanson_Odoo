@@ -1,0 +1,399 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<odoo>
+    <data>
+
+        <!-- ================= ACTION ================= -->
+        <record id="crm.crm_lead_action_pipeline" model="ir.actions.act_window">
+            <field name="view_mode">tree,kanban,form,calendar,graph,pivot</field>
+        </record>
+
+        <!-- ================= FORM OVERRIDE ================= -->
+        <record id="view_crm_lead_form_custom_override" model="ir.ui.view">
+            <field name="name">crm.lead.form.custom.override</field>
+            <field name="model">crm.lead</field>
+            <field name="inherit_id" ref="PLB_input.view_crm_lead_form_custom"/>
+            <field name="priority" eval="1000"/>
+            <field name="arch" type="xml">
+
+                <xpath expr="//header" position="inside">
+                    <!-- ================= STAGE ACTION BUTTONS ================= -->
+                    <button name="action_next_stage"
+                        type="object"
+                        string="Next Stage"
+                        class="btn-dark"
+                        invisible="is_final_contract_stage or is_renewal_stage or is_decline_stage or is_readonly_stage"/>
+
+<!--                    <button name="action_to_renewal"-->
+<!--                        type="object"-->
+<!--                        string="Renewal"-->
+<!--                        invisible="not (is_final_contract_stage)"/>-->
+
+<!--                    <button name="action_to_loss"-->
+<!--                        type="object"-->
+<!--                        string="Loss"-->
+<!--                        invisible="not (is_final_contract_stage)"/>-->
+                </xpath>
+
+
+                <!-- helper flags -->
+                <xpath expr="//sheet" position="inside">
+                    <field name="is_new_stage" invisible="1"/>
+                    <field name="is_qualify_stage" invisible="1"/>
+                    <field name="is_proposal_submitted_stage" invisible="1"/>
+                    <field name="is_contract_stage" invisible="1"/>
+                    <field name="is_final_contract_stage" invisible="1"/>
+                    <field name="is_renewal_stage" invisible="1"/>
+                    <field name="is_decline_stage" invisible="1"/>
+                </xpath>
+
+
+                <!-- Name -->
+                <xpath expr="//field[@name='name']" position="attributes">
+                    <attribute name="placeholder">Initiative / Project Description</attribute>
+                    <attribute name="modifiers">
+                        {"readonly": [["is_qualify_stage", "=", true]]}
+                    </attribute>
+                </xpath>
+
+                <!-- Salesperson readonly -->
+                <xpath expr="//field[@name='user_id']" position="attributes">
+                    <attribute name="readonly">1</attribute>
+                </xpath>
+
+                <!-- Created on -->
+                <xpath expr="//field[@name='user_id']" position="after">
+                    <field name="create_date" string="Created on" readonly="1"/>
+                </xpath>
+
+                <!--Hide Contract Details, Service Information, Additional Info (sheet) -->
+                <!--xpath expr="//sheet/group[1]" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath-->
+                <xpath expr="//sheet/group[2]" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+                <xpath expr="//sheet/group[3]" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+
+                <!-- Hide -->
+                <xpath expr="//field[@name='probability']" position="replace">
+                    <field name="probability" invisible="1"/>
+                </xpath>
+                <!-- Hide other star priority-->
+                <xpath expr="//field[@name='date_funnel']/following::field[@name='priority'][1]"
+                       position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+                <!-- Hide Tag / Other Email -->
+                <xpath expr="//field[@name='tag_ids']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+                <!-- Hide % sign next to Chance -->
+                <xpath expr="//span[normalize-space(text())='%']" position="replace">
+                    <span invisible="1"/>
+                </xpath>
+
+
+                <!-- Lock top fields after qualify -->
+                <xpath expr="//field[@name='partner_id']" position="attributes">
+                    <attribute name="modifiers">
+                        {"readonly": [["is_qualify_stage", "=", true]]}
+                    </attribute>
+                </xpath>
+
+                <!-- PRIORITY = CHANCE (STAR) -->
+                <xpath expr="//field[@name='priority']" position="attributes">
+                    <attribute name="string">Chance</attribute>
+                    <attribute name="widget">priority</attribute>
+                    <attribute name="modifiers">
+                        {"readonly": [["is_qualify_stage", "=", true]]}
+                    </attribute>
+                </xpath>
+
+                <xpath expr="//field[@name='expected_start_date']" position="attributes">
+                    <attribute name="modifiers">
+                        {"readonly": [["is_qualify_stage", "=", true]]}
+                    </attribute>
+                </xpath>
+
+                <xpath expr="//field[@name='scope_of_service']" position="attributes">
+                    <attribute name="modifiers">
+                        {"readonly": [["is_qualify_stage", "=", true]]}
+                    </attribute>
+                </xpath>
+
+                <xpath expr="//field[@name='product']" position="attributes">
+                    <attribute name="modifiers">
+                        {"readonly": [["is_qualify_stage", "=", true]]}
+                    </attribute>
+                </xpath>
+
+                <xpath expr="//field[@name='dept_region']" position="attributes">
+                    <attribute name="modifiers">
+                        {"readonly": [["is_qualify_stage", "=", true]]}
+                    </attribute>
+                </xpath>
+
+                <!-- Hide Internal Notes tab -->
+                <xpath expr="//page[@name='internal_notes']" position="replace">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+                <!-- Hide Extra Information tab -->
+                <xpath expr="//page[@name='lead']" position="attributes">
+                    <attribute name="invisible">1</attribute>
+                </xpath>
+
+
+                <!-- STAGE BAR ABOVE NOTEBOOK -->
+                <!--xpath expr="//sheet/notebook" position="before">
+                    <group class="mt16">
+                        <field name="stage_id"
+                               widget="statusbar"
+                               options="{'clickable': true}"
+                               string="Stages and Mandatory fields for each stages"/>
+                    </group>
+                </xpath-->
+            </field>
+        </record>
+
+
+
+        <!-- ================= NOTEBOOK ================= -->
+        <record id="view_crm_lead_form_qualify_tab" model="ir.ui.view">
+            <field name="name">crm.lead.form.qualify.tab</field>
+            <field name="model">crm.lead</field>
+            <field name="inherit_id" ref="PLB_input.view_crm_lead_form_custom"/>
+            <field name="priority" eval="1200"/>
+            <field name="arch" type="xml">
+
+                <!-- ================= MANDATORY DETAILS TITLE ================= -->
+                <xpath expr="//sheet/notebook" position="before">
+                    <div class="oe_title text-left mt24 mb2">
+                        <h1 class="text-danger fw-bold">
+                            MANDATORY DETAILS
+                        </h1>
+                    </div>
+                </xpath>
+
+
+                <xpath expr="//notebook/page[1]" position="before">
+
+                    <!-- NEW -->
+                    <page name="tab_new" string="For New"
+                          modifiers='{"invisible": [["is_new_stage", "=", false]]}'>
+
+                        <group col="2">
+                            <!-- LEFT COLUMN -->
+                            <group string="Lead Details" col="2">
+                                <field name="name"
+                                       string="Initiative / Project Description"
+                                       modifiers="{'required': [['is_new_stage', '=', true]]}"/>
+
+                                <field name="partner_id"
+                                       string="Customer"
+                                       modifiers="{'required': [['is_new_stage', '=', true]]}"/>
+
+                                <field name="expected_revenue" string="Value Per Annum"/>
+                                <field name="priority" widget="priority" string="Chance"/>
+                            </group>
+
+                            <!-- RIGHT COLUMN -->
+                            <group col="1">
+                                <group string="Contact Info" col="2">
+                                    <field name="email_from" string="Email"/>
+                                    <field name="phone" string="Phone"/>
+                                </group>
+
+                                <group string="Remark" col="2">
+                                    <field name="remark"/>
+                                </group>
+                            </group>
+                        </group>
+                    </page>
+
+
+                    <!-- QUALIFY -->
+                    <page name="tab_qualify" string="For Qualify"
+                          modifiers='{"invisible": [["is_qualify_stage", "=", false]]}'>
+                        <group col="2">
+                            <!-- LEFT COLUMN -->
+                            <group col="1">
+                                <group string="Lead Details" col="2">
+                                    <field name="name"
+                                           string="Initiative / Project Description"
+                                           modifiers="{'required': [['is_qualify_stage', '=', true]]}"/>
+
+                                    <field name="priority" widget="priority"
+                                           modifiers="{'required': [['is_qualify_stage', '=', true]]}"/>
+
+                                    <field name="partner_id"
+                                           modifiers="{'required': [['is_qualify_stage', '=', true]]}"/>
+                                </group>
+                                <group string="Remark" col="2">
+                                    <field name="remark"/>
+                                </group>
+                            </group>
+                            <!-- RIGHT COLUMN -->
+                            <group col="1">
+                                <group string="Contract Details" col="2">
+                                    <field name="expected_start_date"
+                                           modifiers="{'required': [['is_qualify_stage', '=', true]]}"/>
+                                </group>
+                                <group string="Service Information" col="2">
+                                    <field name="scope_of_service"
+                                           modifiers="{'required': [['is_qualify_stage', '=', true]]}"/>
+
+                                    <field name="product"
+                                           modifiers="{'required': [['is_qualify_stage', '=', true]]}"/>
+                                </group>
+                                <group string="Additional Info" col="2">
+                                    <field name="dept_region"
+                                           modifiers="{'required': [['is_qualify_stage', '=', true]]}"/>
+                                </group>
+                            </group>
+                        </group>
+                    </page>
+
+                    <!-- PROPOSAL -->
+                    <page name="tab_proposal" string="For Proposal Submitted / Shortlisted / Verbal"
+                          modifiers='{"invisible": [["is_proposal_submitted_stage", "=", false]]}'>
+                        <group col="3">
+                            <group string="Lead Details" col="2">
+                                <field name="expected_revenue" string="Value Per Annum" modifiers="{'required': [['is_proposal_submitted_stage', '=', true]]}"/>
+                            </group>
+                            <group string="Remark" col="2">
+                                <field name="remark"/>
+                            </group>
+                        </group>
+                        <group col="3">
+                            <group string="Contract Details" col="2">
+                                <field name="contract_type" widget="radio" readonly="is_readonly_stage" modifiers="{'required': [['is_proposal_submitted_stage', '=', true]]}"/>
+                                <field name="contract_months" string="Number of Months" readonly="is_readonly_stage"
+                                       modifiers="{'required': [['is_proposal_submitted_stage', '=', true]]}"/>
+                            </group>
+                            <group string="Service Information" col="2">
+                                <field name="freight_type" invisible="scope_of_service != 'freight_forwarding'"
+                                       readonly="is_readonly_stage" modifiers="{'required': [['is_proposal_submitted_stage', '=', true]]}"/>
+                                <field name="origin_country_id" modifiers="{'required': [['is_proposal_submitted_stage', '=', true]]}"/>
+                                <field name="destination_country_id" modifiers="{'required': [['is_proposal_submitted_stage', '=', true]]}"/>
+                                <field name="port_of_loading_id" modifiers="{'required': [['is_proposal_submitted_stage', '=', true]]}"/>
+                                <field name="port_of_destination_id" modifiers="{'required': [['is_proposal_submitted_stage', '=', true]]}"/>
+                            </group>
+                            <group string="Additional Info" col="2">
+                                <field name="operating_profit_margin" modifiers="{'required': [['is_proposal_submitted_stage', '=', true]]}"/>
+                                <field name="quotation_attachment" modifiers="{'required': [['is_proposal_submitted_stage', '=', true]]}"/>
+                            </group>
+
+                        </group>
+                    </page>
+
+                    <!-- CONTRACT/RENEWAL/DECLINE -->
+                    <page name="tab_contract" string="For Contract / Renewal / Decline"
+                          modifiers='{"invisible": [["is_contract_stage", "=", false]]}'>
+                        <group col="3">
+                            <group string="Contract Details" col="2">
+                                <field name="date_secured" readonly="not is_contract_stage or is_readonly_stage" modifiers="{'required': [['is_contract_stage', '=', true]]}"/>
+                                <field name="date_go_live" readonly="not is_contract_stage or is_readonly_stage" modifiers="{'required': [['is_contract_stage', '=', true]]}"/>
+                                <field name="attachment_file" string="Contract Attachment" filename="attachment_filename"
+                                       readonly="not is_contract_stage or is_readonly_stage"
+                                       modifiers="{'required': [['is_contract_stage', '=', true]]}"/>
+                                <field name="attachment_filename" invisible="1"/>
+                            </group>
+                            <group string="Additional Info" col="2">
+                                <field name="realized_revenue" modifiers="{'required': [['is_contract_stage', '=', true]]}"/>
+                                <field name="remark" modifiers="{'required': [['is_contract_stage', '=', true]]}"/>
+                            </group>
+                            <group string="Remark" col="2">
+                                <field name="remark"/>
+                            </group>
+                        </group>
+                    </page>
+
+                    <!-- OVERALL -->
+                    <page string="Overall">
+                        <!-- WRAPPER GROUP (SIDE BY SIDE) -->
+                        <group col="3">
+                            <!-- ================= CONTRACT DETAILS ================= -->
+                            <group name="tab_overall" string="Contract Details" col="2">
+                                <field name="contract_type" widget="radio" readonly="is_readonly_stage"/>
+                                <field name="contract_months" string="Number of Months" readonly="is_readonly_stage"/>
+                                <field name="expected_start_date" readonly="is_readonly_stage"/>
+                                <field name="date_secured" readonly="not is_contract_stage or is_readonly_stage"/>
+                                <field name="date_go_live" readonly="not is_contract_stage or is_readonly_stage"/>
+                                <field name="attachment_file"
+                                       filename="attachment_filename"
+                                       readonly="not is_contract_stage or is_readonly_stage"/>
+                                <field name="attachment_filename" invisible="1"/>
+                            </group>
+
+                            <!-- ================= SERVICE INFORMATION ================= -->
+                            <group string="Service Information" col="2">
+                                <field name="scope_of_service" readonly="is_readonly_stage"/>
+                                <field name="freight_type"
+                                       invisible="scope_of_service != 'freight_forwarding'"
+                                       readonly="is_readonly_stage"/>
+                                <field name="origin_country_id" readonly="is_readonly_stage"/>
+                                <field name="destination_country_id" readonly="is_readonly_stage"/>
+                                <field name="port_of_loading_id" readonly="is_readonly_stage"/>
+                                <field name="port_of_destination_id" readonly="is_readonly_stage"/>
+                                <field name="product" readonly="is_readonly_stage"/>
+                            </group>
+
+                            <!-- ================= ADDITIONAL INFO ================= -->
+                            <group string="Additional Info" col="2">
+                                <field name="dept_region" readonly="is_readonly_stage"/>
+                                <field name="realized_revenue" readonly="is_readonly_stage"/>
+                                <field name="remark" readonly="is_readonly_stage"/>
+                                <field name="operating_profit_margin"
+                                       widget="percentage"
+                                       readonly="is_readonly_stage"/>
+                                <field name="quotation_attachment"
+                                       filename="quotation_attachment_filename"
+                                       readonly="is_readonly_stage"/>
+                                <field name="quotation_attachment_filename" invisible="1"/>
+                            </group>
+
+                        </group>
+                    </page>
+
+                </xpath>
+            </field>
+        </record>
+
+        <!-- ================= TREE VIEW ================= -->
+        <record id="view_crm_lead_tree_custom_override" model="ir.ui.view">
+            <field name="name">crm.lead.tree.custom.override</field>
+            <field name="model">crm.lead</field>
+            <field name="inherit_id" ref="PLB_input.view_crm_lead_tree_custom"/>
+            <field name="priority" eval="99"/>
+            <field name="arch" type="xml">
+                <xpath expr="/tree" position="replace">
+                    <tree string="Opportunities" class="crm_lead_tree_custom">
+                        <field name="row_number" string="No"/>
+                        <field name="partner_id"/>
+                        <field name="name"/>
+                        <field name="expected_revenue"/>
+                        <field name="operating_profit_margin" widget="percentage"/>
+                        <field name="priority" widget="priority"/>
+                        <field name="stage_id"/>
+                        <field name="description"/>
+                        <field name="user_id"/>
+                        <field name="date_funnel"/>
+                        <field name="expected_start_date"/>
+                        <field name="date_secured"/>
+                        <field name="date_go_live"/>
+                        <field name="scope_of_service"/>
+                        <field name="product"/>
+                        <field name="dept_region"/>
+                        <field name="realized_revenue"/>
+                        <field name="origin_country_id"/>
+                        <field name="destination_country_id"/>
+                        <field name="port_of_loading_id"/>
+                        <field name="port_of_destination_id"/>
+                    </tree>
+                </xpath>
+            </field>
+        </record>
+    </data>
+</odoo>
